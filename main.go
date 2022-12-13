@@ -3,25 +3,44 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-var style = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(lipgloss.Color("#FAFAFA")).
-	Background(lipgloss.Color("#7D56F4")).
-	PaddingTop(2).
-	PaddingLeft(4).
-	Width(22)
+// var style = lipgloss.NewStyle().
+// 	Bold(true).
+// 	Foreground(lipgloss.Color("#FAFAFA")).
+// 	Background(lipgloss.Color("#7D56F4")).
+// 	PaddingTop(2).
+// 	PaddingLeft(4).
+// 	Width(22)
+
+var (
+	testStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#FAFAFA")).
+			Background(lipgloss.Color("#7D56F4")).
+			PaddingTop(2).
+			PaddingLeft(4).
+			Width(22)
+	highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
+	docStyle       = lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Padding(1, 2)
+	windowStyle    = lipgloss.NewStyle().BorderForeground(highlightColor)
+)
+
+type tab struct {
+	name string
+	view string
+}
 
 type model struct {
 	searchInput textinput.Model
-	choices     []string         // items on the to-do list
-	cursor      int              // which to-do list item our cursor is pointing at
-	selected    map[int]struct{} // which to-do items are selected
+	tabs        []tab
+	activeTab   int
+	// selected    map[int]struct{} // which to-do items are selected
 }
 
 func initialModel() model {
@@ -29,15 +48,21 @@ func initialModel() model {
 	searchInput.Placeholder = "Search for movies and shows..."
 	searchInput.Focus()
 
+	tabs := []tab{
+		{
+			name: "Search",
+		},
+		{
+			name: "My List",
+		},
+		{
+			name: "Account",
+		},
+	}
+
 	return model{
 		searchInput: searchInput,
-		// Our to-do list is a grocery list
-		choices: []string{"Buy carrots", "Buy celery", "Buy kohlrabi"},
-
-		// A map which indicates which choices are selected. We're using
-		// the  map like a mathematical set. The keys refer to the indexes
-		// of the `choices` slice, above.
-		selected: make(map[int]struct{}),
+		tabs:        tabs,
 	}
 }
 
@@ -47,6 +72,7 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
 
 	// Is it a key press?
 	case tea.KeyMsg:
@@ -58,27 +84,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-		// The "up" and "k" keys move the cursor up
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-
-		// The "down" and "j" keys move the cursor down
-		case "down", "j":
-			if m.cursor < len(m.choices)-1 {
-				m.cursor++
-			}
-
-		// The "enter" key and the spacebar (a literal space) toggle
-		// the selected state for the item that the cursor is pointing at.
-		case "enter", " ":
-			_, ok := m.selected[m.cursor]
-			if ok {
-				delete(m.selected, m.cursor)
-			} else {
-				m.selected[m.cursor] = struct{}{}
-			}
+			// The "up" and "k" keys move the cursor up
 		}
 	}
 
@@ -91,42 +97,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	// The header
-	s := "What should we buy at the market?\n\n"
 
-	// Iterate over our choices
-	for i, choice := range m.choices {
+	view := strings.Builder{}
 
-		// Is the cursor pointing at this choice?
-		cursor := " " // no cursor
-		if m.cursor == i {
-			cursor = ">" // cursor!
-		}
+	view.WriteString(m.searchInput.View())
 
-		// Is this choice selected?
-		checked := " " // not selected
-		if _, ok := m.selected[i]; ok {
-			checked = "x" // selected!
-		}
+	// for i, tab := range m.tabs {
 
-		// Render the row
-		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
-	}
+	// }
 
-	s += m.searchInput.View()
-
+	// view.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.tabs[m.activeTab]))
 	// The footer
-	s += "\nPress q to quit.\n"
+	view.WriteString("\nPress q to quit.\n")
 
 	// Send the UI for rendering
-	return style.Render(s)
+	return docStyle.Render(view.String())
 }
 
 func main() {
-	p := tea.NewProgram(initialModel())
+	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("Alas, there's been an error: %v", err)
+		fmt.Printf("L + R, Kyle fix your code: %v", err)
 		os.Exit(1)
 	}
 }
