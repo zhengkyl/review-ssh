@@ -1,4 +1,4 @@
-module github.com/zhengkyl/review-tui
+module github.com/zhengkyl/review-ssh
 
 go 1.17
 
