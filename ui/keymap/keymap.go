@@ -14,7 +14,7 @@ type KeyMap struct {
 	Back    key.Binding
 }
 
-func NewKeyMap() *KeyMap {
+func DefaultKeyMap() *KeyMap {
 	km := KeyMap{
 		Quit:    key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "quit")),
 		NextTab: key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next tab")),

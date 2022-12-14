@@ -1,4 +1,4 @@
-# review-shh
+# review-ssh
 
 A terminal user-interface for `review-api` over ssh
 

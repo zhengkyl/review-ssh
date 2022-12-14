@@ -1,77 +1,84 @@
 package ui
 
 import (
-	"strings"
-
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/pages/search"
+	"github.com/zhengkyl/review-ssh/ui/styles"
 )
 
-// var style = lipgloss.NewStyle().
-// 	Bold(true).
-// 	Foreground(lipgloss.Color("#FAFAFA")).
-// 	Background(lipgloss.Color("#7D56F4")).
-// 	PaddingTop(2).
-// 	PaddingLeft(4).
-// 	Width(22)
+// var (
+// 	testStyle = lipgloss.NewStyle().
+// 			Bold(true).
+// 			Foreground(lipgloss.Color("#FAFAFA")).
+// 			Background(lipgloss.Color("#7D56F4")).
+// 			PaddingTop(2).
+// 			PaddingLeft(4).
+// 			Width(22)
+// 	highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
+// 	docStyle       = lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Padding(1, 2)
+// 	windowStyle    = lipgloss.NewStyle().BorderForeground(highlightColor)
+// )
 
-var (
-	testStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("#FAFAFA")).
-			Background(lipgloss.Color("#7D56F4")).
-			PaddingTop(2).
-			PaddingLeft(4).
-			Width(22)
-	highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
-	docStyle       = lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Padding(1, 2)
-	windowStyle    = lipgloss.NewStyle().BorderForeground(highlightColor)
+const (
+	searchPage int = iota
+	accountPage
 )
 
-type tab struct {
-	name string
-	view string
-}
-
-type UI struct {
-	searchInput textinput.Model
-	tabs        []tab
-	activeTab   int
+type UiModel struct {
+	common    common.Common
+	tabs      []common.Component
+	activeTab int
 	// selected    map[int]struct{} // which to-do items are selected
 }
 
-func New() *UI {
-	searchInput := textinput.New()
-	searchInput.Placeholder = "Search for movies and shows..."
-	searchInput.Focus()
+func New() *UiModel {
 
-	tabs := []tab{
-		{
-			name: "Search",
+	return &UiModel{
+		tabs: make([]common.Component, 1),
+		common: common.Common{
+			// Width: ,
+			Styles: styles.DefaultStyles(),
 		},
-		{
-			name: "My List",
-		},
-		{
-			name: "Account",
-		},
-	}
-
-	return &UI{
-		searchInput: searchInput,
-		tabs:        tabs,
 	}
 }
 
-func (m UI) Init() tea.Cmd {
-	return nil
+func (m *UiModel) SetSize(width, height int) {
+	m.common.SetSize(width, height)
+
+	// wm, hm := ui.getMargins()
+
+	// SetSize(width - wm, height - hm)
+
 }
 
-func (m UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m UiModel) Init() tea.Cmd {
+
+	m.tabs[searchPage] = search.New(m.common)
+
+	m.SetSize(m.common.Width, m.common.Height)
+
+	cmds := []tea.Cmd{
+		m.tabs[searchPage].Init(),
+	}
+
+	return tea.Batch(cmds...)
+}
+
+func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmds := make([]tea.Cmd, 0)
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-
+		h, v := m.common.Styles.App.GetFrameSize()
+		m.SetSize(msg.Width-h, msg.Height-v)
+		for i, t := range m.tabs {
+			tabModel, cmd := t.Update(msg)
+			m.tabs[i] = tabModel.(common.Component)
+			if cmd != nil {
+				cmds = append(cmds, cmd)
+			}
+		}
 	// Is it a key press?
 	case tea.KeyMsg:
 
@@ -86,19 +93,19 @@ func (m UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	var cmd tea.Cmd
-
-	m.searchInput, cmd = m.searchInput.Update(msg)
+	tabModel, cmd := m.tabs[m.activeTab].Update(msg)
+	m.tabs[m.activeTab] = tabModel.(common.Component)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
 	// Return the updated model to the Bubble Tea runtime for processing.
 	// Note that we're not returning a command.
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
-func (m UI) View() string {
+func (m UiModel) View() string {
 
-	view := strings.Builder{}
-
-	view.WriteString(m.searchInput.View())
+	var view string
 
 	// for i, tab := range m.tabs {
 
@@ -106,8 +113,10 @@ func (m UI) View() string {
 
 	// view.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.tabs[m.activeTab]))
 	// The footer
-	view.WriteString("\nPress q to quit.\n")
 
+	// view = ui.
+	view = m.tabs[m.activeTab].View()
+	// view = lipgloss.JoinVertical(lipgloss.Left, ui.)
 	// Send the UI for rendering
-	return docStyle.Render(view.String())
+	return m.common.Styles.App.Render(view)
 }
