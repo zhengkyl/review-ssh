@@ -4,7 +4,10 @@ go 1.17
 
 require github.com/charmbracelet/bubbletea v0.23.1
 
-require github.com/atotto/clipboard v0.1.4 // indirect
+require (
+	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/sahilm/fuzzy v0.1.0 // indirect
+)
 
 require (
 	github.com/aymanbagabas/go-osc52 v1.0.3 // indirect
