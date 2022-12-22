@@ -3,7 +3,7 @@ package ui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/zhengkyl/review-ssh/ui/common"
-	"github.com/zhengkyl/review-ssh/ui/pages/search"
+	"github.com/zhengkyl/review-ssh/ui/components/poster"
 	"github.com/zhengkyl/review-ssh/ui/styles"
 )
 
@@ -54,12 +54,14 @@ func (m *UiModel) SetSize(width, height int) {
 
 func (m UiModel) Init() tea.Cmd {
 
-	m.tabs[searchPage] = search.New(m.common)
+	// m.tabs[searchPage] = search.New(m.common)
+	m.tabs[0] = poster.New(m.common, "https://image.tmdb.org/t/p/w92/kgwjIb2JDHRhNk13lmSxiClFjVk.jpg")
 
 	m.SetSize(m.common.Width, m.common.Height)
 
 	cmds := []tea.Cmd{
-		m.tabs[searchPage].Init(),
+		m.tabs[0].Init(),
+		// m.tabs[searchPage].Init(),
 	}
 
 	return tea.Batch(cmds...)

@@ -4,6 +4,12 @@ A terminal user-interface for `review-api` over ssh
 
 # Progress
 
+# 12/22/22
+
+- colors are sooo fun and quirky
+
+<img alt="Day 2" src="./assets/day2.gif" width="600" />
+
 ## 12/21/22
 
 - http requests keep failing?

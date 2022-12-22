@@ -1,7 +1,8 @@
+Output day1.gif
 Set Height 800
 
 Sleep 1s
-Type "go run main.go"
+Type "go run ../main.go"
 Enter
 Sleep 1s
 Type "frozen"
