@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/components/skeleton"
 	"golang.org/x/image/draw"
 
 	// _ means imported for its initialization side-effect
@@ -20,9 +21,11 @@ import (
 // const pixelChar = '█'
 
 type ImageModel struct {
-	common common.Common
-	src    string
-	image  image.Image
+	common   common.Common
+	src      string
+	image    image.Image
+	loaded   bool
+	skeleton skeleton.SkeletonModel
 }
 
 type ImageMsg = image.Image
@@ -55,10 +58,14 @@ func New(common common.Common, src string) *ImageModel {
 	common.Height = 30
 	errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
+
+	skeleton := skeleton.New(common)
+
 	m := &ImageModel{
-		src:    src,
-		common: common,
-		image:  errImg,
+		src:      src,
+		common:   common,
+		image:    errImg,
+		skeleton: *skeleton,
 	}
 	// m.SetSize(common.Width, common.Height)
 	return m
@@ -67,7 +74,7 @@ func New(common common.Common, src string) *ImageModel {
 func (m *ImageModel) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
-
+	// if not loaded ,set skeleton size
 	// wm, hm := m.getMargins()
 
 }
@@ -80,7 +87,7 @@ func (m *ImageModel) getMargins() (wm, hm int) {
 }
 
 func (m *ImageModel) Init() tea.Cmd {
-	return getSrc(m.src)
+	return tea.Batch(getSrc(m.src), m.skeleton.Tick)
 }
 
 func (m *ImageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -88,12 +95,22 @@ func (m *ImageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case ImageMsg:
 		m.image = msg
+		// TODO check image id
+		m.loaded = true
 	}
 
-	return m, nil
+	var cmd tea.Cmd
+	m.skeleton, cmd = m.skeleton.Update(msg)
+
+	return m, cmd
 }
 
 func (m *ImageModel) View() string {
+
+	if !m.loaded {
+		return m.skeleton.View()
+	}
+
 	base := lipgloss.NewStyle().Inline(true)
 
 	dst := image.NewRGBA(image.Rect(0, 0, m.common.Width, m.common.Height))
