@@ -4,6 +4,12 @@ A terminal user-interface for `review-api` over ssh
 
 # Progress
 
+# 1/28/23
+
+- got images loading in a jank way
+
+<img alt="Day 4" src="./assets/day4.gif" width="600" />
+
 # 12/23/22
 
 - colors are sooo fun and quirky

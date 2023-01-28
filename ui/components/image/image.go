@@ -1,4 +1,4 @@
-package poster
+package image
 
 import (
 	"fmt"
@@ -18,21 +18,23 @@ import (
 	_ "image/png"
 )
 
-// const pixelChar = '█'
-
 type ImageModel struct {
 	common   common.Common
 	src      string
 	image    image.Image
 	loaded   bool
 	skeleton skeleton.SkeletonModel
+	init     bool
 }
 
-type ImageMsg = image.Image
+type ImageMsg = struct {
+	src   string
+	image image.Image
+}
 
 func getSrc(src string) tea.Cmd {
-	errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
-	errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
+	// errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
+	// errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
 
 	return func() tea.Msg {
 		resp, err := retryablehttp.Get(src)
@@ -49,13 +51,13 @@ func getSrc(src string) tea.Cmd {
 			return nil
 		}
 
-		return ImageMsg(img)
+		return ImageMsg{src, img}
 	}
 }
 
 func New(common common.Common, src string) *ImageModel {
-	common.Width = 20
-	common.Height = 30
+	common.Width = 10
+	common.Height = 15
 	errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
 
@@ -66,6 +68,7 @@ func New(common common.Common, src string) *ImageModel {
 		common:   common,
 		image:    errImg,
 		skeleton: *skeleton,
+		init:     false,
 	}
 	// m.SetSize(common.Width, common.Height)
 	return m
@@ -90,13 +93,19 @@ func (m *ImageModel) Init() tea.Cmd {
 	return tea.Batch(getSrc(m.src), m.skeleton.Tick)
 }
 
-func (m *ImageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *ImageModel) Update(msg tea.Msg) (*ImageModel, tea.Cmd) {
+	if !m.init {
+		m.init = true
+		return m, m.Init()
+	}
 
 	switch msg := msg.(type) {
 	case ImageMsg:
-		m.image = msg
+		if msg.src == m.src {
+			m.image = msg.image
+			m.loaded = true
+		}
 		// TODO check image id
-		m.loaded = true
 	}
 
 	var cmd tea.Cmd
