@@ -24,7 +24,6 @@ type ImageModel struct {
 	image    image.Image
 	loaded   bool
 	skeleton skeleton.SkeletonModel
-	init     bool
 }
 
 type ImageMsg = struct {
@@ -37,7 +36,10 @@ func getSrc(src string) tea.Cmd {
 	// errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
 
 	return func() tea.Msg {
-		resp, err := retryablehttp.Get(src)
+		// client.Logger = &noopLogger{}
+		client := retryablehttp.NewClient()
+		client.Logger = nil
+		resp, err := client.Get(src)
 
 		if err != nil {
 			return nil
@@ -56,8 +58,8 @@ func getSrc(src string) tea.Cmd {
 }
 
 func New(common common.Common, src string) *ImageModel {
-	common.Width = 10
-	common.Height = 15
+	// common.Width = 6
+	// common.Height = 9
 	errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
 
@@ -68,7 +70,6 @@ func New(common common.Common, src string) *ImageModel {
 		common:   common,
 		image:    errImg,
 		skeleton: *skeleton,
-		init:     false,
 	}
 	// m.SetSize(common.Width, common.Height)
 	return m
@@ -94,11 +95,6 @@ func (m *ImageModel) Init() tea.Cmd {
 }
 
 func (m *ImageModel) Update(msg tea.Msg) (*ImageModel, tea.Cmd) {
-	if !m.init {
-		m.init = true
-		return m, m.Init()
-	}
-
 	switch msg := msg.(type) {
 	case ImageMsg:
 		if msg.src == m.src {
@@ -124,13 +120,7 @@ func (m *ImageModel) View() string {
 
 	dst := image.NewRGBA(image.Rect(0, 0, m.common.Width, m.common.Height))
 
-	// out, _ := os.Create("dst.png")
-	// png.Encode(out, m.image)
-
 	draw.CatmullRom.Scale(dst, dst.Rect, m.image, m.image.Bounds(), draw.Over, nil)
-
-	// out2, _ := os.Create("dst2.png")
-	// png.Encode(out2, dst)
 
 	view := ""
 
@@ -139,6 +129,7 @@ func (m *ImageModel) View() string {
 		for x := dst.Bounds().Min.X; x < dst.Bounds().Max.X; x++ {
 			r, g, b, _ := dst.At(x, y).RGBA()
 
+			// colors are on a scale from 0 - 65535
 			r = r >> 8
 			g = g >> 8
 			b = b >> 8

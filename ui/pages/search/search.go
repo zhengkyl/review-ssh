@@ -4,25 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net/http"
-	"time"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/image"
 )
 
 type SearchModel struct {
-	common  common.Common
-	input   textinput.Model
-	results []item
-	list    list.Model
-	t1      bool
-	t2      bool
+	common     common.Common
+	httpClient *retryablehttp.Client
+	input      textinput.Model
+	list       list.Model
 }
 
 var (
@@ -37,6 +34,9 @@ var (
 const film_url = "https://review-api.fly.dev/search/Film"
 const show_url = "https://review-api.fly.dev/search/Show"
 
+const POSTER_WIDTH = 4
+const POSTER_HEIGHT = 6
+
 type item struct {
 	id           int
 	title        string
@@ -44,6 +44,9 @@ type item struct {
 	release_date string
 	image        *image.ImageModel
 }
+
+// implement list.Item
+func (i item) FilterValue() string { return i.title }
 
 type itemJson struct {
 	Id          int
@@ -53,103 +56,112 @@ type itemJson struct {
 	ReleaseDate string
 }
 
-// func (i item) Title() string       { return i.title }
-// func (i item) Description() string { return i.overview }
-func (i item) FilterValue() string { return i.title }
-
 type itemDelegate struct{}
 
-func (d itemDelegate) Height() int  { return 20 }
-func (d itemDelegate) Spacing() int { return 0 }
-func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
-	cmds := make([]tea.Cmd, 0)
-	for _, listItem := range m.Items() {
-		i, ok := listItem.(item)
-		if !ok {
-			return nil
-		}
+// implement list.ItemDelegate
+func (d itemDelegate) Height() int { return POSTER_HEIGHT }
 
-		// var cmd tea.Cmd
+// implement list.ItemDelegate
+func (d itemDelegate) Spacing() int { return 0 }
+
+// implement list.ItemDelegate
+func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
+	var cmds []tea.Cmd
+
+	for _, listItem := range m.Items() {
+		i := listItem.(item)
 
 		_, cmd := i.image.Update(msg)
 
-		// i.image = imageM.(image.ImageModel)
 		cmds = append(cmds, cmd)
 	}
 
 	return tea.Batch(cmds...)
 }
 
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(item)
-	if !ok {
-		return
+var textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+var titleStyle = lipgloss.NewStyle().Bold(true)
+var contentStyle = lipgloss.NewStyle().MarginLeft(2)
+
+func ellipsisText(s string, max int) string {
+	if max >= len(s) {
+		return s
 	}
-
-	// str := fmt.Sprintf("%d. %s", index+1, i.title)
-	str := lipgloss.JoinHorizontal(0, i.image.View(), i.title)
-
-	fn := itemStyle.Render
-	// if index == m.Index() {
-	// 	fn = func(s string) string {
-	// 		return selectedItemStyle.Render("> " + s)
-	// 	}
-	// }
-
-	fmt.Fprint(w, fn(str))
+	return s[:strings.LastIndex(s[:max-3], " ")] + "..."
 }
 
-type searchMsg []item
+// implement list.ItemDelegate
+func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	i := listItem.(item)
+
+	// NOTE: Fullwidth spaces used in image are 3 wide, checked via notepad
+	contentWidth := m.Width() - itemStyle.GetHorizontalFrameSize() - (POSTER_WIDTH * 3) - contentStyle.GetHorizontalFrameSize()
+
+	desc := ellipsisText(i.overview, contentWidth*2)
+
+	str := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(i.title), textStyle.Width(contentWidth).Render(desc))
+
+	str = contentStyle.Render(str)
+
+	str = lipgloss.JoinHorizontal(lipgloss.Top, i.image.View(), str)
+
+	if index == m.Index() {
+		str = lipgloss.JoinHorizontal(lipgloss.Left, "> ", str)
+		str = selectedItemStyle.Render(str)
+	} else {
+		str = itemStyle.Render(str)
+	}
+
+	fmt.Fprint(w, str)
+}
 
 type searchResponse struct {
 	Results []itemJson
+	// unused fields
+	// Page          int
+	// Total_Pages   int
+	// Total_Results int
 }
 
-func search(query string) tea.Cmd {
+func getSearchCmd(client *retryablehttp.Client, query string) tea.Cmd {
 
 	return func() tea.Msg {
-		client := &http.Client{
-			Timeout: 5 * time.Second,
-		}
-
 		// resp, err := client.Get(fmt.Sprintf("%s?query=%s", film_url, query))
 		resp, err := client.Get("https://review-api.fly.dev/search/Film?query=" + query)
-
 		if err != nil {
-			return searchMsg([]item{{id: 1, title: "here" + err.Error()}})
+			return []item{}
 		}
+
 		defer resp.Body.Close()
 
-		body, err := ioutil.ReadAll(resp.Body)
-
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return searchMsg([]item{{id: 2, title: "there" + err.Error()}})
+			return []item{}
 		}
 
 		var searchResponse searchResponse
-		// json.NewDecoder(resp.Body).Decode(&film)
 		err = json.Unmarshal(body, &searchResponse)
-
 		if err != nil {
-			return searchMsg([]item{{id: 3, title: "everywhere " + err.Error()}})
+			return []item{}
 		}
 
-		var itemResults []item
+		var itemResults []list.Item
 
-		for _, x := range searchResponse.Results {
-			itemResults = append(itemResults, item{
-				x.Id,
-				x.Title,
-				x.Overview,
-				x.ReleaseDate,
-				image.New(common.Common{}, "https://image.tmdb.org/t/p/w200"+x.Poster_Path),
-			})
+		for _, r := range searchResponse.Results {
+			i := item{
+				r.Id,
+				r.Title,
+				r.Overview,
+				r.ReleaseDate,
+				image.New(common.Common{Width: POSTER_WIDTH, Height: POSTER_HEIGHT}, "https://image.tmdb.org/t/p/w200"+r.Poster_Path),
+			}
+			itemResults = append(itemResults, i)
 		}
-		return searchMsg(itemResults)
+		return itemResults
 	}
 }
 
-func New(common common.Common) *SearchModel {
+func New(common common.Common, httpClient *retryablehttp.Client) *SearchModel {
 
 	input := textinput.New()
 	input.Placeholder = "Search for movies and shows..."
@@ -157,9 +169,10 @@ func New(common common.Common) *SearchModel {
 	input.CharLimit = 80
 
 	m := &SearchModel{
-		input:  input,
-		common: common,
-		list:   list.New([]list.Item{}, itemDelegate{}, 50, 20),
+		input:      input,
+		common:     common,
+		list:       list.New([]list.Item{}, itemDelegate{}, 0, 0),
+		httpClient: httpClient,
 	}
 
 	m.SetSize(common.Width, common.Height)
@@ -171,6 +184,7 @@ func (m *SearchModel) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
 
+	m.list.SetSize(width, height)
 	// wm, hm := m.getMargins()
 
 }
@@ -187,25 +201,23 @@ func (m *SearchModel) Init() tea.Cmd {
 }
 
 func (m *SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	cmds := make([]tea.Cmd, 0)
+	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			m.t2 = true
-			cmds = append(cmds, search(m.input.Value()))
+			cmds = append(cmds, getSearchCmd(m.httpClient, m.input.Value()))
 		}
-	case searchMsg:
-		m.t1 = true
-		m.results = msg
-		b := make([]list.Item, len(msg))
-		for i := range msg {
-			b[i] = msg[i]
+
+	case []list.Item:
+		cmds = append(cmds, m.list.SetItems(msg))
+		for _, i := range msg {
+			var j = i.(item)
+			cmds = append(cmds, j.image.Init())
 		}
-		cmd := m.list.SetItems(b)
-		return m, cmd
-		// cmds = append(cmds, cmd)
 
 	case error:
 		return m, nil
@@ -230,14 +242,12 @@ func (m *SearchModel) View() string {
 	view = ss.Render(m.input.View())
 	view += ss.Render(m.list.View())
 
-	if m.t1 {
-		view += "t1 true"
-	}
-	if m.t2 {
-		view += "t2 true"
-	}
-
-	view += fmt.Sprintf("here are my %v", m.results)
+	// if m.t1 {
+	// 	view += "t1 true"
+	// }
+	// if m.t2 {
+	// 	view += "t2 true"
+	// }
 
 	return view
 }

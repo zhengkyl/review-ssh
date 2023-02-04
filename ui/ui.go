@@ -2,6 +2,7 @@ package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/pages/search"
 	"github.com/zhengkyl/review-ssh/ui/styles"
@@ -26,13 +27,13 @@ const (
 )
 
 type UiModel struct {
-	common    common.Common
-	tabs      []common.Component
-	activeTab int
-	// selected    map[int]struct{} // which to-do items are selected
+	common     common.Common
+	tabs       []common.Component
+	activeTab  int
+	httpClient *retryablehttp.Client
 }
 
-func New() *UiModel {
+func New(httpClient *retryablehttp.Client) *UiModel {
 
 	return &UiModel{
 		tabs: make([]common.Component, 1),
@@ -40,6 +41,7 @@ func New() *UiModel {
 			// Width: ,
 			Styles: styles.DefaultStyles(),
 		},
+		httpClient: httpClient,
 	}
 }
 
@@ -54,7 +56,7 @@ func (m *UiModel) SetSize(width, height int) {
 
 func (m UiModel) Init() tea.Cmd {
 
-	m.tabs[searchPage] = search.New(m.common)
+	m.tabs[searchPage] = search.New(m.common, m.httpClient)
 	// m.tabs[0] = poster.New(m.common, "https://image.tmdb.org/t/p/w92/kgwjIb2JDHRhNk13lmSxiClFjVk.jpg")
 
 	m.SetSize(m.common.Width, m.common.Height)
@@ -72,11 +74,18 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		h, v := m.common.Styles.App.GetFrameSize()
-		m.SetSize(msg.Width-h, msg.Height-v)
+		frameW, frameH := m.common.Styles.App.GetFrameSize()
+
+		viewW, viewH := msg.Width-frameW, msg.Height-frameH
+
+		m.SetSize(viewW, viewH)
+
 		for i, t := range m.tabs {
 			tabModel, cmd := t.Update(msg)
 			m.tabs[i] = tabModel.(common.Component)
+
+			m.tabs[i].SetSize(viewW, viewH)
+
 			if cmd != nil {
 				cmds = append(cmds, cmd)
 			}
