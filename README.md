@@ -2,27 +2,34 @@
 
 A terminal user-interface for `review-api` over ssh
 
-# Progress
+## Progress
 
-# 1/28/23
+### 2/3/23
+
+- made list of movies pretty
+- fullwidth chars are 3 wide?
+
+<img alt="Day 5" src="./assets/day5.gif" width="600" />
+
+### 1/28/23
 
 - got images loading in a jank way
 
 <img alt="Day 4" src="./assets/day4.gif" width="600" />
 
-# 12/23/22
+### 12/23/22
 
 - colors are sooo fun and quirky
 
 <img alt="Day 3" src="./assets/day3.gif" width="600" />
 
-# 12/22/22
+### 12/22/22
 
 - colors are sooo fun and quirky
 
 <img alt="Day 2" src="./assets/day2.gif" width="600" />
 
-## 12/21/22
+### 12/21/22
 
 - http requests keep failing?
 - parsing json is a pain?
