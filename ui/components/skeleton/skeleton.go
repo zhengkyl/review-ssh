@@ -68,8 +68,7 @@ func (m SkeletonModel) View() string {
 
 	for y := 0; y < m.common.Height; y++ {
 		for x := 0; x < m.common.Width; x++ {
-			view += ("　")
-			// view += fmt.Sprint(m.frame)
+			view += (" ")
 		}
 		view += "\n"
 	}

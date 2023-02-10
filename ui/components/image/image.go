@@ -32,8 +32,6 @@ type ImageMsg = struct {
 }
 
 func getSrc(src string) tea.Cmd {
-	// errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
-	// errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
 
 	return func() tea.Msg {
 		// client.Logger = &noopLogger{}
@@ -57,6 +55,8 @@ func getSrc(src string) tea.Cmd {
 	}
 }
 
+// The image pixel width is 1/3 of common.Width
+// The block characters used to render an image are exactly 3 characters wide
 func New(common common.Common, src string) *ImageModel {
 	// common.Width = 6
 	// common.Height = 9
@@ -118,7 +118,7 @@ func (m *ImageModel) View() string {
 
 	base := lipgloss.NewStyle().Inline(true)
 
-	dst := image.NewRGBA(image.Rect(0, 0, m.common.Width, m.common.Height))
+	dst := image.NewRGBA(image.Rect(0, 0, m.common.Width/2, m.common.Height))
 
 	draw.CatmullRom.Scale(dst, dst.Rect, m.image, m.image.Bounds(), draw.Over, nil)
 
@@ -143,6 +143,7 @@ func (m *ImageModel) View() string {
 
 		view += "\n"
 	}
+	// view += m.skeleton.View()
 
 	return view
 }

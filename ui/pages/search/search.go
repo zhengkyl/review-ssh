@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -13,6 +12,7 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/image"
+	"golang.org/x/exp/slices"
 )
 
 type SearchModel struct {
@@ -24,8 +24,8 @@ type SearchModel struct {
 
 var (
 	// titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
+	itemStyle         = lipgloss.NewStyle().Padding(0, 4)
+	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).PaddingRight(4).Foreground(lipgloss.Color("170"))
 	// paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
 	// helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
 	// quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
@@ -34,7 +34,8 @@ var (
 const film_url = "https://review-api.fly.dev/search/Film"
 const show_url = "https://review-api.fly.dev/search/Show"
 
-const POSTER_WIDTH = 4
+// NOTE: Fullwidth spaces are 2 wide
+const POSTER_WIDTH = 4 * 2
 const POSTER_HEIGHT = 6
 
 type item struct {
@@ -83,21 +84,41 @@ var textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 var titleStyle = lipgloss.NewStyle().Bold(true)
 var contentStyle = lipgloss.NewStyle().MarginLeft(2)
 
+var ellipsisPos = []rune{' ', '.', ','}
+
 func ellipsisText(s string, max int) string {
 	if max >= len(s) {
 		return s
 	}
-	return s[:strings.LastIndex(s[:max-3], " ")] + "..."
+
+	chars := []rune(s)
+
+	// end is an exclusive bound
+	var end int
+	for end = max - 3; end >= 1; end-- {
+		c := chars[end]
+		prevC := chars[end-1]
+
+		if slices.Contains(ellipsisPos, c) && !slices.Contains(ellipsisPos, prevC) {
+			break
+		}
+	}
+
+	if end == 0 {
+		end = max - 3
+	}
+
+	return string(chars[:end]) + "..."
 }
 
 // implement list.ItemDelegate
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i := listItem.(item)
 
-	// NOTE: Fullwidth spaces used in image are 3 wide, checked via notepad
-	contentWidth := m.Width() - itemStyle.GetHorizontalFrameSize() - (POSTER_WIDTH * 3) - contentStyle.GetHorizontalFrameSize()
+	contentWidth := m.Width() - itemStyle.GetHorizontalFrameSize() - POSTER_WIDTH - contentStyle.GetHorizontalFrameSize() - 10
 
-	desc := ellipsisText(i.overview, contentWidth*2)
+	// Subtract 15 to account for long word causing early newline.
+	desc := ellipsisText(i.overview, contentWidth*2-15)
 
 	str := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(i.title), textStyle.Width(contentWidth).Render(desc))
 
@@ -242,16 +263,5 @@ func (m *SearchModel) View() string {
 	view = ss.Render(m.input.View())
 	view += ss.Render(m.list.View())
 
-	// if m.t1 {
-	// 	view += "t1 true"
-	// }
-	// if m.t2 {
-	// 	view += "t2 true"
-	// }
-
 	return view
 }
-
-// var cmd tea.Cmd
-
-// m.searchInput, cmd = m.searchInput.Update(msg)
