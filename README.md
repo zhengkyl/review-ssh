@@ -4,10 +4,16 @@ A terminal user-interface for `review-api` over ssh
 
 ## Progress
 
+### 2/11/23
+
+- toggle between multiple pages
+- functionless buttons for each movie in list
+
+<img alt="Day 6" src="./assets/day6.gif" width="600" />
+
 ### 2/3/23
 
 - made list of movies pretty
-- fullwidth chars are 3 wide?
 
 <img alt="Day 5" src="./assets/day5.gif" width="600" />
 

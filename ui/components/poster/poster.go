@@ -1,4 +1,4 @@
-package image
+package poster
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 	_ "image/png"
 )
 
-type ImageModel struct {
+type PosterModel struct {
 	common   common.Common
 	src      string
 	image    image.Image
@@ -26,7 +26,7 @@ type ImageModel struct {
 	skeleton skeleton.SkeletonModel
 }
 
-type ImageMsg = struct {
+type PosterMsg = struct {
 	src   string
 	image image.Image
 }
@@ -51,13 +51,13 @@ func getSrc(src string) tea.Cmd {
 			return nil
 		}
 
-		return ImageMsg{src, img}
+		return PosterMsg{src, img}
 	}
 }
 
-// The image pixel width is 1/3 of common.Width
+// The image pixel width is 1/2 of common.Width
 // The block characters used to render an image are exactly 3 characters wide
-func New(common common.Common, src string) *ImageModel {
+func New(common common.Common, src string) *PosterModel {
 	// common.Width = 6
 	// common.Height = 9
 	errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
@@ -65,7 +65,7 @@ func New(common common.Common, src string) *ImageModel {
 
 	skeleton := skeleton.New(common)
 
-	m := &ImageModel{
+	m := &PosterModel{
 		src:      src,
 		common:   common,
 		image:    errImg,
@@ -75,7 +75,7 @@ func New(common common.Common, src string) *ImageModel {
 	return m
 }
 
-func (m *ImageModel) SetSize(width, height int) {
+func (m *PosterModel) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
 	// if not loaded ,set skeleton size
@@ -83,20 +83,20 @@ func (m *ImageModel) SetSize(width, height int) {
 
 }
 
-func (m *ImageModel) getMargins() (wm, hm int) {
+func (m *PosterModel) getMargins() (wm, hm int) {
 	wm = 0
 	hm = 0
 
 	return
 }
 
-func (m *ImageModel) Init() tea.Cmd {
+func (m *PosterModel) Init() tea.Cmd {
 	return tea.Batch(getSrc(m.src), m.skeleton.Tick)
 }
 
-func (m *ImageModel) Update(msg tea.Msg) (*ImageModel, tea.Cmd) {
+func (m *PosterModel) Update(msg tea.Msg) (*PosterModel, tea.Cmd) {
 	switch msg := msg.(type) {
-	case ImageMsg:
+	case PosterMsg:
 		if msg.src == m.src {
 			m.image = msg.image
 			m.loaded = true
@@ -110,15 +110,16 @@ func (m *ImageModel) Update(msg tea.Msg) (*ImageModel, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *ImageModel) View() string {
+func (m *PosterModel) View() string {
 
 	if !m.loaded {
 		return m.skeleton.View()
 	}
 
-	base := lipgloss.NewStyle().Inline(true)
+	base := lipgloss.NewStyle() //.Inline(true)
+	// base := lipgloss.NewStyle().Inline(true)
 
-	dst := image.NewRGBA(image.Rect(0, 0, m.common.Width/2, m.common.Height))
+	dst := image.NewRGBA(image.Rect(0, 0, m.common.Width, m.common.Height))
 
 	draw.CatmullRom.Scale(dst, dst.Rect, m.image, m.image.Bounds(), draw.Over, nil)
 
@@ -137,8 +138,12 @@ func (m *ImageModel) View() string {
 			// view += fmt.Sprintf("%v, %v, %v", r, g, b)
 			pixel := base.Copy().Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
 
-			view += pixel.Render("　")
+			view += pixel.Render(" ")
 
+		}
+
+		if y == dst.Bounds().Max.Y-1 {
+			break
 		}
 
 		view += "\n"

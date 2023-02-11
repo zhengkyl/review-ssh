@@ -1,9 +1,12 @@
 package ui
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/keymap"
+	"github.com/zhengkyl/review-ssh/ui/pages/account"
 	"github.com/zhengkyl/review-ssh/ui/pages/search"
 	"github.com/zhengkyl/review-ssh/ui/styles"
 )
@@ -26,6 +29,8 @@ const (
 	accountPage
 )
 
+const NUM_PAGES = 2
+
 type UiModel struct {
 	common     common.Common
 	tabs       []common.Component
@@ -36,11 +41,13 @@ type UiModel struct {
 func New(httpClient *retryablehttp.Client) *UiModel {
 
 	return &UiModel{
-		tabs: make([]common.Component, 1),
 		common: common.Common{
 			// Width: ,
 			Styles: styles.DefaultStyles(),
+			KeyMap: keymap.DefaultKeyMap(),
 		},
+		tabs:       make([]common.Component, NUM_PAGES),
+		activeTab:  0,
 		httpClient: httpClient,
 	}
 }
@@ -57,20 +64,20 @@ func (m *UiModel) SetSize(width, height int) {
 func (m UiModel) Init() tea.Cmd {
 
 	m.tabs[searchPage] = search.New(m.common, m.httpClient)
-	// m.tabs[0] = poster.New(m.common, "https://image.tmdb.org/t/p/w92/kgwjIb2JDHRhNk13lmSxiClFjVk.jpg")
+	m.tabs[accountPage] = account.NewLogin(m.common, m.httpClient)
 
 	m.SetSize(m.common.Width, m.common.Height)
 
 	cmds := []tea.Cmd{
-		// m.tabs[0].Init(),
 		m.tabs[searchPage].Init(),
+		m.tabs[accountPage].Init(),
 	}
 
 	return tea.Batch(cmds...)
 }
 
 func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	cmds := make([]tea.Cmd, 0)
+	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -92,16 +99,19 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	// Is it a key press?
 	case tea.KeyMsg:
-
-		// Cool, what was the actual key pressed?
-		switch msg.String() {
-
-		// These keys should exit the program.
-		case "ctrl+c", "q":
-			return m, tea.Quit
-
-			// The "up" and "k" keys move the cursor up
+		switch m.activeTab {
+		case searchPage:
+		case accountPage:
 		}
+
+		if key.Matches(msg, m.common.KeyMap.NextTab) {
+			m.activeTab = (m.activeTab + 1) % NUM_PAGES
+		} else if key.Matches(msg, m.common.KeyMap.PrevTab) {
+			m.activeTab = (m.activeTab - 1 + NUM_PAGES) % NUM_PAGES
+		} else if key.Matches(msg, m.common.KeyMap.Quit) {
+			return m, tea.Quit
+		}
+
 	}
 
 	tabModel, cmd := m.tabs[m.activeTab].Update(msg)

@@ -11,9 +11,8 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 )
 
-const skeletonFPS = 10
-
-const animationFrames = 20
+const SKELETON_FPS = 10
+const NUM_FRAMES = 20
 
 // Used to make sure only one skeleton sends ticks, which all skeletons use
 var (
@@ -46,7 +45,7 @@ func New(common common.Common) *SkeletonModel {
 func (m SkeletonModel) Update(msg tea.Msg) (SkeletonModel, tea.Cmd) {
 	switch msg.(type) {
 	case TickMsg:
-		m.frame = (m.frame + 1) % animationFrames
+		m.frame = (m.frame + 1) % NUM_FRAMES
 
 		return m, m.tick()
 	default:
@@ -60,7 +59,7 @@ type TickMsg struct {
 }
 
 func (m SkeletonModel) View() string {
-	rgb := loopInt(40, 100, float64(m.frame)/animationFrames)
+	rgb := loopInt(40, 100, float64(m.frame)/NUM_FRAMES)
 
 	base := lipgloss.NewStyle().Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", rgb, rgb, rgb)))
 
@@ -70,6 +69,11 @@ func (m SkeletonModel) View() string {
 		for x := 0; x < m.common.Width; x++ {
 			view += (" ")
 		}
+
+		if y == m.common.Height-1 {
+			break
+		}
+
 		view += "\n"
 	}
 
@@ -95,7 +99,7 @@ func (m SkeletonModel) tick() tea.Cmd {
 		return nil
 	}
 
-	return tea.Tick(time.Second/skeletonFPS, func(t time.Time) tea.Msg {
+	return tea.Tick(time.Second/SKELETON_FPS, func(t time.Time) tea.Msg {
 		return TickMsg{
 			Time: t,
 		}

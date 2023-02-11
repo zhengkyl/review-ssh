@@ -2,7 +2,6 @@ package search
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -11,8 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
-	"github.com/zhengkyl/review-ssh/ui/components/image"
-	"golang.org/x/exp/slices"
+	"github.com/zhengkyl/review-ssh/ui/components/poster"
 )
 
 type SearchModel struct {
@@ -22,32 +20,8 @@ type SearchModel struct {
 	list       list.Model
 }
 
-var (
-	// titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().Padding(0, 4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).PaddingRight(4).Foreground(lipgloss.Color("170"))
-	// paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	// helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	// quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
-)
-
-const film_url = "https://review-api.fly.dev/search/Film"
-const show_url = "https://review-api.fly.dev/search/Show"
-
-// NOTE: Fullwidth spaces are 2 wide
-const POSTER_WIDTH = 4 * 2
-const POSTER_HEIGHT = 6
-
-type item struct {
-	id           int
-	title        string
-	overview     string
-	release_date string
-	image        *image.ImageModel
-}
-
-// implement list.Item
-func (i item) FilterValue() string { return i.title }
+// const film_url = "https://review-api.fly.dev/search/Film"
+// const show_url = "https://review-api.fly.dev/search/Show"
 
 type itemJson struct {
 	Id          int
@@ -56,86 +30,6 @@ type itemJson struct {
 	Poster_Path string
 	ReleaseDate string
 }
-
-type itemDelegate struct{}
-
-// implement list.ItemDelegate
-func (d itemDelegate) Height() int { return POSTER_HEIGHT }
-
-// implement list.ItemDelegate
-func (d itemDelegate) Spacing() int { return 0 }
-
-// implement list.ItemDelegate
-func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
-	var cmds []tea.Cmd
-
-	for _, listItem := range m.Items() {
-		i := listItem.(item)
-
-		_, cmd := i.image.Update(msg)
-
-		cmds = append(cmds, cmd)
-	}
-
-	return tea.Batch(cmds...)
-}
-
-var textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-var titleStyle = lipgloss.NewStyle().Bold(true)
-var contentStyle = lipgloss.NewStyle().MarginLeft(2)
-
-var ellipsisPos = []rune{' ', '.', ','}
-
-func ellipsisText(s string, max int) string {
-	if max >= len(s) {
-		return s
-	}
-
-	chars := []rune(s)
-
-	// end is an exclusive bound
-	var end int
-	for end = max - 3; end >= 1; end-- {
-		c := chars[end]
-		prevC := chars[end-1]
-
-		if slices.Contains(ellipsisPos, c) && !slices.Contains(ellipsisPos, prevC) {
-			break
-		}
-	}
-
-	if end == 0 {
-		end = max - 3
-	}
-
-	return string(chars[:end]) + "..."
-}
-
-// implement list.ItemDelegate
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i := listItem.(item)
-
-	contentWidth := m.Width() - itemStyle.GetHorizontalFrameSize() - POSTER_WIDTH - contentStyle.GetHorizontalFrameSize() - 10
-
-	// Subtract 15 to account for long word causing early newline.
-	desc := ellipsisText(i.overview, contentWidth*2-15)
-
-	str := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(i.title), textStyle.Width(contentWidth).Render(desc))
-
-	str = contentStyle.Render(str)
-
-	str = lipgloss.JoinHorizontal(lipgloss.Top, i.image.View(), str)
-
-	if index == m.Index() {
-		str = lipgloss.JoinHorizontal(lipgloss.Left, "> ", str)
-		str = selectedItemStyle.Render(str)
-	} else {
-		str = itemStyle.Render(str)
-	}
-
-	fmt.Fprint(w, str)
-}
-
 type searchResponse struct {
 	Results []itemJson
 	// unused fields
@@ -174,7 +68,8 @@ func getSearchCmd(client *retryablehttp.Client, query string) tea.Cmd {
 				r.Title,
 				r.Overview,
 				r.ReleaseDate,
-				image.New(common.Common{Width: POSTER_WIDTH, Height: POSTER_HEIGHT}, "https://image.tmdb.org/t/p/w200"+r.Poster_Path),
+				poster.New(common.Common{Width: POSTER_WIDTH, Height: POSTER_HEIGHT}, "https://image.tmdb.org/t/p/w200"+r.Poster_Path),
+				NewButtons(common.Common{Width: 0, Height: 0}),
 			}
 			itemResults = append(itemResults, i)
 		}
@@ -237,7 +132,7 @@ func (m *SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.list.SetItems(msg))
 		for _, i := range msg {
 			var j = i.(item)
-			cmds = append(cmds, j.image.Init())
+			cmds = append(cmds, j.poster.Init(), j.buttons.Init())
 		}
 
 	case error:
