@@ -13,8 +13,10 @@ import (
 
 var (
 	// titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle       = lipgloss.NewStyle().Padding(0, 4, 0, 4).MarginBottom(1)
-	activeItemStyle = lipgloss.NewStyle().Padding(0, 4, 0, 2).MarginBottom(1).Foreground(lipgloss.Color("170"))
+	itemStyle       = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).MarginBottom(1).BorderStyle(lipgloss.Border{Left: " "}).BorderLeft(true)
+	activeItemStyle = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).MarginBottom(1).Foreground(
+		lipgloss.Color("170")).BorderStyle(lipgloss.Border{Left: "┃"}).
+		BorderForeground(lipgloss.Color("176")).BorderLeft(true)
 	// paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
 	// helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
 	// quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
@@ -65,7 +67,8 @@ func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 }
 
 var textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-var titleStyle = lipgloss.NewStyle().Bold(true)
+var titleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#fff"))
+var subtitleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 var contentStyle = lipgloss.NewStyle().MarginLeft(2)
 
 var ellipsisPos = []rune{' ', '.', ','}
@@ -99,14 +102,21 @@ func ellipsisText(s string, max int) string {
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i := listItem.(item)
 
-	contentWidth := m.Width() - itemStyle.GetHorizontalFrameSize() - POSTER_WIDTH - contentStyle.GetHorizontalFrameSize() - 10
+	contentWidth := m.Width() - itemStyle.GetHorizontalFrameSize() - POSTER_WIDTH - contentStyle.GetHorizontalFrameSize()
 
 	// Subtract 15 to account for long word causing early newline.
 	desc := ellipsisText(i.overview, contentWidth*2-15)
 
-	str := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(i.title), textStyle.Width(contentWidth).Render(desc))
+	var releaseYear string
+	if len(i.release_date) > 4 {
+		releaseYear = i.release_date[:4]
+	}
 
-	str += "\n"
+	str := lipgloss.JoinHorizontal(lipgloss.Top, titleStyle.Render(i.title), " ", subtitleStyle.Render(releaseYear))
+
+	str = lipgloss.JoinVertical(lipgloss.Left, str, textStyle.Width(contentWidth).Render(desc))
+
+	str += "\n\n"
 	str += i.buttons.View()
 
 	str = contentStyle.Render(str)
@@ -114,7 +124,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	str = lipgloss.JoinHorizontal(lipgloss.Top, i.poster.View(), str)
 
 	if index == m.Index() {
-		str = lipgloss.JoinHorizontal(lipgloss.Left, "> ", str)
+		// str = lipgloss.JoinHorizontal(lipgloss.Left, "> ", str)
 		str = activeItemStyle.Render(str)
 	} else {
 		str = itemStyle.Render(str)

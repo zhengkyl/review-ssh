@@ -18,8 +18,9 @@ type ButtonsModel struct {
 }
 
 var (
-	buttonStyle       = lipgloss.NewStyle()
-	activeButtonStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
+	buttonStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF7DB")).Background(lipgloss.Color("#888B7E")).Padding(0, 1)
+	activeButtonStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF7DB")).
+				Background(lipgloss.Color("#F25D94")).Padding(0, 1)
 	// paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
 	// helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
 	// quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
@@ -29,13 +30,13 @@ func NewButtons(common common.Common) *ButtonsModel {
 	return &ButtonsModel{
 		common: common,
 		buttons: []Button{
-			{"[ Show more ]", func() tea.Msg {
+			{"Show more", func() tea.Msg {
 				return nil
 			}},
-			{"[ LIKE ]", func() tea.Msg {
+			{"LIKE", func() tea.Msg {
 				return nil
 			}},
-			{"[ STAR ]", func() tea.Msg {
+			{"STAR", func() tea.Msg {
 				return nil
 			}},
 			// {"👍", func() tea.Msg {

@@ -24,11 +24,11 @@ type SearchModel struct {
 // const show_url = "https://review-api.fly.dev/search/Show"
 
 type itemJson struct {
-	Id          int
-	Title       string
-	Overview    string
-	Poster_Path string
-	ReleaseDate string
+	Id           int
+	Title        string
+	Overview     string
+	Poster_Path  string
+	Release_Date string
 }
 type searchResponse struct {
 	Results []itemJson
@@ -67,7 +67,7 @@ func getSearchCmd(client *retryablehttp.Client, query string) tea.Cmd {
 				r.Id,
 				r.Title,
 				r.Overview,
-				r.ReleaseDate,
+				r.Release_Date,
 				poster.New(common.Common{Width: POSTER_WIDTH, Height: POSTER_HEIGHT}, "https://image.tmdb.org/t/p/w200"+r.Poster_Path),
 				NewButtons(common.Common{Width: 0, Height: 0}),
 			}

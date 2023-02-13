@@ -1,8 +1,11 @@
 package ui
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/keymap"
@@ -24,12 +27,38 @@ import (
 // 	windowStyle    = lipgloss.NewStyle().BorderForeground(highlightColor)
 // )
 
-const (
-	searchPage int = iota
-	accountPage
+var (
+	// activeTabBorder = lipgloss.Border{
+	// 	Top:         "─",
+	// 	Bottom:      " ",
+	// 	Left:        "│",
+	// 	Right:       "│",
+	// 	TopLeft:     "╭",
+	// 	TopRight:    "╮",
+	// 	BottomLeft:  "┘",
+	// 	BottomRight: "└",
+	// }
+
+	// tabBorder = lipgloss.Border{
+	// 	Top:         "─",
+	// 	Bottom:      "─",
+	// 	Left:        "│",
+	// 	Right:       "│",
+	// 	TopLeft:     "╭",
+	// 	TopRight:    "╮",
+	// 	BottomLeft:  "┴",
+	// 	BottomRight: "┴",
+	// }
+
+	tabStyle       = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#7D56F4"))
+	activeTabStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#7D56F4"))
 )
 
-const NUM_PAGES = 2
+const (
+	searchTab int = iota
+	accountTab
+	NUM_TABS
+)
 
 type UiModel struct {
 	common     common.Common
@@ -46,7 +75,7 @@ func New(httpClient *retryablehttp.Client) *UiModel {
 			Styles: styles.DefaultStyles(),
 			KeyMap: keymap.DefaultKeyMap(),
 		},
-		tabs:       make([]common.Component, NUM_PAGES),
+		tabs:       make([]common.Component, NUM_TABS),
 		activeTab:  0,
 		httpClient: httpClient,
 	}
@@ -63,14 +92,14 @@ func (m *UiModel) SetSize(width, height int) {
 
 func (m UiModel) Init() tea.Cmd {
 
-	m.tabs[searchPage] = search.New(m.common, m.httpClient)
-	m.tabs[accountPage] = account.NewLogin(m.common, m.httpClient)
+	m.tabs[searchTab] = search.New(m.common, m.httpClient)
+	m.tabs[accountTab] = account.NewLogin(m.common, m.httpClient)
 
 	m.SetSize(m.common.Width, m.common.Height)
 
 	cmds := []tea.Cmd{
-		m.tabs[searchPage].Init(),
-		m.tabs[accountPage].Init(),
+		m.tabs[searchTab].Init(),
+		m.tabs[accountTab].Init(),
 	}
 
 	return tea.Batch(cmds...)
@@ -91,7 +120,7 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			tabModel, cmd := t.Update(msg)
 			m.tabs[i] = tabModel.(common.Component)
 
-			m.tabs[i].SetSize(viewW, viewH)
+			m.tabs[i].SetSize(viewW, viewH-4)
 
 			if cmd != nil {
 				cmds = append(cmds, cmd)
@@ -100,14 +129,14 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Is it a key press?
 	case tea.KeyMsg:
 		switch m.activeTab {
-		case searchPage:
-		case accountPage:
+		case searchTab:
+		case accountTab:
 		}
 
 		if key.Matches(msg, m.common.KeyMap.NextTab) {
-			m.activeTab = (m.activeTab + 1) % NUM_PAGES
+			m.activeTab = (m.activeTab + 1) % NUM_TABS
 		} else if key.Matches(msg, m.common.KeyMap.PrevTab) {
-			m.activeTab = (m.activeTab - 1 + NUM_PAGES) % NUM_PAGES
+			m.activeTab = (m.activeTab - 1 + NUM_TABS) % NUM_TABS
 		} else if key.Matches(msg, m.common.KeyMap.Quit) {
 			return m, tea.Quit
 		}
@@ -124,20 +153,35 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+var tabNames = []string{
+	"Search",
+	"Account",
+}
+
 func (m UiModel) View() string {
+	view := strings.Builder{}
 
-	var view string
+	var names []string
+	for i, name := range tabNames {
+		if i == m.activeTab {
+			names = append(names, activeTabStyle.Render(name))
+		} else {
+			names = append(names, tabStyle.Render(name))
+		}
+	}
 
-	// for i, tab := range m.tabs {
+	tabs := lipgloss.JoinHorizontal(lipgloss.Top,
+		names...,
+	)
 
-	// }
+	view.WriteString(tabs + "\n\n")
 
 	// view.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.tabs[m.activeTab]))
 	// The footer
 
 	// view = ui.
-	view = m.tabs[m.activeTab].View()
+	view.WriteString(m.tabs[m.activeTab].View())
 	// view = lipgloss.JoinVertical(lipgloss.Left, ui.)
 	// Send the UI for rendering
-	return m.common.Styles.App.Render(view)
+	return m.common.Styles.App.Render(view.String())
 }
