@@ -62,7 +62,7 @@ const (
 
 type UiModel struct {
 	common     common.Common
-	tabs       []common.Component
+	tabs       []common.PageComponent
 	activeTab  int
 	httpClient *retryablehttp.Client
 }
@@ -75,7 +75,7 @@ func New(httpClient *retryablehttp.Client) *UiModel {
 			Styles: styles.DefaultStyles(),
 			KeyMap: keymap.DefaultKeyMap(),
 		},
-		tabs:       make([]common.Component, NUM_TABS),
+		tabs:       make([]common.PageComponent, NUM_TABS),
 		activeTab:  0,
 		httpClient: httpClient,
 	}
@@ -118,7 +118,7 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		for i, t := range m.tabs {
 			tabModel, cmd := t.Update(msg)
-			m.tabs[i] = tabModel.(common.Component)
+			m.tabs[i] = tabModel.(common.PageComponent)
 
 			m.tabs[i].SetSize(viewW, viewH-4)
 
@@ -144,7 +144,7 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	tabModel, cmd := m.tabs[m.activeTab].Update(msg)
-	m.tabs[m.activeTab] = tabModel.(common.Component)
+	m.tabs[m.activeTab] = tabModel.(common.PageComponent)
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
