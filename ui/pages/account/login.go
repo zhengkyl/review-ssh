@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/components/button"
 )
 
 var (
@@ -16,6 +17,8 @@ var (
 	noStyle      = lipgloss.NewStyle()
 )
 
+const SUBMIT_INDEX = 2
+
 type LoginModel struct {
 	common     common.Common
 	httpClient *retryablehttp.Client
@@ -23,15 +26,20 @@ type LoginModel struct {
 	focusIndex int
 }
 
+type loginData struct {
+	email    string
+	password string
+}
+
 func NewLogin(c common.Common, httpClient *retryablehttp.Client) *LoginModel {
 	m := &LoginModel{
 		c,
 		httpClient,
-		make([]common.FocusableComponent, 2),
+		make([]common.FocusableComponent, 3),
 		0,
 	}
 
-	for i := range m.inputs {
+	for i := 0; i < SUBMIT_INDEX; i++ {
 		input := textinput.New()
 		input.CursorStyle = cursorStyle
 		input.CharLimit = 80
@@ -47,6 +55,8 @@ func NewLogin(c common.Common, httpClient *retryablehttp.Client) *LoginModel {
 		m.inputs[i] = &input
 	}
 
+	m.inputs[2] = button.New(c, "Submit", func() tea.Msg { return nil })
+
 	return m
 }
 
@@ -59,24 +69,49 @@ func (m *LoginModel) Init() tea.Cmd {
 
 func blurFocusIndex(m *LoginModel) {
 	// button focused
-	if m.focusIndex == 2 {
+	m.inputs[m.focusIndex].Blur()
+	if m.focusIndex == SUBMIT_INDEX {
 		return
 	}
 	input := m.inputs[m.focusIndex].(*textinput.Model)
-	input.Blur()
 	input.PromptStyle = noStyle
 	input.TextStyle = noStyle
 }
 
 func focusFocusIndex(m *LoginModel) {
 	// button focused
-	if m.focusIndex == 2 {
+	m.inputs[m.focusIndex].Focus()
+	if m.focusIndex == SUBMIT_INDEX {
 		return
 	}
 	input := m.inputs[m.focusIndex].(*textinput.Model)
-	input.Focus()
 	input.PromptStyle = focusedStyle
 	input.TextStyle = focusedStyle
+}
+
+func changeFocusIndex(m *LoginModel, newIndex int) {
+	blurFocusIndex(m)
+	m.focusIndex = newIndex
+	focusFocusIndex(m)
+}
+
+func postAuth(client *retryablehttp.Client, loginData loginData) tea.Cmd {
+	return func() tea.Msg {
+
+		resp, err := client.Post("https://review-api.fly.dev/auth", "application/json", loginData)
+
+		if err != nil {
+			return nil
+		}
+
+		if resp.StatusCode != 204 {
+			return nil
+		}
+
+		cookie := resp.Header.Get("Set-Cookie")
+
+		return cookie
+	}
 }
 
 func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -88,14 +123,19 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		// email, password, submit
-		case key.Matches(msg, m.common.KeyMap.Down):
-			blurFocusIndex(m)
-			m.focusIndex = (m.focusIndex + 1) % 3
-			focusFocusIndex(m)
-		case key.Matches(msg, m.common.KeyMap.Up):
-			blurFocusIndex(m)
-			m.focusIndex = (m.focusIndex + 3 - 1) % 3
-			focusFocusIndex(m)
+		case key.Matches(msg, m.common.KeyMap.Select):
+			if m.focusIndex == SUBMIT_INDEX {
+
+				return m, postAuth(m.httpClient, loginData{
+					m.inputs[0].(*textinput.Model).Value(),
+					m.inputs[1].(*textinput.Model).Value(),
+				})
+			}
+			changeFocusIndex(m, (m.focusIndex+1)%3)
+		case key.Matches(msg, m.common.KeyMap.NextInput):
+			changeFocusIndex(m, (m.focusIndex+1)%3)
+		case key.Matches(msg, m.common.KeyMap.PrevInput):
+			changeFocusIndex(m, (m.focusIndex+3-1)%3)
 		}
 	}
 

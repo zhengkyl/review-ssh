@@ -135,8 +135,10 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if key.Matches(msg, m.common.KeyMap.NextTab) {
 			m.activeTab = (m.activeTab + 1) % NUM_TABS
+			return m, nil
 		} else if key.Matches(msg, m.common.KeyMap.PrevTab) {
 			m.activeTab = (m.activeTab - 1 + NUM_TABS) % NUM_TABS
+			return m, nil
 		} else if key.Matches(msg, m.common.KeyMap.Quit) {
 			return m, tea.Quit
 		}

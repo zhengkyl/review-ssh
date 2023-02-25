@@ -1,6 +1,7 @@
 package button
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
@@ -43,13 +44,19 @@ func (m *ButtonModel) Blur() {
 }
 
 func (m *ButtonModel) Update(msg tea.Msg) (*ButtonModel, tea.Cmd) {
+	if m.focus {
+
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch {
+			case key.Matches(msg, m.common.KeyMap.Select):
+				return m, m.callback
+			}
+		}
+
+	}
+
 	return m, nil
-
-	// var cmds []tea.Cmd
-
-	// // m.buttons[m.activeButton].text = "no"
-
-	// return m, tea.Batch(cmds...)
 }
 
 func (m *ButtonModel) View() string {
