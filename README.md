@@ -4,6 +4,12 @@ A terminal user-interface for `review-api` over ssh
 
 ## Progress
 
+### 2/25/23
+
+- move between input fields
+
+<img alt="Day 7" src="./assets/day7.gif" width="600" />
+
 ### 2/11/23
 
 - toggle between multiple pages
