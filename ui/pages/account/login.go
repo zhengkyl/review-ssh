@@ -43,8 +43,13 @@ func NewLogin(c common.Common, s *common.Shared) *LoginModel {
 		0,
 	}
 
+	inputCommon := common.Common{
+		Width:  c.Width - 0, // TODO padding
+		Height: 3,           // TODO does nothing
+	}
+
 	for i := 0; i < SUBMIT_INDEX; i++ {
-		input := textinput.New(c)
+		input := textinput.New(inputCommon)
 		input.Inner.CursorStyle = cursorStyle
 		input.Inner.CharLimit = 80
 		switch i {
@@ -138,6 +143,10 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+
+		for _, input := range m.inputs {
+			input.SetSize(msg.Width, 3)
+		}
 
 	case tea.KeyMsg:
 		switch {

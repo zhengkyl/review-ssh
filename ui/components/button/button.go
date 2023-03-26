@@ -38,6 +38,10 @@ func (m *Model) Blur() {
 	m.focus = false
 }
 
+func (m *Model) SetSize(h, w int) {
+
+}
+
 func (m *Model) Init() tea.Cmd {
 	return nil
 }

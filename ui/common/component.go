@@ -7,6 +7,9 @@ import (
 
 type Sizable interface {
 	SetSize(width, height int)
+	// Width() int
+	// Height() int
+	// GetMargins() int
 }
 
 type PageComponent interface {
@@ -21,7 +24,7 @@ type Component interface {
 }
 
 type FocusableComponent interface {
-	tea.Model
+	Component
 	Focus() tea.Cmd
 	Blur()
 }

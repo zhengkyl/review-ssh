@@ -128,9 +128,7 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			tab.SetSize(viewW, viewH-4)
 
-			if cmd != nil {
-				cmds = append(cmds, cmd)
-			}
+			cmds = append(cmds, cmd)
 		}
 	// Is it a key press?
 	case tea.KeyMsg:
@@ -141,10 +139,10 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if key.Matches(msg, m.common.KeyMap.NextTab) {
 			m.activeTab = (m.activeTab + 1) % NUM_TABS
-			return m, nil
+			// return m, nil
 		} else if key.Matches(msg, m.common.KeyMap.PrevTab) {
 			m.activeTab = (m.activeTab - 1 + NUM_TABS) % NUM_TABS
-			return m, nil
+			// return m, nil
 		} else if key.Matches(msg, m.common.KeyMap.Quit) {
 			return m, tea.Quit
 		}
@@ -154,9 +152,7 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	_, cmd := m.tabs[m.activeTab].Update(msg)
 	// m.tabs[m.activeTab] = tabModel.(common.PageComponent)
 
-	if cmd != nil {
-		cmds = append(cmds, cmd)
-	}
+	cmds = append(cmds, cmd)
 	// Return the updated model to the Bubble Tea runtime for processing.
 	// Note that we're not returning a command.
 	return m, tea.Batch(cmds...)
