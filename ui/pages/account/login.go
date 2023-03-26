@@ -1,13 +1,17 @@
 package account
 
 import (
+	"bytes"
+	"encoding/json"
+
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textinput"
+	bubbles_textinput "github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/button"
+	"github.com/zhengkyl/review-ssh/ui/components/textinput"
 )
 
 var (
@@ -21,38 +25,38 @@ const SUBMIT_INDEX = 2
 
 type LoginModel struct {
 	common     common.Common
-	httpClient *retryablehttp.Client
+	state      *common.Shared
 	inputs     []common.FocusableComponent
 	focusIndex int
 }
 
 type loginData struct {
-	email    string
-	password string
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func NewLogin(c common.Common, httpClient *retryablehttp.Client) *LoginModel {
+func NewLogin(c common.Common, s *common.Shared) *LoginModel {
 	m := &LoginModel{
 		c,
-		httpClient,
+		s,
 		make([]common.FocusableComponent, 3),
 		0,
 	}
 
 	for i := 0; i < SUBMIT_INDEX; i++ {
-		input := textinput.New()
-		input.CursorStyle = cursorStyle
-		input.CharLimit = 80
+		input := textinput.New(c)
+		input.Inner.CursorStyle = cursorStyle
+		input.Inner.CharLimit = 80
 		switch i {
 		case 0:
-			input.Placeholder = "Email"
+			input.Inner.Placeholder = "Email"
 			input.Focus()
 		case 1:
-			input.Placeholder = "Password"
-			input.EchoMode = textinput.EchoPassword
+			input.Inner.Placeholder = "Password"
+			input.Inner.EchoMode = bubbles_textinput.EchoPassword
 			// input.EchoCharacter = '*'
 		}
-		m.inputs[i] = &input
+		m.inputs[i] = input
 	}
 
 	m.inputs[2] = button.New(c, "Submit", func() tea.Msg { return nil })
@@ -64,7 +68,7 @@ func (m *LoginModel) SetSize(width, height int) {
 }
 
 func (m *LoginModel) Init() tea.Cmd {
-	return textinput.Blink
+	return nil
 }
 
 func blurFocusIndex(m *LoginModel) {
@@ -74,8 +78,8 @@ func blurFocusIndex(m *LoginModel) {
 		return
 	}
 	input := m.inputs[m.focusIndex].(*textinput.Model)
-	input.PromptStyle = noStyle
-	input.TextStyle = noStyle
+	input.Inner.PromptStyle = noStyle
+	input.Inner.TextStyle = noStyle
 }
 
 func focusFocusIndex(m *LoginModel) {
@@ -85,8 +89,8 @@ func focusFocusIndex(m *LoginModel) {
 		return
 	}
 	input := m.inputs[m.focusIndex].(*textinput.Model)
-	input.PromptStyle = focusedStyle
-	input.TextStyle = focusedStyle
+	input.Inner.PromptStyle = focusedStyle
+	input.Inner.TextStyle = focusedStyle
 }
 
 func changeFocusIndex(m *LoginModel, newIndex int) {
@@ -98,19 +102,34 @@ func changeFocusIndex(m *LoginModel, newIndex int) {
 func postAuth(client *retryablehttp.Client, loginData loginData) tea.Cmd {
 	return func() tea.Msg {
 
-		resp, err := client.Post("https://review-api.fly.dev/auth", "application/json", loginData)
+		bsLoginData, err := json.Marshal(loginData)
 
 		if err != nil {
-			return nil
+			return common.AuthState{
+				Authed: false,
+			}
+		}
+
+		resp, err := client.Post("https://review-api.fly.dev/auth", "application/json", bytes.NewBuffer(bsLoginData))
+
+		if err != nil {
+			return common.AuthState{
+				Authed: false,
+			}
 		}
 
 		if resp.StatusCode != 204 {
-			return nil
+			return common.AuthState{
+				Authed: false,
+			}
 		}
 
 		cookie := resp.Header.Get("Set-Cookie")
 
-		return cookie
+		return common.AuthState{
+			Authed: true,
+			Cookie: cookie,
+		}
 	}
 }
 
@@ -126,9 +145,9 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.common.KeyMap.Select):
 			if m.focusIndex == SUBMIT_INDEX {
 
-				return m, postAuth(m.httpClient, loginData{
-					m.inputs[0].(*textinput.Model).Value(),
-					m.inputs[1].(*textinput.Model).Value(),
+				return m, postAuth(&m.state.HttpClient, loginData{
+					m.inputs[0].(*textinput.Model).Inner.Value(),
+					m.inputs[1].(*textinput.Model).Inner.Value(),
 				})
 			}
 			changeFocusIndex(m, (m.focusIndex+1)%3)
@@ -140,14 +159,9 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
-
 	for i := range m.inputs {
-		switch input := m.inputs[i].(type) {
-		case *textinput.Model:
-			var f textinput.Model
-			f, cmd = input.Update(msg)
-			m.inputs[i] = &f
-		}
+		_, cmd = m.inputs[i].Update(msg)
+
 		cmds = append(cmds, cmd)
 	}
 
@@ -160,6 +174,8 @@ func (m *LoginModel) View() string {
 	for i := range m.inputs {
 		sections = append(sections, m.inputs[i].View())
 	}
+
+	sections = append(sections, m.state.AuthState.Cookie)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }

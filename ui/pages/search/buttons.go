@@ -10,19 +10,29 @@ import (
 type ButtonsModel struct {
 	common       common.Common
 	activeButton int
-	buttons      []*button.ButtonModel
+	buttons      []*button.Model
 }
 
 func NewButtons(common common.Common) *ButtonsModel {
 	return &ButtonsModel{
 		common: common,
-		buttons: []*button.ButtonModel{
-			button.New(common, "Show more",
+		buttons: []*button.Model{
+			// button.New(common, "Show more",
+			// 	func() tea.Msg {
+			// 		return nil
+			// 	},
+			// ),
+			button.New(common, ":D",
 				func() tea.Msg {
 					return nil
 				},
 			),
-			button.New(common, "LIKE",
+			button.New(common, "<3",
+				func() tea.Msg {
+					return nil
+				},
+			),
+			button.New(common, "au",
 				func() tea.Msg {
 					return nil
 				},
@@ -47,11 +57,16 @@ func (m *ButtonsModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *ButtonsModel) Update(msg tea.Msg) (*ButtonsModel, tea.Cmd) {
+func (m *ButtonsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	// m.buttons[m.activeButton].text = "no"
+	var cmd tea.Cmd
+	for _, b := range m.buttons {
+		_, cmd = b.Update(msg)
 
+		cmds = append(cmds, cmd)
+	}
 	return m, tea.Batch(cmds...)
 }
 

@@ -2,6 +2,40 @@
 
 A terminal user-interface for `review-api` over ssh
 
+## Ahoy!
+
+All ye brave souls who wish to delve within this repo, heed me warnings three!
+
+- I be new to Go and this be me maiden voyage.
+  - This is my first project with go, so I don't understand best practices, and I'm more concerned with a working app.
+- [@charmbracelet/soft-serve](https://github.com/charmbracelet/soft-serve) be the siren I follow, but bountiful booty or the depths of the sea, where does it lead?
+  - Bubble tea is a nice framework for terminal user interfaces (TUI) using Go, but that doesn't mean ANYONE should write TUI apps in Go. It's still very non-ergonomic and I don't think it scales well with more complex apps with deeply nested views. The [component library](https://github.com/charmbracelet/bubbles) can be annoying to work with since the components don't implement any common interface. Go can be overly verbose and also segfault without helpful errors.
+- Ye must lose your landlubber ways if ye wish to conquer these high seas!
+  - Talk like a pirate.
+
+### Things of note
+
+You may see this and wonder why ignore the first arg of Update()?
+
+```go
+_, cmd := child.Update(msg)
+```
+
+I opted to only work with struct pointers to avoid type assertions everywhere like below.
+
+```go
+// type MyModel struct {
+//   child child.Model
+// }
+// func (m *MyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd)  {
+//...
+
+model, cmd := child.Update(msg)
+m.child = model.(child.Model)
+```
+
+The bubbles components avoid the type assertions by having a Update() function with a specific return type. This makes them hard to work with (like in lists), and I ended up creating wrapper components in some cases.
+
 ## Progress
 
 ### 2/25/23

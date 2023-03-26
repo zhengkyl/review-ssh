@@ -42,7 +42,11 @@ func New(common common.Common) *SkeletonModel {
 	return m
 }
 
-func (m SkeletonModel) Update(msg tea.Msg) (SkeletonModel, tea.Cmd) {
+func (m *SkeletonModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m *SkeletonModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
 	case TickMsg:
 		m.frame = (m.frame + 1) % NUM_FRAMES
@@ -58,7 +62,7 @@ type TickMsg struct {
 	ID   int
 }
 
-func (m SkeletonModel) View() string {
+func (m *SkeletonModel) View() string {
 	rgb := loopInt(40, 100, float64(m.frame)/NUM_FRAMES)
 
 	base := lipgloss.NewStyle().Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", rgb, rgb, rgb)))
@@ -84,7 +88,7 @@ func loopInt(min int, max int, frac float64) int {
 	return int(math.Abs(0.5-frac)*float64(max-min)) + min
 }
 
-func (m SkeletonModel) Tick() tea.Msg {
+func (m *SkeletonModel) Tick() tea.Msg {
 	if m.id != 1 {
 		return nil
 	}
@@ -94,7 +98,7 @@ func (m SkeletonModel) Tick() tea.Msg {
 	}
 }
 
-func (m SkeletonModel) tick() tea.Cmd {
+func (m *SkeletonModel) tick() tea.Cmd {
 	if m.id != 1 {
 		return nil
 	}

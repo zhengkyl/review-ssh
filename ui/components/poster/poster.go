@@ -105,7 +105,7 @@ func (m *PosterModel) Update(msg tea.Msg) (*PosterModel, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
-	m.skeleton, cmd = m.skeleton.Update(msg)
+	_, cmd = m.skeleton.Update(msg)
 
 	return m, cmd
 }

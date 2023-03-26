@@ -14,10 +14,10 @@ import (
 )
 
 type SearchModel struct {
-	common     common.Common
-	httpClient *retryablehttp.Client
-	input      textinput.Model
-	list       list.Model
+	common common.Common
+	state  *common.Shared
+	input  textinput.Model
+	list   list.Model
 }
 
 // const film_url = "https://review-api.fly.dev/search/Film"
@@ -27,8 +27,8 @@ type itemJson struct {
 	Id           int
 	Title        string
 	Overview     string
-	Poster_Path  string
-	Release_Date string
+	Poster_path  string
+	Release_date string
 }
 type searchResponse struct {
 	Results []itemJson
@@ -67,8 +67,8 @@ func getSearchCmd(client *retryablehttp.Client, query string) tea.Cmd {
 				r.Id,
 				r.Title,
 				r.Overview,
-				r.Release_Date,
-				poster.New(common.Common{Width: POSTER_WIDTH, Height: POSTER_HEIGHT}, "https://image.tmdb.org/t/p/w200"+r.Poster_Path),
+				r.Release_date,
+				poster.New(common.Common{Width: POSTER_WIDTH, Height: POSTER_HEIGHT}, "https://image.tmdb.org/t/p/w200"+r.Poster_path),
 				NewButtons(common.Common{Width: 0, Height: 0}),
 			}
 			itemResults = append(itemResults, i)
@@ -77,7 +77,7 @@ func getSearchCmd(client *retryablehttp.Client, query string) tea.Cmd {
 	}
 }
 
-func New(common common.Common, httpClient *retryablehttp.Client) *SearchModel {
+func New(common common.Common, state *common.Shared) *SearchModel {
 
 	input := textinput.New()
 	input.Placeholder = "Search for movies and shows..."
@@ -85,10 +85,10 @@ func New(common common.Common, httpClient *retryablehttp.Client) *SearchModel {
 	input.CharLimit = 80
 
 	m := &SearchModel{
-		input:      input,
-		common:     common,
-		list:       list.New([]list.Item{}, itemDelegate{}, 0, 0),
-		httpClient: httpClient,
+		input:  input,
+		common: common,
+		state:  state,
+		list:   list.New([]list.Item{}, itemDelegate{}, 0, 0),
 	}
 
 	m.SetSize(common.Width, common.Height)
@@ -117,6 +117,7 @@ func (m *SearchModel) Init() tea.Cmd {
 }
 
 func (m *SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -125,7 +126,7 @@ func (m *SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			cmds = append(cmds, getSearchCmd(m.httpClient, m.input.Value()))
+			cmds = append(cmds, getSearchCmd(&m.state.HttpClient, m.input.Value()))
 		}
 
 	case []list.Item:
@@ -140,9 +141,11 @@ func (m *SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
+	// Necessary b/c bubbles component
 	m.input, cmd = m.input.Update(msg)
 	cmds = append(cmds, cmd)
 
+	// Necessary b/c bubbles component
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 

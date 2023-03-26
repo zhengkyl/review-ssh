@@ -61,10 +61,11 @@ const (
 )
 
 type UiModel struct {
-	common     common.Common
-	tabs       []common.PageComponent
-	activeTab  int
-	httpClient *retryablehttp.Client
+	common    common.Common
+	shared    *common.Shared
+	tabs      []common.PageComponent
+	activeTab int
+	// httpClient *retryablehttp.Client
 }
 
 func New(httpClient *retryablehttp.Client) *UiModel {
@@ -75,9 +76,12 @@ func New(httpClient *retryablehttp.Client) *UiModel {
 			Styles: styles.DefaultStyles(),
 			KeyMap: keymap.DefaultKeyMap(),
 		},
-		tabs:       make([]common.PageComponent, NUM_TABS),
-		activeTab:  0,
-		httpClient: httpClient,
+		shared: &common.Shared{
+			HttpClient: *httpClient,
+		},
+		tabs:      make([]common.PageComponent, NUM_TABS),
+		activeTab: 0,
+		// httpClient: httpClient,
 	}
 }
 
@@ -90,10 +94,10 @@ func (m *UiModel) SetSize(width, height int) {
 
 }
 
-func (m UiModel) Init() tea.Cmd {
+func (m *UiModel) Init() tea.Cmd {
 
-	m.tabs[searchTab] = search.New(m.common, m.httpClient)
-	m.tabs[accountTab] = account.NewLogin(m.common, m.httpClient)
+	m.tabs[searchTab] = search.New(m.common, m.shared)
+	m.tabs[accountTab] = account.NewLogin(m.common, m.shared)
 
 	m.SetSize(m.common.Width, m.common.Height)
 
@@ -105,10 +109,12 @@ func (m UiModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case common.AuthState:
+		m.shared.AuthState = msg
 	case tea.WindowSizeMsg:
 		frameW, frameH := m.common.Styles.App.GetFrameSize()
 
@@ -116,11 +122,11 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.SetSize(viewW, viewH)
 
-		for i, t := range m.tabs {
-			tabModel, cmd := t.Update(msg)
-			m.tabs[i] = tabModel.(common.PageComponent)
+		for _, tab := range m.tabs {
+			_, cmd := tab.Update(msg)
+			// m.tabs[i] = tabModel.(common.PageComponent)
 
-			m.tabs[i].SetSize(viewW, viewH-4)
+			tab.SetSize(viewW, viewH-4)
 
 			if cmd != nil {
 				cmds = append(cmds, cmd)
@@ -145,8 +151,9 @@ func (m UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	}
 
-	tabModel, cmd := m.tabs[m.activeTab].Update(msg)
-	m.tabs[m.activeTab] = tabModel.(common.PageComponent)
+	_, cmd := m.tabs[m.activeTab].Update(msg)
+	// m.tabs[m.activeTab] = tabModel.(common.PageComponent)
+
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
@@ -160,7 +167,7 @@ var tabNames = []string{
 	"Account",
 }
 
-func (m UiModel) View() string {
+func (m *UiModel) View() string {
 	view := strings.Builder{}
 
 	var names []string

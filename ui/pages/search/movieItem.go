@@ -54,12 +54,10 @@ func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 		i := listItem.(item)
 
 		var cmd tea.Cmd
-		// TODO setting i.poster doesn't change anything because not pointer
-		i.poster, cmd = i.poster.Update(msg)
+		_, cmd = i.poster.Update(msg)
 		cmds = append(cmds, cmd)
 
-		// TODO setting i.buttons doesn't change anything because not pointer
-		i.buttons, cmd = i.buttons.Update(msg)
+		_, cmd = i.buttons.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 

@@ -7,7 +7,7 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 )
 
-type ButtonModel struct {
+type Model struct {
 	common   common.Common
 	text     string
 	callback tea.Cmd
@@ -20,8 +20,8 @@ var (
 				Background(lipgloss.Color("#F25D94")).Padding(0, 1)
 )
 
-func New(common common.Common, text string, callback tea.Cmd) *ButtonModel {
-	return &ButtonModel{
+func New(common common.Common, text string, callback tea.Cmd) *Model {
+	return &Model{
 		common,
 		text,
 		callback,
@@ -29,21 +29,20 @@ func New(common common.Common, text string, callback tea.Cmd) *ButtonModel {
 	}
 }
 
-func (m *ButtonModel) Init() tea.Cmd {
-	var cmds []tea.Cmd
-	return tea.Batch(cmds...)
-}
-
-func (m *ButtonModel) Focus() tea.Cmd {
+func (m *Model) Focus() tea.Cmd {
 	m.focus = true
 	return nil
 }
 
-func (m *ButtonModel) Blur() {
+func (m *Model) Blur() {
 	m.focus = false
 }
 
-func (m *ButtonModel) Update(msg tea.Msg) (*ButtonModel, tea.Cmd) {
+func (m *Model) Init() tea.Cmd {
+	return nil
+}
+
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.focus {
 
 		switch msg := msg.(type) {
@@ -59,7 +58,7 @@ func (m *ButtonModel) Update(msg tea.Msg) (*ButtonModel, tea.Cmd) {
 	return m, nil
 }
 
-func (m *ButtonModel) View() string {
+func (m *Model) View() string {
 	if m.focus {
 		return activeButtonStyle.Render(m.text)
 	}
