@@ -1,17 +1,13 @@
 package account
 
 import (
-	"bytes"
-	"encoding/json"
-
 	"github.com/charmbracelet/bubbles/key"
-	bubbles_textinput "github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/button"
-	"github.com/zhengkyl/review-ssh/ui/components/textinput"
+	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 )
 
 var (
@@ -25,17 +21,12 @@ const SUBMIT_INDEX = 2
 
 type LoginModel struct {
 	common     common.Common
-	state      *common.Shared
+	shared     *common.Shared
 	inputs     []common.FocusableComponent
 	focusIndex int
 }
 
-type loginData struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func NewLogin(c common.Common, s *common.Shared) *LoginModel {
+func New(c common.Common, s *common.Shared) *LoginModel {
 	m := &LoginModel{
 		c,
 		s,
@@ -49,7 +40,7 @@ func NewLogin(c common.Common, s *common.Shared) *LoginModel {
 	}
 
 	for i := 0; i < SUBMIT_INDEX; i++ {
-		input := textinput.New(inputCommon)
+		input := textfield.New(inputCommon)
 		input.Inner.CursorStyle = cursorStyle
 		input.Inner.CharLimit = 80
 		switch i {
@@ -58,7 +49,7 @@ func NewLogin(c common.Common, s *common.Shared) *LoginModel {
 			input.Focus()
 		case 1:
 			input.Inner.Placeholder = "Password"
-			input.Inner.EchoMode = bubbles_textinput.EchoPassword
+			input.Inner.EchoMode = textinput.EchoPassword
 			// input.EchoCharacter = '*'
 		}
 		m.inputs[i] = input
@@ -82,7 +73,7 @@ func blurFocusIndex(m *LoginModel) {
 	if m.focusIndex == SUBMIT_INDEX {
 		return
 	}
-	input := m.inputs[m.focusIndex].(*textinput.Model)
+	input := m.inputs[m.focusIndex].(*textfield.Model)
 	input.Inner.PromptStyle = noStyle
 	input.Inner.TextStyle = noStyle
 }
@@ -93,7 +84,7 @@ func focusFocusIndex(m *LoginModel) {
 	if m.focusIndex == SUBMIT_INDEX {
 		return
 	}
-	input := m.inputs[m.focusIndex].(*textinput.Model)
+	input := m.inputs[m.focusIndex].(*textfield.Model)
 	input.Inner.PromptStyle = focusedStyle
 	input.Inner.TextStyle = focusedStyle
 }
@@ -102,40 +93,6 @@ func changeFocusIndex(m *LoginModel, newIndex int) {
 	blurFocusIndex(m)
 	m.focusIndex = newIndex
 	focusFocusIndex(m)
-}
-
-func postAuth(client *retryablehttp.Client, loginData loginData) tea.Cmd {
-	return func() tea.Msg {
-
-		bsLoginData, err := json.Marshal(loginData)
-
-		if err != nil {
-			return common.AuthState{
-				Authed: false,
-			}
-		}
-
-		resp, err := client.Post("https://review-api.fly.dev/auth", "application/json", bytes.NewBuffer(bsLoginData))
-
-		if err != nil {
-			return common.AuthState{
-				Authed: false,
-			}
-		}
-
-		if resp.StatusCode != 204 {
-			return common.AuthState{
-				Authed: false,
-			}
-		}
-
-		cookie := resp.Header.Get("Set-Cookie")
-
-		return common.AuthState{
-			Authed: true,
-			Cookie: cookie,
-		}
-	}
 }
 
 func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -154,9 +111,9 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.common.KeyMap.Select):
 			if m.focusIndex == SUBMIT_INDEX {
 
-				return m, postAuth(&m.state.HttpClient, loginData{
-					m.inputs[0].(*textinput.Model).Inner.Value(),
-					m.inputs[1].(*textinput.Model).Inner.Value(),
+				return m, postAuth(&m.shared.HttpClient, loginData{
+					m.inputs[0].(*textfield.Model).Inner.Value(),
+					m.inputs[1].(*textfield.Model).Inner.Value(),
 				})
 			}
 			changeFocusIndex(m, (m.focusIndex+1)%3)
@@ -178,13 +135,20 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *LoginModel) View() string {
+
+	// if m.shared.AuthState.Authed {
+	// 	return m.shared.AuthState.User.Name
+	// }
+
 	var sections []string
+
+	sections = append(sections, m.shared.AuthState.Cookie)
 
 	for i := range m.inputs {
 		sections = append(sections, m.inputs[i].View())
 	}
 
-	sections = append(sections, m.state.AuthState.Cookie)
+	sections = append(sections, m.shared.AuthState.Cookie)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }

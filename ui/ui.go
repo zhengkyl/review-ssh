@@ -97,7 +97,7 @@ func (m *UiModel) SetSize(width, height int) {
 func (m *UiModel) Init() tea.Cmd {
 
 	m.tabs[searchTab] = search.New(m.common, m.shared)
-	m.tabs[accountTab] = account.NewLogin(m.common, m.shared)
+	m.tabs[accountTab] = account.New(m.common, m.shared)
 
 	m.SetSize(m.common.Width, m.common.Height)
 
@@ -165,7 +165,6 @@ var tabNames = []string{
 
 func (m *UiModel) View() string {
 	view := strings.Builder{}
-
 	var names []string
 	for i, name := range tabNames {
 		if i == m.activeTab {
@@ -188,5 +187,8 @@ func (m *UiModel) View() string {
 	view.WriteString(m.tabs[m.activeTab].View())
 	// view = lipgloss.JoinVertical(lipgloss.Left, ui.)
 	// Send the UI for rendering
-	return m.common.Styles.App.Render(view.String())
+	parent := m.common.Styles.App.Render(view.String())
+	return parent
+	// return util.RenderOverlay(parent, "hello there\nthis should be an overlay\ndid it work?", 5, 20)
+
 }
