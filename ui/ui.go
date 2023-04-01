@@ -12,6 +12,7 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
 	"github.com/zhengkyl/review-ssh/ui/pages/search"
 	"github.com/zhengkyl/review-ssh/ui/styles"
+	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
 // var (
@@ -188,7 +189,7 @@ func (m *UiModel) View() string {
 	// view = lipgloss.JoinVertical(lipgloss.Left, ui.)
 	// Send the UI for rendering
 	parent := m.common.Styles.App.Render(view.String())
-	return parent
-	// return util.RenderOverlay(parent, "hello there\nthis should be an overlay\ndid it work?", 5, 20)
+	// return parent
+	return util.RenderOverlay(parent, "hello there\nthis should be an overlay\ndid it work?", 5, 20)
 
 }
