@@ -1,6 +1,9 @@
 package util
 
 import (
+	"strings"
+
+	"github.com/mattn/go-runewidth"
 	"github.com/muesli/ansi"
 )
 
@@ -40,38 +43,85 @@ func (s *Stack[T]) IsEmpty() bool {
 }
 
 type AThing struct {
-	start bool
-	text  string
+	start int
+	end   int
 }
 
 // TODO DOES NOT WORK USE WITH CAUTION
-func RenderOverlay(parentView, overlayView string, top, right int) string {
+func RenderOverlay(parentView, overlayView string, top, left int) string {
 
 	// // return parentView + fmt.Sprintf("\033[%d;%dH%s", top, right, overlayView)
 	stack := make(Stack[AThing], 0)
 	var escapeStart int
 	var escapeEnd int
+	var isReset bool
+	var n int
 
 	for i, r := range parentView {
 		if r == ansi.Marker {
 			escapeStart = i
-			continue
+			isReset = true
 		} else if escapeStart > escapeEnd {
-			if ansi.IsTerminator(r) {
-				// escapeEnd = i +
+			// reset sequence = '\xb1', '[', '0', 'm'
+			if i == escapeStart+2 {
+				if r != '0' {
+					isReset = false
+				}
 			}
-			continue
+			// isTerminal means isAlphabetic, in lipgloss's case 'm'
+			if ansi.IsTerminator(r) {
+				if i == escapeStart+3 && isReset {
+					stack.Pop()
+				} else {
+					escapeEnd = i + 1
+					stack.Push(AThing{
+						escapeStart, escapeEnd,
+					})
+				}
+			}
+		} else {
+			n += runewidth.RuneWidth(r)
+
+			if n >= left {
+				// push stack # of resets
+			}
+
+			if n >= left+len(strings.Split(overlayView, "\n")[0]) {
+				// push stack
+
+				return "something"
+			}
 		}
 	}
 
+	return "something else"
+	// ;m
+	// var CSI = termenv.CSI
+	// this
+	// return fmt.Sprintf("%s%sm%s%sm", CSI, seq, s, CSI+ResetSeq)
+
+	// for _, c := range s {
+	// 	if c == Marker {
+	// 		// ANSI escape sequence
+	// 		ansi = true
+	// 	} else if ansi {
+	// 		if IsTerminator(c) {
+	// 			// ANSI sequence terminated
+	// 			ansi = false
+	// 		}
+	// 	} else {
+	// 		n += runewidth.RuneWidth(c)
+	// 	}
+	// }
+
 	// parentLines := strings.Split(parentView, "\n")
-	// // parentWidth := runewidth.StringWidth(parentLines[0])
+	// parentWidth := runewidth.StringWidth(parentLines[0])
 	// // parentHeight := len(parentLines)
 
 	// overlayLines := strings.Split(overlayView, "\n")
 	// overlayHeight := len(overlayLines)
 
-	// // lipgloss.Width(parentView)
+	// lipgloss.Width(parentView)
 
 	// for j := 0; j < overlayHeight; j++ {
 	// 	overlayWidth := lipgloss.Width(overlayLines[j])
