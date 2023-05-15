@@ -22,7 +22,7 @@ type Model struct {
 
 func New(common common.Common) *Model {
 	inner := textinput.New()
-	inner.Width = common.Width
+	// inner.Width = common.Width - 8
 
 	return &Model{common, inner}
 }

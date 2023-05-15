@@ -15,18 +15,19 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
-// var (
-// 	testStyle = lipgloss.NewStyle().
-// 			Bold(true).
-// 			Foreground(lipgloss.Color("#FAFAFA")).
-// 			Background(lipgloss.Color("#7D56F4")).
-// 			PaddingTop(2).
-// 			PaddingLeft(4).
-// 			Width(22)
-// 	highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
-// 	docStyle       = lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Padding(1, 2)
-// 	windowStyle    = lipgloss.NewStyle().BorderForeground(highlightColor)
-// )
+var (
+	// 	testStyle = lipgloss.NewStyle().
+	// 			Bold(true).
+	// 			Foreground(lipgloss.Color("#FAFAFA")).
+	// 			Background(lipgloss.Color("#7D56F4")).
+	// 			PaddingTop(2).
+	// 			PaddingLeft(4).
+	// 			Width(22)
+	// highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
+	docStyle = lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Padding(1, 2)
+
+// windowStyle    = lipgloss.NewStyle().BorderForeground(highlightColor)
+)
 
 var (
 	// activeTabBorder = lipgloss.Border{
@@ -190,6 +191,6 @@ func (m *UiModel) View() string {
 	// Send the UI for rendering
 	parent := m.common.Styles.App.Render(view.String())
 	// return parent
-	return util.RenderOverlay(parent, "hello there\nthis should be an overlay\ndid it work?", 5, 20)
+	return util.RenderOverlay(parent, docStyle.Render("hello there\nthis should be an overlay\ndid it work?"), 5, 20)
 
 }

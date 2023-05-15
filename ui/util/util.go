@@ -82,8 +82,8 @@ func styleByLine(view string) []string {
 		shouldClearPrefix := stackBytes > 0
 
 		// Detecting nonterminiated control sequences in line
-		var seqStart int
-		var seqEnd int
+		seqStart := -1
+		seqEnd := 0
 
 		var width int
 		var r rune
@@ -92,10 +92,12 @@ func styleByLine(view string) []string {
 
 			if r == ansi.Marker {
 				seqStart = j
-			} else if seqStart > seqEnd {
+			} else if seqStart >= seqEnd {
 				if !ansi.IsTerminator(r) {
 					continue
 				}
+
+				seqEnd = j + 1
 
 				if j == seqStart+3 &&
 					// Control sequences are ASCII so, string index is fine
@@ -108,7 +110,6 @@ func styleByLine(view string) []string {
 
 					shouldClearPrefix = false
 				} else {
-					seqEnd = j + 1
 					stack.Push(LineSeqBounds{i, seqStart, seqEnd})
 					stackBytes += seqEnd - seqStart
 				}
@@ -139,8 +140,9 @@ func RenderOverlay(parentView, overlayView string, top, left int) string {
 
 		n := 0
 
-		var seqStart int
-		var seqEnd int
+		// Detect when seqStart > seqEnd, even when 0 is valid
+		seqStart := -1
+		seqEnd := 0
 
 		overlayStart := false
 		overlayEnd := false
@@ -162,10 +164,12 @@ func RenderOverlay(parentView, overlayView string, top, left int) string {
 
 			if r == ansi.Marker {
 				seqStart = j
-			} else if seqStart > seqEnd {
+			} else if seqStart >= seqEnd {
 				if !ansi.IsTerminator(r) {
 					continue
 				}
+
+				seqEnd = j + 1
 
 				if j == seqStart+3 &&
 					parentLine[seqStart+1] == '[' &&
@@ -174,16 +178,11 @@ func RenderOverlay(parentView, overlayView string, top, left int) string {
 
 					stack.Clear()
 				} else {
-					seqEnd = j + 1
 					stack.Push(LineSeqBounds{i, seqStart, seqEnd})
 				}
 
 			} else if shouldOverlay {
 				n += runewidth.RuneWidth(r)
-
-				if n < left {
-					continue
-				}
 
 				if !overlayStart {
 					if n < left {
@@ -203,7 +202,9 @@ func RenderOverlay(parentView, overlayView string, top, left int) string {
 
 					sb.WriteString(overlayLines[overlayIndex])
 				} else if !overlayEnd {
-					if n < left+len(overlayLines[overlayIndex]) {
+					right := left + ansi.PrintableRuneWidth(overlayLines[overlayIndex])
+
+					if n < right {
 						continue
 					}
 					overlayEnd = true
@@ -212,10 +213,10 @@ func RenderOverlay(parentView, overlayView string, top, left int) string {
 						sb.WriteString(parentLines[seq.line][seq.start:seq.end])
 					}
 
-					if n == left+len(overlayLines[overlayIndex]) {
+					if n == right {
 						sb.WriteString(parentLine[j+width:])
-					} else if n > left+len(overlayLines[overlayIndex]) {
-						sb.WriteString(" " + parentLine[j:])
+					} else if n > right {
+						sb.WriteString(" " + parentLine[j+width:])
 					}
 				}
 			}
