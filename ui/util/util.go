@@ -2,6 +2,7 @@ package util
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/muesli/ansi"
@@ -67,12 +68,10 @@ func styleByLine(view string) []string {
 	stackBytes := 0
 
 	for i, line := range lines {
+		// Adding previous nonterminating control sequences
 		sb := strings.Builder{}
 
 		growth := stackBytes + len(line)
-		if stackBytes > 0 {
-			growth += len(resetSeq)
-		}
 		sb.Grow(growth)
 
 		for _, seq := range stack {
@@ -80,19 +79,16 @@ func styleByLine(view string) []string {
 		}
 		sb.WriteString(line)
 
-		if stackBytes > 0 {
-			sb.WriteString(resetSeq)
-		}
+		shouldClearPrefix := stackBytes > 0
 
-		styledLines[i] = sb.String()
-
-		lineRunes := []rune(line)
-
+		// Detecting nonterminiated control sequences in line
 		var seqStart int
 		var seqEnd int
 
-		for j := 0; j < len(lineRunes); j++ {
-			r := lineRunes[j]
+		var width int
+		var r rune
+		for j := 0; j < len(line); j += width {
+			r, width = utf8.DecodeRuneInString(line[j:])
 
 			if r == ansi.Marker {
 				seqStart = j
@@ -102,12 +98,15 @@ func styleByLine(view string) []string {
 				}
 
 				if j == seqStart+3 &&
-					lineRunes[seqStart+1] == '[' &&
-					lineRunes[seqStart+2] == '0' &&
-					lineRunes[seqStart+3] == 'm' {
+					// Control sequences are ASCII so, string index is fine
+					line[seqStart+1] == '[' &&
+					line[seqStart+2] == '0' &&
+					line[seqStart+3] == 'm' {
 
 					stack.Clear()
 					stackBytes = 0
+
+					shouldClearPrefix = false
 				} else {
 					seqEnd = j + 1
 					stack.Push(LineSeqBounds{i, seqStart, seqEnd})
@@ -116,41 +115,50 @@ func styleByLine(view string) []string {
 			}
 		}
 
+		if shouldClearPrefix {
+			sb.WriteString(resetSeq)
+		}
+		styledLines[i] = sb.String()
 	}
 
 	return styledLines
 }
 
-// type SeqBounds struct {
-// 	start int
-// 	end   int
-// }
-
-// TODO DOES NOT WORK USE WITH CAUTION
 func RenderOverlay(parentView, overlayView string, top, left int) string {
+	// return parentView
+	// parentLines := styleByLine(parentView)
+	// return strings.Join(parentLines, "\n")
 
 	parentLines := strings.Split(parentView, "\n")
-
-	// TODO benchmark alternatives if []rune() is slow
-	// strings.NewReader().ReadRune()
-	// utf8.DecodeRuneInString()
-
 	overlayLines := styleByLine(overlayView)
 
-	layeredLines := make([]string, len(parentLines))
-
+	finalLines := make([]string, len(parentLines))
 	stack := make(Stack[LineSeqBounds], 0)
 
 	for i, parentLine := range parentLines {
 
 		n := 0
-		parentRunes := []rune(parentLine)
 
 		var seqStart int
 		var seqEnd int
 
-		for j := 0; j < len(parentRunes); j++ {
-			r := parentRunes[j]
+		overlayStart := false
+		overlayEnd := false
+
+		overlayIndex := i - top
+		shouldOverlay := overlayIndex >= 0 && overlayIndex < len(overlayLines)
+
+		// lineWidth := ansi.PrintableRuneWidth(parentLine)
+		// if shouldOverlay && lineWidth < left {
+		// 	parentLine += strings.Repeat(" ", left-lineWidth)
+		// }
+
+		sb := strings.Builder{}
+
+		var width int
+		var r rune
+		for j := 0; j < len(parentLine); j += width {
+			r, width = utf8.DecodeRuneInString(parentLine[j:])
 
 			if r == ansi.Marker {
 				seqStart = j
@@ -160,9 +168,9 @@ func RenderOverlay(parentView, overlayView string, top, left int) string {
 				}
 
 				if j == seqStart+3 &&
-					parentRunes[seqStart+1] == '[' &&
-					parentRunes[seqStart+2] == '0' &&
-					parentRunes[seqStart+3] == 'm' {
+					parentLine[seqStart+1] == '[' &&
+					parentLine[seqStart+2] == '0' &&
+					parentLine[seqStart+3] == 'm' {
 
 					stack.Clear()
 				} else {
@@ -170,46 +178,60 @@ func RenderOverlay(parentView, overlayView string, top, left int) string {
 					stack.Push(LineSeqBounds{i, seqStart, seqEnd})
 				}
 
-			} else if i >= top && i < top+len(overlayLines) {
+			} else if shouldOverlay {
 				n += runewidth.RuneWidth(r)
-
-				// TODO insert control sequences
 
 				if n < left {
 					continue
 				}
 
-				if n > left {
+				if !overlayStart {
+					if n < left {
+						continue
+					}
+					overlayStart = true
 
-					// parentLines[i][:j+1]
-					// resetSeq
-					// overlayLines[i]
+					if left != 0 {
+						if n == left {
+							sb.WriteString(parentLine[:j+width])
+						} else if n > left {
+							sb.WriteString(parentLine[:j] + " ")
+						}
+
+						sb.WriteString(resetSeq)
+					}
+
+					sb.WriteString(overlayLines[overlayIndex])
+				} else if !overlayEnd {
+					if n < left+len(overlayLines[overlayIndex]) {
+						continue
+					}
+					overlayEnd = true
+
+					for _, seq := range stack {
+						sb.WriteString(parentLines[seq.line][seq.start:seq.end])
+					}
+
+					if n == left+len(overlayLines[overlayIndex]) {
+						sb.WriteString(parentLine[j+width:])
+					} else if n > left+len(overlayLines[overlayIndex]) {
+						sb.WriteString(" " + parentLine[j:])
+					}
 				}
-
-				if n >= left+len(overlayLines[i]) {
-					// parentLines[i][j:]
-				}
-
 			}
+
 		}
+
+		if shouldOverlay {
+			finalLines[i] = sb.String()
+		} else {
+			finalLines[i] = parentLine
+		}
+
 	}
 
-	return strings.Join(layeredLines, "\n")
+	return strings.Join(finalLines, "\n")
+	// reference
 	// var CSI = termenv.CSI
-	// this
 	// return fmt.Sprintf("%s%sm%s%sm", CSI, seq, s, CSI+ResetSeq)
-
-	// for _, c := range s {
-	// 	if c == Marker {
-	// 		// ANSI escape sequence
-	// 		ansi = true
-	// 	} else if ansi {
-	// 		if IsTerminator(c) {
-	// 			// ANSI sequence terminated
-	// 			ansi = false
-	// 		}
-	// 	} else {
-	// 		n += runewidth.RuneWidth(c)
-	// 	}
-	// }
 }

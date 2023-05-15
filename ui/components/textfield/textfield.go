@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/ansi"
 	"github.com/zhengkyl/review-ssh/ui/common"
 )
 
@@ -44,7 +45,8 @@ func (m *Model) SetSize(w, h int) {
 
 	// TODO what do if background color set
 	if m.Inner.Placeholder != "" {
-		m.Inner.Placeholder = m.Inner.Placeholder + strings.Repeat(" ", m.Inner.Width-len(m.Inner.Placeholder))
+		// +1 necessary, see textinput.Model View()
+		m.Inner.Placeholder = m.Inner.Placeholder + strings.Repeat(" ", m.Inner.Width-ansi.PrintableRuneWidth(m.Inner.Placeholder)+1)
 	}
 }
 

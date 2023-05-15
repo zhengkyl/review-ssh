@@ -148,7 +148,7 @@ func (m *LoginModel) View() string {
 		sections = append(sections, m.inputs[i].View())
 	}
 
-	sections = append(sections, m.shared.AuthState.Cookie)
+	// sections = append(sections, m.shared.AuthState.Cookie)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
