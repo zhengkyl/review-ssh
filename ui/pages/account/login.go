@@ -41,15 +41,16 @@ func New(c common.Common, s *common.Shared) *LoginModel {
 
 	for i := 0; i < SUBMIT_INDEX; i++ {
 		input := textfield.New(inputCommon)
-		input.Inner.CursorStyle = cursorStyle
-		input.Inner.CharLimit = 80
+		input.CursorStyle(cursorStyle)
+		input.CharLimit(80)
+
 		switch i {
 		case 0:
-			input.Inner.Placeholder = "Email"
+			input.Placeholder("Email")
 			input.Focus()
 		case 1:
-			input.Inner.Placeholder = "Password"
-			input.Inner.EchoMode = textinput.EchoPassword
+			input.Placeholder("Password")
+			input.EchoMode(textinput.EchoPassword)
 			// input.EchoCharacter = '*'
 		}
 		m.inputs[i] = input
@@ -61,6 +62,8 @@ func New(c common.Common, s *common.Shared) *LoginModel {
 }
 
 func (m *LoginModel) SetSize(width, height int) {
+	m.inputs[0].SetSize(width, 3)
+	m.inputs[1].SetSize(width, 3)
 }
 
 func (m *LoginModel) Init() tea.Cmd {
@@ -74,8 +77,8 @@ func blurFocusIndex(m *LoginModel) {
 		return
 	}
 	input := m.inputs[m.focusIndex].(*textfield.Model)
-	input.Inner.PromptStyle = noStyle
-	input.Inner.TextStyle = noStyle
+	input.PromptStyle(noStyle)
+	input.TextStyle(noStyle)
 }
 
 func focusFocusIndex(m *LoginModel) {
@@ -85,8 +88,8 @@ func focusFocusIndex(m *LoginModel) {
 		return
 	}
 	input := m.inputs[m.focusIndex].(*textfield.Model)
-	input.Inner.PromptStyle = focusedStyle
-	input.Inner.TextStyle = focusedStyle
+	input.PromptStyle(focusedStyle)
+	input.TextStyle(focusedStyle)
 }
 
 func changeFocusIndex(m *LoginModel, newIndex int) {
@@ -112,8 +115,8 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.focusIndex == SUBMIT_INDEX {
 
 				return m, postAuth(&m.shared.HttpClient, loginData{
-					m.inputs[0].(*textfield.Model).Inner.Value(),
-					m.inputs[1].(*textfield.Model).Inner.Value(),
+					m.inputs[0].(*textfield.Model).Value(),
+					m.inputs[1].(*textfield.Model).Value(),
 				})
 			}
 			changeFocusIndex(m, (m.focusIndex+1)%3)

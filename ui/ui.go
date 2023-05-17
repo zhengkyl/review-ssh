@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/keymap"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
 	"github.com/zhengkyl/review-ssh/ui/pages/search"
@@ -51,9 +52,10 @@ var (
 	// 	BottomLeft:  "┴",
 	// 	BottomRight: "┴",
 	// }
-
-	tabStyle       = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#7D56F4"))
-	activeTabStyle = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#7D56F4"))
+	titleStyle     = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185"))
+	tabBorder      = lipgloss.NormalBorder()
+	tabStyle       = lipgloss.NewStyle().Padding(0, 1).BorderForeground(lipgloss.Color("#7D56F4")).Border(tabBorder, true)
+	activeTabStyle = lipgloss.NewStyle().Padding(0, 1).BorderForeground(lipgloss.Color("#7D56F4")).Border(tabBorder, true)
 )
 
 const (
@@ -63,14 +65,24 @@ const (
 )
 
 type UiModel struct {
-	common    common.Common
-	shared    *common.Shared
-	tabs      []common.PageComponent
-	activeTab int
+	common      common.Common
+	shared      *common.Shared
+	tabs        []common.PageComponent
+	activeTab   int
+	searchField textfield.Model
+
 	// httpClient *retryablehttp.Client
 }
 
 func New(httpClient *retryablehttp.Client) *UiModel {
+
+	searchField := textfield.New(common.Common{
+		Width:  10, // TODO get dimensions from args
+		Height: 3,
+	})
+
+	searchField.CharLimit(80)
+	searchField.Placeholder("(s)earch for movies...")
 
 	return &UiModel{
 		common: common.Common{
@@ -81,14 +93,21 @@ func New(httpClient *retryablehttp.Client) *UiModel {
 		shared: &common.Shared{
 			HttpClient: *httpClient,
 		},
-		tabs:      make([]common.PageComponent, NUM_TABS),
-		activeTab: 0,
+		tabs:        make([]common.PageComponent, NUM_TABS),
+		activeTab:   0,
+		searchField: *searchField,
 		// httpClient: httpClient,
 	}
 }
 
 func (m *UiModel) SetSize(width, height int) {
 	m.common.SetSize(width, height)
+
+	m.searchField.SetSize(width-20, 3)
+
+	for _, tab := range m.tabs {
+		tab.SetSize(width, height)
+	}
 
 	// wm, hm := ui.getMargins()
 
@@ -124,14 +143,14 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.SetSize(viewW, viewH)
 
-		for _, tab := range m.tabs {
-			_, cmd := tab.Update(msg)
-			// m.tabs[i] = tabModel.(common.PageComponent)
+		// for _, tab := range m.tabs {
+		// 	_, cmd := tab.Update(msg)
+		// 	// m.tabs[i] = tabModel.(common.PageComponent)
 
-			tab.SetSize(viewW, viewH-4)
+		// 	tab.SetSize(viewW, viewH-4)
 
-			cmds = append(cmds, cmd)
-		}
+		// 	cmds = append(cmds, cmd)
+		// }
 	// Is it a key press?
 	case tea.KeyMsg:
 		switch m.activeTab {
@@ -161,13 +180,20 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 var tabNames = []string{
-	"Search",
-	"Account",
+	"watching",
+	"plan to watch",
+	"completed",
+	"dropped",
 }
 
 func (m *UiModel) View() string {
 	view := strings.Builder{}
-	var names []string
+
+	bar := lipgloss.JoinHorizontal(lipgloss.Center, titleStyle.Render("movielo"), m.searchField.View())
+	view.WriteString(bar + "\n")
+
+	names := []string{}
+
 	for i, name := range tabNames {
 		if i == m.activeTab {
 			names = append(names, activeTabStyle.Render(name))
