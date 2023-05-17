@@ -12,16 +12,16 @@ type Sizable interface {
 	// GetMargins() int
 }
 
-type PageComponent interface {
+type Component interface {
 	tea.Model
 	Sizable
 	// help.KeyMap
 }
 
-type Component interface {
-	tea.Model
-	Sizable
-}
+// type Component interface {
+// 	tea.Model
+// 	Sizable
+// }
 
 type FocusableComponent interface {
 	Component

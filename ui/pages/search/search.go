@@ -10,7 +10,6 @@ import (
 
 type SearchModel struct {
 	common common.Common
-	state  *common.Shared
 	input  textinput.Model
 	list   list.Model
 }
@@ -26,7 +25,7 @@ type itemJson struct {
 	Release_date string
 }
 
-func New(common common.Common, state *common.Shared) *SearchModel {
+func New(common common.Common) *SearchModel {
 
 	input := textinput.New()
 	input.Placeholder = "Search for movies and shows..."
@@ -36,7 +35,6 @@ func New(common common.Common, state *common.Shared) *SearchModel {
 	m := &SearchModel{
 		input:  input,
 		common: common,
-		state:  state,
 		list:   list.New([]list.Item{}, itemDelegate{}, 0, 0),
 	}
 
@@ -75,7 +73,7 @@ func (m *SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			cmds = append(cmds, getSearchCmd(&m.state.HttpClient, m.input.Value()))
+			cmds = append(cmds, getSearchCmd(&m.common.Global.HttpClient, m.input.Value()))
 		}
 
 	case []list.Item:

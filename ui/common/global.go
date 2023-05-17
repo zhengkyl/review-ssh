@@ -4,11 +4,15 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/zhengkyl/review-ssh/ui/keymap"
+	"github.com/zhengkyl/review-ssh/ui/styles"
 )
 
-type Shared struct {
+type Global struct {
 	AuthState  AuthState
 	HttpClient retryablehttp.Client
+	Styles     *styles.Styles
+	KeyMap     *keymap.KeyMap
 }
 
 type AuthState struct {

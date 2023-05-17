@@ -66,8 +66,7 @@ const (
 
 type UiModel struct {
 	common      common.Common
-	shared      *common.Shared
-	tabs        []common.PageComponent
+	tabs        []common.Component
 	activeTab   int
 	searchField textfield.Model
 
@@ -87,13 +86,13 @@ func New(httpClient *retryablehttp.Client) *UiModel {
 	return &UiModel{
 		common: common.Common{
 			// Width: ,
-			Styles: styles.DefaultStyles(),
-			KeyMap: keymap.DefaultKeyMap(),
+			Global: common.Global{
+				Styles:     styles.DefaultStyles(),
+				KeyMap:     keymap.DefaultKeyMap(),
+				HttpClient: *httpClient,
+			},
 		},
-		shared: &common.Shared{
-			HttpClient: *httpClient,
-		},
-		tabs:        make([]common.PageComponent, NUM_TABS),
+		tabs:        make([]common.Component, NUM_TABS),
 		activeTab:   0,
 		searchField: *searchField,
 		// httpClient: httpClient,
@@ -101,12 +100,13 @@ func New(httpClient *retryablehttp.Client) *UiModel {
 }
 
 func (m *UiModel) SetSize(width, height int) {
-	m.common.SetSize(width, height)
+	m.common.Width = width
+	m.common.Height = height
 
 	m.searchField.SetSize(width-20, 3)
 
 	for _, tab := range m.tabs {
-		tab.SetSize(width, height)
+		tab.SetSize(width, height-3)
 	}
 
 	// wm, hm := ui.getMargins()
@@ -117,8 +117,8 @@ func (m *UiModel) SetSize(width, height int) {
 
 func (m *UiModel) Init() tea.Cmd {
 
-	m.tabs[searchTab] = search.New(m.common, m.shared)
-	m.tabs[accountTab] = account.New(m.common, m.shared)
+	m.tabs[searchTab] = search.New(m.common)
+	m.tabs[accountTab] = account.New(m.common)
 
 	m.SetSize(m.common.Width, m.common.Height)
 
@@ -135,9 +135,9 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case common.AuthState:
-		m.shared.AuthState = msg
+		m.common.Global.AuthState = msg
 	case tea.WindowSizeMsg:
-		frameW, frameH := m.common.Styles.App.GetFrameSize()
+		frameW, frameH := m.common.Global.Styles.App.GetFrameSize()
 
 		viewW, viewH := msg.Width-frameW, msg.Height-frameH
 
@@ -158,13 +158,13 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case accountTab:
 		}
 
-		if key.Matches(msg, m.common.KeyMap.NextTab) {
+		if key.Matches(msg, m.common.Global.KeyMap.NextTab) {
 			m.activeTab = (m.activeTab + 1) % NUM_TABS
 			// return m, nil
-		} else if key.Matches(msg, m.common.KeyMap.PrevTab) {
+		} else if key.Matches(msg, m.common.Global.KeyMap.PrevTab) {
 			m.activeTab = (m.activeTab - 1 + NUM_TABS) % NUM_TABS
 			// return m, nil
-		} else if key.Matches(msg, m.common.KeyMap.Quit) {
+		} else if key.Matches(msg, m.common.Global.KeyMap.Quit) {
 			return m, tea.Quit
 		}
 
@@ -215,7 +215,7 @@ func (m *UiModel) View() string {
 	view.WriteString(m.tabs[m.activeTab].View())
 	// view = lipgloss.JoinVertical(lipgloss.Left, ui.)
 	// Send the UI for rendering
-	parent := m.common.Styles.App.Render(view.String())
+	parent := m.common.Global.Styles.App.Render(view.String())
 	// return parent
 	return util.RenderOverlay(parent, docStyle.Render("hello there\nthis should be an overlay\ndid it work?"), 5, 20)
 

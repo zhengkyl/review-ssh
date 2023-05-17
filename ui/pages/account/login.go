@@ -21,15 +21,13 @@ const SUBMIT_INDEX = 2
 
 type LoginModel struct {
 	common     common.Common
-	shared     *common.Shared
 	inputs     []common.FocusableComponent
 	focusIndex int
 }
 
-func New(c common.Common, s *common.Shared) *LoginModel {
+func New(c common.Common) *LoginModel {
 	m := &LoginModel{
 		c,
-		s,
 		make([]common.FocusableComponent, 3),
 		0,
 	}
@@ -111,18 +109,18 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		// email, password, submit
-		case key.Matches(msg, m.common.KeyMap.Select):
+		case key.Matches(msg, m.common.Global.KeyMap.Select):
 			if m.focusIndex == SUBMIT_INDEX {
 
-				return m, postAuth(&m.shared.HttpClient, loginData{
+				return m, postAuth(&m.common.Global.HttpClient, loginData{
 					m.inputs[0].(*textfield.Model).Value(),
 					m.inputs[1].(*textfield.Model).Value(),
 				})
 			}
 			changeFocusIndex(m, (m.focusIndex+1)%3)
-		case key.Matches(msg, m.common.KeyMap.NextInput):
+		case key.Matches(msg, m.common.Global.KeyMap.NextInput):
 			changeFocusIndex(m, (m.focusIndex+1)%3)
-		case key.Matches(msg, m.common.KeyMap.PrevInput):
+		case key.Matches(msg, m.common.Global.KeyMap.PrevInput):
 			changeFocusIndex(m, (m.focusIndex+3-1)%3)
 		}
 	}
@@ -139,19 +137,19 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *LoginModel) View() string {
 
-	// if m.shared.AuthState.Authed {
-	// 	return m.shared.AuthState.User.Name
+	// if m.global.AuthState.Authed {
+	// 	return m.global.AuthState.User.Name
 	// }
 
 	var sections []string
 
-	sections = append(sections, m.shared.AuthState.Cookie)
+	sections = append(sections, m.common.Global.AuthState.Cookie)
 
 	for i := range m.inputs {
 		sections = append(sections, m.inputs[i].View())
 	}
 
-	// sections = append(sections, m.shared.AuthState.Cookie)
+	// sections = append(sections, m.global.AuthState.Cookie)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
