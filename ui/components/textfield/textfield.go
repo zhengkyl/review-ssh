@@ -15,7 +15,7 @@ import (
 
 var (
 	tabBorder  = lipgloss.RoundedBorder()
-	inputStyle = lipgloss.NewStyle().Border(tabBorder, true)
+	inputStyle = lipgloss.NewStyle().Border(tabBorder, true) //.BorderBottom(true)
 )
 
 type Model struct {

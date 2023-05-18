@@ -18,7 +18,7 @@ type KeyMap struct {
 
 func DefaultKeyMap() *KeyMap {
 	km := KeyMap{
-		Quit:      key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "quit")),
+		Quit:      key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
 		NextTab:   key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next tab")),
 		PrevTab:   key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("shift+tab", "prev tab")),
 		Up:        key.NewBinding(key.WithKeys("k", "up"), key.WithHelp("k", "up")),

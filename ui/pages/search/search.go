@@ -8,7 +8,7 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 )
 
-type SearchModel struct {
+type Model struct {
 	common common.Common
 	input  textinput.Model
 	list   list.Model
@@ -25,14 +25,14 @@ type itemJson struct {
 	Release_date string
 }
 
-func New(common common.Common) *SearchModel {
+func New(common common.Common) *Model {
 
 	input := textinput.New()
 	input.Placeholder = "Search for movies and shows..."
 	input.Focus()
 	input.CharLimit = 80
 
-	m := &SearchModel{
+	m := &Model{
 		input:  input,
 		common: common,
 		list:   list.New([]list.Item{}, itemDelegate{}, 0, 0),
@@ -43,7 +43,7 @@ func New(common common.Common) *SearchModel {
 	return m
 }
 
-func (m *SearchModel) SetSize(width, height int) {
+func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
 
@@ -52,18 +52,18 @@ func (m *SearchModel) SetSize(width, height int) {
 
 }
 
-func (m *SearchModel) getMargins() (wm, hm int) {
+func (m *Model) getMargins() (wm, hm int) {
 	wm = 0
 	hm = 0
 
 	return
 }
 
-func (m *SearchModel) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m *SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmds []tea.Cmd
 
@@ -99,7 +99,7 @@ func (m *SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *SearchModel) View() string {
+func (m *Model) View() string {
 	var view string
 
 	wm, _ := m.getMargins()

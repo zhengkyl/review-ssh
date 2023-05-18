@@ -126,10 +126,6 @@ func styleByLine(view string) []string {
 }
 
 func RenderOverlay(parentView, overlayView string, top, left int) string {
-	// return parentView
-	// parentLines := styleByLine(parentView)
-	// return strings.Join(parentLines, "\n")
-
 	parentLines := strings.Split(parentView, "\n")
 	overlayLines := styleByLine(overlayView)
 

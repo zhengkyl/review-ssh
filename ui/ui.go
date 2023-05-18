@@ -6,24 +6,16 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
-	"github.com/zhengkyl/review-ssh/ui/keymap"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
+	"github.com/zhengkyl/review-ssh/ui/pages/lists"
+	"github.com/zhengkyl/review-ssh/ui/pages/movie"
 	"github.com/zhengkyl/review-ssh/ui/pages/search"
-	"github.com/zhengkyl/review-ssh/ui/styles"
 	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
 var (
-	// 	testStyle = lipgloss.NewStyle().
-	// 			Bold(true).
-	// 			Foreground(lipgloss.Color("#FAFAFA")).
-	// 			Background(lipgloss.Color("#7D56F4")).
-	// 			PaddingTop(2).
-	// 			PaddingLeft(4).
-	// 			Width(22)
 	// highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	docStyle = lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Padding(1, 2)
 
@@ -31,106 +23,58 @@ var (
 )
 
 var (
-	// activeTabBorder = lipgloss.Border{
-	// 	Top:         "─",
-	// 	Bottom:      " ",
-	// 	Left:        "│",
-	// 	Right:       "│",
-	// 	TopLeft:     "╭",
-	// 	TopRight:    "╮",
-	// 	BottomLeft:  "┘",
-	// 	BottomRight: "└",
-	// }
-
-	// tabBorder = lipgloss.Border{
-	// 	Top:         "─",
-	// 	Bottom:      "─",
-	// 	Left:        "│",
-	// 	Right:       "│",
-	// 	TopLeft:     "╭",
-	// 	TopRight:    "╮",
-	// 	BottomLeft:  "┴",
-	// 	BottomRight: "┴",
-	// }
-	titleStyle     = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185"))
-	tabBorder      = lipgloss.NormalBorder()
-	tabStyle       = lipgloss.NewStyle().Padding(0, 1).BorderForeground(lipgloss.Color("#7D56F4")).Border(tabBorder, true)
-	activeTabStyle = lipgloss.NewStyle().Padding(0, 1).BorderForeground(lipgloss.Color("#7D56F4")).Border(tabBorder, true)
+	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185"))
 )
 
-const (
-	searchTab int = iota
-	accountTab
-	NUM_TABS
-)
-
-type UiModel struct {
+type Model struct {
 	common      common.Common
-	tabs        []common.Component
-	activeTab   int
-	searchField textfield.Model
-
-	// httpClient *retryablehttp.Client
+	searchField *textfield.Model
+	accountPage *account.Model
+	listsPage   *lists.Model
+	searchPage  *search.Model
+	moviePage   *movie.Model
 }
 
-func New(httpClient *retryablehttp.Client) *UiModel {
+func New(c common.Common) *Model {
 
-	searchField := textfield.New(common.Common{
-		Width:  10, // TODO get dimensions from args
-		Height: 3,
-	})
-
+	searchField := textfield.New(c)
 	searchField.CharLimit(80)
 	searchField.Placeholder("(s)earch for movies...")
 
-	return &UiModel{
-		common: common.Common{
-			// Width: ,
-			Global: common.Global{
-				Styles:     styles.DefaultStyles(),
-				KeyMap:     keymap.DefaultKeyMap(),
-				HttpClient: *httpClient,
-			},
-		},
-		tabs:        make([]common.Component, NUM_TABS),
-		activeTab:   0,
-		searchField: *searchField,
-		// httpClient: httpClient,
+	m := &Model{
+		common:      c,
+		searchField: searchField,
+		accountPage: account.New(c),
+		listsPage:   lists.New(c),
+		searchPage:  search.New(c),
+		moviePage:   movie.New(c),
 	}
+
+	m.SetSize(c.Width, c.Height)
+
+	return m
 }
 
-func (m *UiModel) SetSize(width, height int) {
+func (m *Model) SetSize(width, height int) {
+	// wm, hm := ui.getMargins()
+
 	m.common.Width = width
 	m.common.Height = height
 
 	m.searchField.SetSize(width-20, 3)
 
-	for _, tab := range m.tabs {
-		tab.SetSize(width, height-3)
-	}
-
-	// wm, hm := ui.getMargins()
-
-	// SetSize(width - wm, height - hm)
-
+	contentHeight := height - 3
+	m.accountPage.SetSize(width, contentHeight)
+	m.listsPage.SetSize(width, contentHeight)
+	m.searchPage.SetSize(width, contentHeight)
+	m.moviePage.SetSize(width, contentHeight)
 }
 
-func (m *UiModel) Init() tea.Cmd {
-
-	m.tabs[searchTab] = search.New(m.common)
-	m.tabs[accountTab] = account.New(m.common)
-
-	m.SetSize(m.common.Width, m.common.Height)
-
-	cmds := []tea.Cmd{
-		m.tabs[searchTab].Init(),
-		m.tabs[accountTab].Init(),
-	}
-
-	return tea.Batch(cmds...)
+func (m *Model) Init() tea.Cmd {
+	return nil
 }
 
-func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -143,80 +87,29 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.SetSize(viewW, viewH)
 
-		// for _, tab := range m.tabs {
-		// 	_, cmd := tab.Update(msg)
-		// 	// m.tabs[i] = tabModel.(common.PageComponent)
-
-		// 	tab.SetSize(viewW, viewH-4)
-
-		// 	cmds = append(cmds, cmd)
-		// }
-	// Is it a key press?
 	case tea.KeyMsg:
-		switch m.activeTab {
-		case searchTab:
-		case accountTab:
-		}
-
-		if key.Matches(msg, m.common.Global.KeyMap.NextTab) {
-			m.activeTab = (m.activeTab + 1) % NUM_TABS
-			// return m, nil
-		} else if key.Matches(msg, m.common.Global.KeyMap.PrevTab) {
-			m.activeTab = (m.activeTab - 1 + NUM_TABS) % NUM_TABS
-			// return m, nil
-		} else if key.Matches(msg, m.common.Global.KeyMap.Quit) {
+		if key.Matches(msg, m.common.Global.KeyMap.Quit) {
 			return m, tea.Quit
 		}
 
 	}
 
-	_, cmd := m.tabs[m.activeTab].Update(msg)
-	// m.tabs[m.activeTab] = tabModel.(common.PageComponent)
-
-	cmds = append(cmds, cmd)
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
 	return m, tea.Batch(cmds...)
 }
 
-var tabNames = []string{
-	"watching",
-	"plan to watch",
-	"completed",
-	"dropped",
-}
-
-func (m *UiModel) View() string {
+func (m *Model) View() string {
 	view := strings.Builder{}
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Center, titleStyle.Render("movielo"), m.searchField.View())
-	view.WriteString(bar + "\n")
+	view.WriteString(bar)
+	view.WriteString("\n")
 
-	names := []string{}
-
-	for i, name := range tabNames {
-		if i == m.activeTab {
-			names = append(names, activeTabStyle.Render(name))
-		} else {
-			names = append(names, tabStyle.Render(name))
-		}
+	if !m.common.Global.AuthState.Authed {
+		view.WriteString(m.accountPage.View())
+		return view.String()
 	}
 
-	tabs := lipgloss.JoinHorizontal(lipgloss.Top,
-		names...,
-	)
-
-	view.WriteString(tabs + "\n\n")
-
-	// view.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.tabs[m.activeTab]))
-	// The footer
-
-	// view = ui.
-	view.WriteString(m.tabs[m.activeTab].View())
-	// view = lipgloss.JoinVertical(lipgloss.Left, ui.)
-	// Send the UI for rendering
 	parent := m.common.Global.Styles.App.Render(view.String())
-	// return parent
 	return util.RenderOverlay(parent, docStyle.Render("hello there\nthis should be an overlay\ndid it work?"), 5, 20)
 
 }

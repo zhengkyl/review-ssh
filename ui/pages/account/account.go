@@ -19,14 +19,14 @@ var (
 
 const SUBMIT_INDEX = 2
 
-type LoginModel struct {
+type Model struct {
 	common     common.Common
 	inputs     []common.FocusableComponent
 	focusIndex int
 }
 
-func New(c common.Common) *LoginModel {
-	m := &LoginModel{
+func New(c common.Common) *Model {
+	m := &Model{
 		c,
 		make([]common.FocusableComponent, 3),
 		0,
@@ -59,16 +59,16 @@ func New(c common.Common) *LoginModel {
 	return m
 }
 
-func (m *LoginModel) SetSize(width, height int) {
+func (m *Model) SetSize(width, height int) {
 	m.inputs[0].SetSize(width, 3)
 	m.inputs[1].SetSize(width, 3)
 }
 
-func (m *LoginModel) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func blurFocusIndex(m *LoginModel) {
+func blurFocusIndex(m *Model) {
 	// button focused
 	m.inputs[m.focusIndex].Blur()
 	if m.focusIndex == SUBMIT_INDEX {
@@ -79,7 +79,7 @@ func blurFocusIndex(m *LoginModel) {
 	input.TextStyle(noStyle)
 }
 
-func focusFocusIndex(m *LoginModel) {
+func focusFocusIndex(m *Model) {
 	// button focused
 	m.inputs[m.focusIndex].Focus()
 	if m.focusIndex == SUBMIT_INDEX {
@@ -90,13 +90,13 @@ func focusFocusIndex(m *LoginModel) {
 	input.TextStyle(focusedStyle)
 }
 
-func changeFocusIndex(m *LoginModel, newIndex int) {
+func changeFocusIndex(m *Model, newIndex int) {
 	blurFocusIndex(m)
 	m.focusIndex = newIndex
 	focusFocusIndex(m)
 }
 
-func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -135,7 +135,7 @@ func (m *LoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *LoginModel) View() string {
+func (m *Model) View() string {
 
 	// if m.global.AuthState.Authed {
 	// 	return m.global.AuthState.User.Name

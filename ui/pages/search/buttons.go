@@ -13,31 +13,31 @@ type ButtonsModel struct {
 	buttons      []*button.Model
 }
 
-func NewButtons(common common.Common) *ButtonsModel {
+func NewButtons(c common.Common) *ButtonsModel {
 	return &ButtonsModel{
-		common: common,
+		common: c,
 		buttons: []*button.Model{
 			// button.New(common, "Show more",
 			// 	func() tea.Msg {
 			// 		return nil
 			// 	},
 			// ),
-			button.New(common, ":D",
+			button.New(c, ":D",
 				func() tea.Msg {
 					return nil
 				},
 			),
-			button.New(common, "<3",
+			button.New(c, "<3",
 				func() tea.Msg {
 					return nil
 				},
 			),
-			button.New(common, "au",
+			button.New(c, "au",
 				func() tea.Msg {
 					return nil
 				},
 			),
-			button.New(common, "",
+			button.New(c, "",
 				func() tea.Msg {
 					return nil
 				},
