@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/charmbracelet/bubbles/cursor"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -29,6 +30,10 @@ func New(common common.Common) *Model {
 	// inner.Width = common.Width - 8
 
 	return &Model{common, inner, ""}
+}
+
+func (m *Model) Focused() bool {
+	return m.inner.Focused()
 }
 
 func (m *Model) Focus() tea.Cmd {
@@ -60,6 +65,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.inner, cmd = m.inner.Update(msg)
 
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if key.Matches(msg, m.common.Global.KeyMap.Back) {
+			m.Blur()
+		}
+
+	}
 	return m, cmd
 }
 

@@ -25,6 +25,7 @@ type Component interface {
 
 type FocusableComponent interface {
 	Component
+	Focused() bool
 	Focus() tea.Cmd
 	Blur()
 }

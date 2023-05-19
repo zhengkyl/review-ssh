@@ -4,6 +4,7 @@ import "github.com/charmbracelet/bubbles/key"
 
 type KeyMap struct {
 	Quit      key.Binding
+	Search    key.Binding
 	NextTab   key.Binding
 	PrevTab   key.Binding
 	Up        key.Binding
@@ -19,6 +20,7 @@ type KeyMap struct {
 func DefaultKeyMap() *KeyMap {
 	km := KeyMap{
 		Quit:      key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
+		Search:    key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "search")),
 		NextTab:   key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next tab")),
 		PrevTab:   key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("shift+tab", "prev tab")),
 		Up:        key.NewBinding(key.WithKeys("k", "up"), key.WithHelp("k", "up")),

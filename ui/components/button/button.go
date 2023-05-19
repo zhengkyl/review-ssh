@@ -29,6 +29,10 @@ func New(common common.Common, text string, callback tea.Cmd) *Model {
 	}
 }
 
+func (m *Model) Focused() bool {
+	return m.focus
+}
+
 func (m *Model) Focus() tea.Cmd {
 	m.focus = true
 	return nil

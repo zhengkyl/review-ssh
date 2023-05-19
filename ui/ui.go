@@ -92,6 +92,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
+		// TODO all other focusables
+		if !m.searchField.Focused() {
+
+			if key.Matches(msg, m.common.Global.KeyMap.Search) {
+				return m, m.searchField.Focus()
+			}
+
+		}
+
+	}
+
+	if m.searchField.Focused() {
+		_, cmd := m.searchField.Update(msg)
+		cmds = append(cmds, cmd)
 	}
 
 	return m, tea.Batch(cmds...)
