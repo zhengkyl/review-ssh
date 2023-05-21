@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
+	"github.com/zhengkyl/review-ssh/ui/components/vscroll"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
 	"github.com/zhengkyl/review-ssh/ui/pages/lists"
 	"github.com/zhengkyl/review-ssh/ui/pages/movie"
@@ -33,6 +34,7 @@ type Model struct {
 	listsPage   *lists.Model
 	searchPage  *search.Model
 	moviePage   *movie.Model
+	scrollView  *vscroll.Model
 }
 
 func New(c common.Common) *Model {
@@ -48,6 +50,9 @@ func New(c common.Common) *Model {
 		listsPage:   lists.New(c),
 		searchPage:  search.New(c),
 		moviePage:   movie.New(c),
+		scrollView: vscroll.New(c, []tea.Model{
+			account.New(c), account.New(c), account.New(c), account.New(c), account.New(c),
+		}),
 	}
 
 	m.SetSize(c.Width, c.Height)
@@ -68,6 +73,7 @@ func (m *Model) SetSize(width, height int) {
 	m.listsPage.SetSize(width, contentHeight)
 	m.searchPage.SetSize(width, contentHeight)
 	m.moviePage.SetSize(width, contentHeight)
+	m.scrollView.SetSize(width, contentHeight)
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -108,6 +114,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	_, cmd := m.scrollView.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -119,9 +128,11 @@ func (m *Model) View() string {
 	view.WriteString("\n")
 
 	if !m.common.Global.AuthState.Authed {
-		view.WriteString(m.accountPage.View())
+		// view.WriteString(m.accountPage.View())
+		view.WriteString(m.scrollView.View())
 		return view.String()
 	}
+	view.WriteString(m.scrollView.View())
 
 	parent := m.common.Global.Styles.App.Render(view.String())
 	return util.RenderOverlay(parent, docStyle.Render("hello there\nthis should be an overlay\ndid it work?"), 5, 20)
