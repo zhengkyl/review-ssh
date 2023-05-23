@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
-	"github.com/zhengkyl/review-ssh/ui/components/vscroll"
+	"github.com/zhengkyl/review-ssh/ui/components/vlist"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
 	"github.com/zhengkyl/review-ssh/ui/pages/lists"
 	"github.com/zhengkyl/review-ssh/ui/pages/movie"
@@ -34,7 +34,7 @@ type Model struct {
 	listsPage   *lists.Model
 	searchPage  *search.Model
 	moviePage   *movie.Model
-	scrollView  *vscroll.Model
+	scrollView  *vlist.Model
 }
 
 func New(c common.Common) *Model {
@@ -50,7 +50,7 @@ func New(c common.Common) *Model {
 		listsPage:   lists.New(c),
 		searchPage:  search.New(c),
 		moviePage:   movie.New(c),
-		scrollView: vscroll.New(c, []tea.Model{
+		scrollView: vlist.New(c, []tea.Model{
 			account.New(c), account.New(c), account.New(c), account.New(c), account.New(c),
 		}),
 	}

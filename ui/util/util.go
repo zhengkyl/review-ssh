@@ -8,20 +8,6 @@ import (
 	"github.com/muesli/ansi"
 )
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 // Pop() is unchecked
 type Stack[T any] []T
 

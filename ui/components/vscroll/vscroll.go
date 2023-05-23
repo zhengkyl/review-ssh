@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
 type Model struct {
@@ -42,11 +43,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// TODO how do upper bound for dynamic height
 
 		case key.Matches(msg, m.common.Global.KeyMap.Up):
-			m.offset--
-			if m.offset < 0 {
-				m.offset = 0
-			}
-
+			m.offset = util.Max(m.offset-1, 0)
 		}
 	}
 	for _, child := range m.children {
@@ -81,6 +78,7 @@ func (m *Model) View() string {
 			if height > m.offset {
 				something := height - m.offset
 				subSections := strings.Split(section, "\n")
+				// TODO if taller than viewport height
 				visiblePart := subSections[(sectionHeight - something):]
 				sb.WriteString(strings.Join(visiblePart, "\n"))
 			}

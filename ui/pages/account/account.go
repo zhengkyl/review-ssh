@@ -1,6 +1,8 @@
 package account
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -138,6 +140,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	// return "-0\n1\n2\n3\n4\n5\n6\n7\n8\n-9"
+	return fmt.Sprintf("ITEM: %p\n1\n2\n3\n4\n5\n6\n7", m)
 
 	// if m.global.AuthState.Authed {
 	// 	return m.global.AuthState.User.Name
