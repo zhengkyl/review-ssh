@@ -35,6 +35,7 @@ func New(c common.Common) *Model {
 	inputCommon := common.Common{
 		Width:  c.Width - 0, // TODO padding
 		Height: 3,           // TODO does nothing
+		Global: c.Global,
 	}
 
 	for i := 0; i < SUBMIT_INDEX; i++ {
@@ -136,6 +137,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
+	// return "-0\n1\n2\n3\n4\n5\n6\n7\n8\n-9"
 
 	// if m.global.AuthState.Authed {
 	// 	return m.global.AuthState.User.Name
