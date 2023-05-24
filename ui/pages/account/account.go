@@ -1,8 +1,6 @@
 package account
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,6 +22,7 @@ const SUBMIT_INDEX = 2
 type Model struct {
 	common     common.Common
 	inputs     []common.FocusableComponent
+	buttons    []button.Model
 	focusIndex int
 }
 
@@ -31,6 +30,11 @@ func New(c common.Common) *Model {
 	m := &Model{
 		c,
 		make([]common.FocusableComponent, 3),
+		[]button.Model{
+			*button.New(c, "     Sign in     ", func() tea.Msg { return nil }),
+			*button.New(c, "     Sign up     ", func() tea.Msg { return nil }),
+			*button.New(c, "Continue as guest", func() tea.Msg { return nil }),
+		},
 		0,
 	}
 
@@ -140,7 +144,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	// return "-0\n1\n2\n3\n4\n5\n6\n7\n8\n-9"
-	return fmt.Sprintf("ITEM: %p\n1\n2\n3\n4\n5\n6\n7", m)
+	// return fmt.Sprintf("ITEM: %p\n1\n2\n3\n4\n5\n6\n7", m)
 
 	// if m.global.AuthState.Authed {
 	// 	return m.global.AuthState.User.Name
@@ -152,6 +156,9 @@ func (m *Model) View() string {
 
 	for i := range m.inputs {
 		sections = append(sections, m.inputs[i].View())
+	}
+	for i := range m.buttons {
+		sections = append(sections, m.buttons[i].View())
 	}
 
 	// sections = append(sections, m.global.AuthState.Cookie)

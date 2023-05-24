@@ -1,7 +1,6 @@
 package vlist
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -69,7 +68,7 @@ func (m *Model) View() string {
 	height := 0
 
 	m.visibleItems = 0
-	sb.WriteString(fmt.Sprintf("OFFSET %v : ACTIVE %v \n", m.offset, m.active))
+	// sb.WriteString(fmt.Sprintf("OFFSET %v : ACTIVE %v \n", m.offset, m.active))
 
 	for i := m.offset; i < len(m.children); i++ {
 		section := m.children[i].View()
