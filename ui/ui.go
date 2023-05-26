@@ -111,8 +111,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.searchField.Focused() {
 		_, cmd := m.searchField.Update(msg)
 		cmds = append(cmds, cmd)
+	} else {
+		_, cmd := m.accountPage.Update(msg)
+		cmds = append(cmds, cmd)
 	}
-
 	// _, cmd := m.scrollView.Update(msg)
 	// cmds = append(cmds, cmd)
 

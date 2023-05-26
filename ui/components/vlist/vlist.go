@@ -19,13 +19,22 @@ type Model struct {
 }
 
 func New(c common.Common, children []tea.Model) *Model {
-	return &Model{
+	m := &Model{
 		common:       c,
 		children:     children,
 		offset:       0,
 		active:       0,
 		visibleItems: 1, // ??? TODO
 	}
+
+	if len(children) > 0 {
+		switch current := m.children[m.active].(type) {
+		case common.FocusableComponent:
+			current.Focus()
+		}
+	}
+
+	return m
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -34,6 +43,7 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) Init() tea.Cmd {
+
 	return nil
 }
 
@@ -41,6 +51,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		prevActive := m.active
 		switch {
 		case key.Matches(msg, m.common.Global.KeyMap.Down):
 			m.active = util.Min(m.active+1, len(m.children)-1)
@@ -54,6 +65,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.active == m.offset-1 {
 				m.offset = m.active
 			}
+		}
+
+		if prevActive != m.active {
+			switch prev := m.children[prevActive].(type) {
+			case common.FocusableComponent:
+				prev.Blur()
+			}
+
+			switch current := m.children[m.active].(type) {
+			case common.FocusableComponent:
+				current.Focus()
+			}
+
 		}
 	}
 	for _, child := range m.children {

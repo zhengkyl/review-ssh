@@ -8,6 +8,7 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/button"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
+	"github.com/zhengkyl/review-ssh/ui/components/vlist"
 )
 
 var (
@@ -22,7 +23,7 @@ const SUBMIT_INDEX = 2
 type Model struct {
 	common     common.Common
 	inputs     []common.FocusableComponent
-	buttons    []button.Model
+	buttons    *vlist.Model
 	focusIndex int
 }
 
@@ -30,11 +31,13 @@ func New(c common.Common) *Model {
 	m := &Model{
 		c,
 		make([]common.FocusableComponent, 3),
-		[]button.Model{
-			*button.New(c, "     Sign in     ", func() tea.Msg { return nil }),
-			*button.New(c, "     Sign up     ", func() tea.Msg { return nil }),
-			*button.New(c, "Continue as guest", func() tea.Msg { return nil }),
-		},
+		vlist.New(c,
+			[]tea.Model{
+				button.New(c, "     Sign in     ", func() tea.Msg { return nil }),
+				button.New(c, "     Sign up     ", func() tea.Msg { return nil }),
+				button.New(c, "Continue as guest", func() tea.Msg { return nil }),
+			},
+		),
 		0,
 	}
 
@@ -69,6 +72,8 @@ func New(c common.Common) *Model {
 func (m *Model) SetSize(width, height int) {
 	m.inputs[0].SetSize(width, 3)
 	m.inputs[1].SetSize(width, 3)
+
+	m.buttons.SetSize(width, height)
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -139,6 +144,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	_, cmd = m.buttons.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -157,9 +165,8 @@ func (m *Model) View() string {
 	for i := range m.inputs {
 		sections = append(sections, m.inputs[i].View())
 	}
-	for i := range m.buttons {
-		sections = append(sections, m.buttons[i].View())
-	}
+
+	sections = append(sections, m.buttons.View())
 
 	// sections = append(sections, m.global.AuthState.Cookie)
 
