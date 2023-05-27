@@ -28,17 +28,21 @@ type Model struct {
 }
 
 func New(c common.Common) *Model {
+	b := vlist.New(c,
+		[]tea.Model{
+			button.New(c, "     Sign in     ", func() tea.Msg { return nil }),
+			button.New(c, "     Sign up     ", func() tea.Msg { return nil }),
+			button.New(c, "Continue as guest", func() tea.Msg { return nil }),
+		},
+	)
+
+	b.Style.Active = lipgloss.NewStyle().PaddingLeft(2)
+
 	m := &Model{
-		c,
-		make([]common.FocusableComponent, 3),
-		vlist.New(c,
-			[]tea.Model{
-				button.New(c, "     Sign in     ", func() tea.Msg { return nil }),
-				button.New(c, "     Sign up     ", func() tea.Msg { return nil }),
-				button.New(c, "Continue as guest", func() tea.Msg { return nil }),
-			},
-		),
-		0,
+		common:     c,
+		inputs:     make([]common.FocusableComponent, 3),
+		buttons:    b,
+		focusIndex: 0,
 	}
 
 	inputCommon := common.Common{

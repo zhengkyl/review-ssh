@@ -9,23 +9,27 @@ import (
 
 type Model struct {
 	common   common.Common
+	Style    Style
 	text     string
 	callback tea.Cmd
 	focus    bool
 }
 
-var (
-	buttonStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF7DB")).Background(lipgloss.Color("#888B7E")).Padding(0, 1)
-	activeButtonStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF7DB")).
-				Background(lipgloss.Color("#F25D94")).Padding(0, 1)
-)
+type Style struct {
+	Normal lipgloss.Style
+	Active lipgloss.Style
+}
 
-func New(common common.Common, text string, callback tea.Cmd) *Model {
+func New(c common.Common, text string, callback tea.Cmd) *Model {
 	return &Model{
-		common,
-		text,
-		callback,
-		false,
+		common: c,
+		Style: Style{
+			Normal: lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF7DB")).Background(lipgloss.Color("#888B7E")).Padding(0, 1),
+			Active: lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF7DB")).Background(lipgloss.Color("#F25D94")).Padding(0, 1),
+		},
+		text:     text,
+		callback: callback,
+		focus:    false,
 	}
 }
 
@@ -68,8 +72,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	if m.focus {
-		return activeButtonStyle.Render(m.text)
+		return m.Style.Active.Render(m.text)
 	}
 
-	return buttonStyle.Render(m.text)
+	return m.Style.Normal.Render(m.text)
 }

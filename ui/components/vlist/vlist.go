@@ -12,15 +12,25 @@ import (
 
 type Model struct {
 	common       common.Common
+	Style        Style
 	children     []tea.Model
 	offset       int
 	active       int
 	visibleItems int
 }
 
+type Style struct {
+	Normal lipgloss.Style
+	Active lipgloss.Style
+}
+
 func New(c common.Common, children []tea.Model) *Model {
 	m := &Model{
-		common:       c,
+		common: c,
+		Style: Style{
+			Normal: lipgloss.NewStyle(),
+			Active: lipgloss.NewStyle(),
+		},
 		children:     children,
 		offset:       0,
 		active:       0,
@@ -92,10 +102,16 @@ func (m *Model) View() string {
 	height := 0
 
 	m.visibleItems = 0
-	// sb.WriteString(fmt.Sprintf("OFFSET %v : ACTIVE %v \n", m.offset, m.active))
 
 	for i := m.offset; i < len(m.children); i++ {
 		section := m.children[i].View()
+
+		if i == m.active {
+			section = m.Style.Active.Render(section)
+		} else {
+			section = m.Style.Normal.Render(section)
+		}
+
 		sectionHeight := lipgloss.Height(section)
 
 		if height+sectionHeight > m.common.Height {
@@ -105,8 +121,11 @@ func (m *Model) View() string {
 		height += sectionHeight
 		m.visibleItems++
 
+		if i > m.offset {
+			sb.WriteString("\n")
+		}
+
 		sb.WriteString(section)
-		sb.WriteString("\n")
 	}
 
 	return sb.String()
