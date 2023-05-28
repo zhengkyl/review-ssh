@@ -15,8 +15,12 @@ import (
 )
 
 var (
-	tabBorder  = lipgloss.RoundedBorder()
-	inputStyle = lipgloss.NewStyle().Border(tabBorder, true) //.BorderBottom(true)
+	tabBorder    = lipgloss.RoundedBorder()
+	inputStyle   = lipgloss.NewStyle().Border(tabBorder, true) //.BorderBottom(true)
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle  = focusedStyle.Copy()
+	noStyle      = lipgloss.NewStyle()
 )
 
 type Model struct {
@@ -37,11 +41,15 @@ func (m *Model) Focused() bool {
 }
 
 func (m *Model) Focus() tea.Cmd {
+	m.inner.PromptStyle = focusedStyle
+	m.inner.TextStyle = focusedStyle
 	return m.inner.Focus()
 }
 
 func (m *Model) Blur() {
 	m.inner.Blur()
+	m.inner.PromptStyle = noStyle
+	m.inner.TextStyle = noStyle
 }
 
 func (m *Model) SetSize(w, h int) {

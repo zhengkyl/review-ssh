@@ -1,7 +1,6 @@
 package account
 
 import (
-	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -13,19 +12,23 @@ import (
 
 var (
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	cursorStyle  = focusedStyle.Copy()
-	noStyle      = lipgloss.NewStyle()
 )
 
 const SUBMIT_INDEX = 2
 
 type Model struct {
 	common     common.Common
-	inputs     []common.FocusableComponent
+	inputs     *vlist.Model
 	buttons    *vlist.Model
 	focusIndex int
+	stage      int
 }
+
+const (
+	showButtons = iota
+	showInputs
+)
 
 func New(c common.Common) *Model {
 	b := vlist.New(c,
@@ -38,12 +41,7 @@ func New(c common.Common) *Model {
 
 	b.Style.Active = lipgloss.NewStyle().PaddingLeft(2)
 
-	m := &Model{
-		common:     c,
-		inputs:     make([]common.FocusableComponent, 3),
-		buttons:    b,
-		focusIndex: 0,
-	}
+	inputs := make([]tea.Model, 3)
 
 	inputCommon := common.Common{
 		Width:  c.Width - 0, // TODO padding
@@ -63,19 +61,30 @@ func New(c common.Common) *Model {
 		case 1:
 			input.Placeholder("Password")
 			input.EchoMode(textinput.EchoPassword)
-			// input.EchoCharacter = '*'
 		}
-		m.inputs[i] = input
+		inputs[i] = input
 	}
 
-	m.inputs[2] = button.New(c, "Submit", func() tea.Msg { return nil })
+	inputs[2] = button.New(c, "Submit", func() tea.Msg {
+		return postAuth(&c.Global.HttpClient, loginData{
+			inputs[0].(*textfield.Model).Value(),
+			inputs[1].(*textfield.Model).Value(),
+		})
+
+	})
+
+	m := &Model{
+		common:     c,
+		inputs:     vlist.New(c, inputs),
+		buttons:    b,
+		focusIndex: 0,
+	}
 
 	return m
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.inputs[0].SetSize(width, 3)
-	m.inputs[1].SetSize(width, 3)
+	m.inputs.SetSize(width, height)
 
 	m.buttons.SetSize(width, height)
 }
@@ -84,69 +93,22 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func blurFocusIndex(m *Model) {
-	// button focused
-	m.inputs[m.focusIndex].Blur()
-	if m.focusIndex == SUBMIT_INDEX {
-		return
-	}
-	input := m.inputs[m.focusIndex].(*textfield.Model)
-	input.PromptStyle(noStyle)
-	input.TextStyle(noStyle)
-}
-
-func focusFocusIndex(m *Model) {
-	// button focused
-	m.inputs[m.focusIndex].Focus()
-	if m.focusIndex == SUBMIT_INDEX {
-		return
-	}
-	input := m.inputs[m.focusIndex].(*textfield.Model)
-	input.PromptStyle(focusedStyle)
-	input.TextStyle(focusedStyle)
-}
-
-func changeFocusIndex(m *Model, newIndex int) {
-	blurFocusIndex(m)
-	m.focusIndex = newIndex
-	focusFocusIndex(m)
-}
-
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-
-		for _, input := range m.inputs {
-			input.SetSize(msg.Width, 3)
-		}
+		m.SetSize(msg.Width, msg.Height)
 
 	case tea.KeyMsg:
 		switch {
-		// email, password, submit
-		case key.Matches(msg, m.common.Global.KeyMap.Select):
-			if m.focusIndex == SUBMIT_INDEX {
-
-				return m, postAuth(&m.common.Global.HttpClient, loginData{
-					m.inputs[0].(*textfield.Model).Value(),
-					m.inputs[1].(*textfield.Model).Value(),
-				})
-			}
-			changeFocusIndex(m, (m.focusIndex+1)%3)
-		case key.Matches(msg, m.common.Global.KeyMap.NextInput):
-			changeFocusIndex(m, (m.focusIndex+1)%3)
-		case key.Matches(msg, m.common.Global.KeyMap.PrevInput):
-			changeFocusIndex(m, (m.focusIndex+3-1)%3)
 		}
 	}
 
 	var cmd tea.Cmd
-	for i := range m.inputs {
-		_, cmd = m.inputs[i].Update(msg)
 
-		cmds = append(cmds, cmd)
-	}
+	_, cmd = m.inputs.Update(msg)
+	cmds = append(cmds, cmd)
 
 	_, cmd = m.buttons.Update(msg)
 	cmds = append(cmds, cmd)
@@ -166,11 +128,12 @@ func (m *Model) View() string {
 
 	sections = append(sections, m.common.Global.AuthState.Cookie)
 
-	for i := range m.inputs {
-		sections = append(sections, m.inputs[i].View())
+	if m.stage == showInputs {
+		sections = append(sections, m.inputs.View())
 	}
-
-	sections = append(sections, m.buttons.View())
+	if m.stage == showButtons {
+		sections = append(sections, m.buttons.View())
+	}
 
 	// sections = append(sections, m.global.AuthState.Cookie)
 
