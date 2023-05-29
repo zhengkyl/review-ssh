@@ -7,8 +7,8 @@ import (
 
 type Sizable interface {
 	SetSize(width, height int)
-	// Width() int
-	// Height() int
+	Width() int
+	Height() int
 	// GetMargins() int
 }
 

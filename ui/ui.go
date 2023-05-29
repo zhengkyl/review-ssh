@@ -135,7 +135,8 @@ func (m *Model) View() string {
 	}
 	// view.WriteString(m.scrollView.View())
 
-	parent := m.common.Global.Styles.App.Render(view.String())
+	// parent := m.common.Global.Styles.App.Render(view.String())
+	parent := view.String()
 	return util.RenderOverlay(parent, docStyle.Render("hello there\nthis should be an overlay\ndid it work?"), 5, 20)
 
 }

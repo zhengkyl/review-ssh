@@ -29,11 +29,14 @@ type Model struct {
 	placeholder string
 }
 
-func New(common common.Common) *Model {
+func New(c common.Common) *Model {
 	inner := textinput.New()
-	// inner.Width = common.Width - 8
 
-	return &Model{common, inner, ""}
+	m := &Model{c, inner, ""}
+
+	m.SetSize(c.Width, c.Height)
+
+	return m
 }
 
 func (m *Model) Focused() bool {
@@ -53,16 +56,22 @@ func (m *Model) Blur() {
 }
 
 func (m *Model) SetSize(w, h int) {
-	// TODO figure out how to get this padding/margin
-
-	m.common.Width = w - 8
+	m.common.Width = w
 	m.common.Height = h
 
-	m.inner.Width = w - 8
+	// Left right border + padding + > indicator
+	m.inner.Width = w - 5
 
 	if m.placeholder != "" {
 		m.Placeholder(m.placeholder)
 	}
+}
+
+func (m *Model) Height() int {
+	return m.common.Height
+}
+func (m *Model) Width() int {
+	return m.common.Width
 }
 
 func (m *Model) Init() tea.Cmd {

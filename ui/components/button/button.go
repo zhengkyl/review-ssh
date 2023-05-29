@@ -49,6 +49,12 @@ func (m *Model) Blur() {
 func (m *Model) SetSize(h, w int) {
 
 }
+func (m *Model) Height() int {
+	return m.common.Height
+}
+func (m *Model) Width() int {
+	return m.common.Width
+}
 
 func (m *Model) Init() tea.Cmd {
 	return nil

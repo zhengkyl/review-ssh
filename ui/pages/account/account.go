@@ -1,6 +1,8 @@
 package account
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -26,22 +28,26 @@ type Model struct {
 }
 
 const (
-	showButtons = iota
-	showInputs
+	picker = iota
+	signIn
+	signUp
 )
+
+type signInMsg struct{}
+type signUpMsg struct{}
 
 func New(c common.Common) *Model {
 	b := vlist.New(c,
-		[]tea.Model{
-			button.New(c, "     Sign in     ", func() tea.Msg { return nil }),
-			button.New(c, "     Sign up     ", func() tea.Msg { return nil }),
-			button.New(c, "Continue as guest", func() tea.Msg { return nil }),
+		[]common.Component{
+			button.New(c, "     Sign in     ", func() tea.Msg { return signInMsg{} }),
+			button.New(c, "     Sign up     ", func() tea.Msg { return signUpMsg{} }),
+			button.New(c, "Continue as guest", func() tea.Msg { return common.GuestAuthState }),
 		},
 	)
 
 	b.Style.Active = lipgloss.NewStyle().PaddingLeft(2)
 
-	inputs := make([]tea.Model, 3)
+	inputs := make([]common.Component, 3)
 
 	inputCommon := common.Common{
 		Width:  c.Width - 0, // TODO padding
@@ -85,7 +91,6 @@ func New(c common.Common) *Model {
 
 func (m *Model) SetSize(width, height int) {
 	m.inputs.SetSize(width, height)
-
 	m.buttons.SetSize(width, height)
 }
 
@@ -100,6 +105,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 
+	case signInMsg:
+		m.stage = signIn
+	case signUpMsg:
+		m.stage = signUp
 	case tea.KeyMsg:
 		switch {
 		}
@@ -107,10 +116,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 
-	_, cmd = m.inputs.Update(msg)
-	cmds = append(cmds, cmd)
-
-	_, cmd = m.buttons.Update(msg)
+	if m.stage == picker {
+		_, cmd = m.buttons.Update(msg)
+	} else {
+		_, cmd = m.inputs.Update(msg)
+	}
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -124,18 +134,27 @@ func (m *Model) View() string {
 	// 	return m.global.AuthState.User.Name
 	// }
 
-	var sections []string
+	sb := strings.Builder{}
 
-	sections = append(sections, m.common.Global.AuthState.Cookie)
+	sb.WriteString(m.common.Global.AuthState.Cookie)
+	sb.WriteString("\n")
 
-	if m.stage == showInputs {
-		sections = append(sections, m.inputs.View())
-	}
-	if m.stage == showButtons {
-		sections = append(sections, m.buttons.View())
+	if m.stage == picker {
+		sb.WriteString(m.buttons.View())
+	} else {
+
+		if m.stage == signIn {
+			sb.WriteString("Sign in")
+		} else if m.stage == signUp {
+			sb.WriteString("Sign up")
+		}
+
+		sb.WriteString("\n")
+		sb.WriteString(m.inputs.View())
+
 	}
 
 	// sections = append(sections, m.global.AuthState.Cookie)
 
-	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	return sb.String()
 }

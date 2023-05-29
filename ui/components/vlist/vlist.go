@@ -13,7 +13,7 @@ import (
 type Model struct {
 	common       common.Common
 	Style        Style
-	children     []tea.Model
+	children     []common.Component
 	offset       int
 	active       int
 	visibleItems int
@@ -24,7 +24,7 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(c common.Common, children []tea.Model) *Model {
+func New(c common.Common, children []common.Component) *Model {
 	m := &Model{
 		common: c,
 		Style: Style{
@@ -34,7 +34,7 @@ func New(c common.Common, children []tea.Model) *Model {
 		children:     children,
 		offset:       0,
 		active:       0,
-		visibleItems: 1, // ??? TODO
+		visibleItems: c.Height, // set to highest possible ie 1 height items, set in Update()
 	}
 
 	if len(children) > 0 {
@@ -50,10 +50,13 @@ func New(c common.Common, children []tea.Model) *Model {
 func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
+
+	for _, child := range m.children {
+		child.SetSize(width, child.Height())
+	}
 }
 
 func (m *Model) Init() tea.Cmd {
-
 	return nil
 }
 

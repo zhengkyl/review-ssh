@@ -28,3 +28,13 @@ type User struct {
 	Created_at time.Time `json:"created_at"`
 	Updated_at time.Time `json:"updated_at"`
 }
+
+var GuestAuthState = AuthState{
+	Authed: true,
+	Cookie: "guestcookie",
+	User: User{
+		Id:    -1,
+		Name:  "Guest",
+		Email: "guest@zhengkyl.com",
+	},
+}

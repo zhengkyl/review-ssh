@@ -59,6 +59,14 @@ func (m *Model) SetSize(width, height int) {
 	m.common.Height = height
 }
 
+func (m *Model) Height() int {
+	return m.common.Height
+}
+
+func (m *Model) Width() int {
+	return m.common.Width
+}
+
 func (m *Model) Init() tea.Cmd {
 	return nil
 }
