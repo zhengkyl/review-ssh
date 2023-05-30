@@ -9,12 +9,18 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 )
 
-type loginData struct {
+type authData struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func postAuth(client *retryablehttp.Client, loginData loginData) tea.Cmd {
+type signInErr struct {
+}
+
+type signUpErr struct {
+}
+
+func postSignIn(client *retryablehttp.Client, loginData authData) tea.Cmd {
 	return func() tea.Msg {
 
 		bsLoginData, err := json.Marshal(loginData)
@@ -58,3 +64,7 @@ func postAuth(client *retryablehttp.Client, loginData loginData) tea.Cmd {
 		}
 	}
 }
+
+// func postSignUp(client *retryablehttp.Client, loginData authData) tea.Cmd {
+
+// }

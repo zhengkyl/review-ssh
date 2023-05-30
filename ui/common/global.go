@@ -10,7 +10,7 @@ import (
 
 type Global struct {
 	AuthState  AuthState
-	HttpClient retryablehttp.Client
+	HttpClient *retryablehttp.Client
 	Styles     *styles.Styles
 	KeyMap     *keymap.KeyMap
 }

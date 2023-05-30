@@ -20,7 +20,7 @@ func main() {
 		Global: common.Global{
 			Styles:     styles.DefaultStyles(),
 			KeyMap:     keymap.DefaultKeyMap(),
-			HttpClient: *httpClient,
+			HttpClient: httpClient,
 		},
 	}
 

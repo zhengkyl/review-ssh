@@ -28,9 +28,9 @@ type Model struct {
 }
 
 const (
-	picker = iota
-	signIn
-	signUp
+	picker = 0
+	signIn = 2
+	signUp = 3
 )
 
 type signInMsg struct{}
@@ -38,50 +38,17 @@ type signUpMsg struct{}
 
 func New(c common.Common) *Model {
 	b := vlist.New(c,
-		[]common.Component{
-			button.New(c, "     Sign in     ", func() tea.Msg { return signInMsg{} }),
-			button.New(c, "     Sign up     ", func() tea.Msg { return signUpMsg{} }),
-			button.New(c, "Continue as guest", func() tea.Msg { return common.GuestAuthState }),
-		},
+		button.New(c, "     Sign in     ", func() tea.Msg { return signInMsg{} }),
+		button.New(c, "     Sign up     ", func() tea.Msg { return signUpMsg{} }),
+		button.New(c, "Continue as guest", func() tea.Msg { return common.GuestAuthState }),
 	)
 
-	b.Style.Active = lipgloss.NewStyle().PaddingLeft(2)
-
-	inputs := make([]common.Component, 3)
-
-	inputCommon := common.Common{
-		Width:  c.Width - 0, // TODO padding
-		Height: 3,           // TODO does nothing
-		Global: c.Global,
-	}
-
-	for i := 0; i < SUBMIT_INDEX; i++ {
-		input := textfield.New(inputCommon)
-		input.CursorStyle(cursorStyle)
-		input.CharLimit(80)
-
-		switch i {
-		case 0:
-			input.Placeholder("Email")
-			input.Focus()
-		case 1:
-			input.Placeholder("Password")
-			input.EchoMode(textinput.EchoPassword)
-		}
-		inputs[i] = input
-	}
-
-	inputs[2] = button.New(c, "Submit", func() tea.Msg {
-		return postAuth(&c.Global.HttpClient, loginData{
-			inputs[0].(*textfield.Model).Value(),
-			inputs[1].(*textfield.Model).Value(),
-		})
-
-	})
+	b.Style.Active = lipgloss.NewStyle().MarginTop(1)
+	b.Style.Normal = lipgloss.NewStyle().MarginTop(1)
 
 	m := &Model{
 		common:     c,
-		inputs:     vlist.New(c, inputs),
+		inputs:     vlist.New(c),
 		buttons:    b,
 		focusIndex: 0,
 	}
@@ -90,6 +57,9 @@ func New(c common.Common) *Model {
 }
 
 func (m *Model) SetSize(width, height int) {
+	m.common.Width = width
+	m.common.Height = height
+
 	m.inputs.SetSize(width, height)
 	m.buttons.SetSize(width, height)
 }
@@ -107,8 +77,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case signInMsg:
 		m.stage = signIn
+		m.inputs.Children = createInputs(m.common, signIn)
 	case signUpMsg:
 		m.stage = signUp
+		m.inputs.Children = createInputs(m.common, signUp)
 	case tea.KeyMsg:
 		switch {
 		}
@@ -157,4 +129,62 @@ func (m *Model) View() string {
 	// sections = append(sections, m.global.AuthState.Cookie)
 
 	return sb.String()
+}
+
+func createInputs(c common.Common, numInputs int) []common.Component {
+	inputs := make([]common.Component, 0, 3)
+
+	ic := common.Common{
+		Width:  c.Width,
+		Height: 3, // TODO does nothing
+		Global: c.Global,
+	}
+
+	for i := 0; i < numInputs; i++ {
+		input := textfield.New(ic)
+		input.CursorStyle(cursorStyle)
+		input.CharLimit(80)
+
+		switch i {
+		case 0:
+			input.Placeholder("Email")
+			input.Focus()
+		case 1:
+			input.Placeholder("Password")
+			input.EchoMode(textinput.EchoPassword)
+		case 2:
+			input.Placeholder("Retype password")
+			input.EchoMode(textinput.EchoPassword)
+		}
+
+		inputs = append(inputs, input)
+	}
+
+	bc := common.Common{
+		Width:  c.Width,
+		Height: 1, // TODO does nothing
+		Global: c.Global,
+	}
+
+	var callback tea.Cmd
+	if numInputs == signIn {
+		callback = func() tea.Msg {
+			return postSignIn(bc.Global.HttpClient, authData{
+				inputs[0].(*textfield.Model).Value(),
+				inputs[1].(*textfield.Model).Value(),
+			})
+		}
+	} else {
+		callback = func() tea.Msg {
+			return postSignIn(bc.Global.HttpClient, authData{
+				inputs[0].(*textfield.Model).Value(),
+				inputs[1].(*textfield.Model).Value(),
+			})
+		}
+	}
+
+	button := button.New(bc, "Submit", callback)
+	inputs = append(inputs, button)
+
+	return inputs
 }

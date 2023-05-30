@@ -73,7 +73,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			cmds = append(cmds, getSearchCmd(&m.common.Global.HttpClient, m.input.Value()))
+			cmds = append(cmds, getSearchCmd(m.common.Global.HttpClient, m.input.Value()))
 		}
 
 	case []list.Item:

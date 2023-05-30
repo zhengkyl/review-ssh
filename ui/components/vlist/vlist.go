@@ -13,7 +13,7 @@ import (
 type Model struct {
 	common       common.Common
 	Style        Style
-	children     []common.Component
+	Children     []common.Component
 	offset       int
 	active       int
 	visibleItems int
@@ -24,21 +24,21 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(c common.Common, children []common.Component) *Model {
+func New(c common.Common, children ...common.Component) *Model {
 	m := &Model{
 		common: c,
 		Style: Style{
 			Normal: lipgloss.NewStyle(),
 			Active: lipgloss.NewStyle(),
 		},
-		children:     children,
+		Children:     children,
 		offset:       0,
 		active:       0,
 		visibleItems: c.Height, // set to highest possible ie 1 height items, set in Update()
 	}
 
 	if len(children) > 0 {
-		switch current := m.children[m.active].(type) {
+		switch current := m.Children[m.active].(type) {
 		case common.FocusableComponent:
 			current.Focus()
 		}
@@ -51,7 +51,7 @@ func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
 
-	for _, child := range m.children {
+	for _, child := range m.Children {
 		child.SetSize(width, child.Height())
 	}
 }
@@ -67,7 +67,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		prevActive := m.active
 		switch {
 		case key.Matches(msg, m.common.Global.KeyMap.Down):
-			m.active = util.Min(m.active+1, len(m.children)-1)
+			m.active = util.Min(m.active+1, len(m.Children)-1)
 
 			if m.active == m.offset+m.visibleItems {
 				m.offset = m.active
@@ -81,19 +81,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if prevActive != m.active {
-			switch prev := m.children[prevActive].(type) {
+			switch prev := m.Children[prevActive].(type) {
 			case common.FocusableComponent:
 				prev.Blur()
 			}
 
-			switch current := m.children[m.active].(type) {
+			switch current := m.Children[m.active].(type) {
 			case common.FocusableComponent:
 				current.Focus()
 			}
 
 		}
 	}
-	for _, child := range m.children {
+
+	for _, child := range m.Children {
 		_, cmd := child.Update(msg)
 		cmds = append(cmds, cmd)
 	}
@@ -106,8 +107,8 @@ func (m *Model) View() string {
 
 	m.visibleItems = 0
 
-	for i := m.offset; i < len(m.children); i++ {
-		section := m.children[i].View()
+	for i := m.offset; i < len(m.Children); i++ {
+		section := m.Children[i].View()
 
 		if i == m.active {
 			section = m.Style.Active.Render(section)
