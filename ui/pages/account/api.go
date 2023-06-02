@@ -9,7 +9,49 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 )
 
-type authData struct {
+type signUpData struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type signUpRes struct {
+	ok  bool
+	err string
+}
+
+func postSignUp(client *retryablehttp.Client, data signUpData) tea.Cmd {
+	return func() tea.Msg {
+
+		bsLoginData, err := json.Marshal(data)
+
+		if err != nil {
+			return signUpRes{false, err.Error()}
+		}
+
+		resp, err := client.Post("https://review-api.fly.dev/users", "application/json", bytes.NewBuffer(bsLoginData))
+
+		if err != nil {
+			return signUpRes{false, err.Error()}
+		}
+
+		if resp.StatusCode != 200 {
+			return signUpRes{false, err.Error()}
+		}
+
+		var user common.User
+
+		err = json.NewDecoder(resp.Body).Decode(&user)
+
+		if err != nil {
+			return signUpRes{false, err.Error()}
+		}
+
+		return signUpRes{true, err.Error()}
+	}
+}
+
+type signInData struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -17,32 +59,23 @@ type authData struct {
 type signInErr struct {
 }
 
-type signUpErr struct {
-}
-
-func postSignIn(client *retryablehttp.Client, loginData authData) tea.Cmd {
+func postSignIn(client *retryablehttp.Client, data signInData) tea.Cmd {
 	return func() tea.Msg {
 
-		bsLoginData, err := json.Marshal(loginData)
+		bsLoginData, err := json.Marshal(data)
 
 		if err != nil {
-			return common.AuthState{
-				Authed: false,
-			}
+			return signInErr{}
 		}
 
 		resp, err := client.Post("https://review-api.fly.dev/auth", "application/json", bytes.NewBuffer(bsLoginData))
 
 		if err != nil {
-			return common.AuthState{
-				Authed: false,
-			}
+			return signInErr{}
 		}
 
 		if resp.StatusCode != 200 {
-			return common.AuthState{
-				Authed: false,
-			}
+			return signInErr{}
 		}
 
 		cookie := resp.Header.Get("Set-Cookie")
@@ -52,9 +85,7 @@ func postSignIn(client *retryablehttp.Client, loginData authData) tea.Cmd {
 		err = json.NewDecoder(resp.Body).Decode(&user)
 
 		if err != nil {
-			return common.AuthState{
-				Authed: false,
-			}
+			return signInErr{}
 		}
 
 		return common.AuthState{
@@ -64,7 +95,3 @@ func postSignIn(client *retryablehttp.Client, loginData authData) tea.Cmd {
 		}
 	}
 }
-
-// func postSignUp(client *retryablehttp.Client, loginData authData) tea.Cmd {
-
-// }

@@ -1,6 +1,7 @@
 package account
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -25,6 +26,7 @@ type Model struct {
 	buttons    *vlist.Model
 	focusIndex int
 	stage      int
+	debug      string
 }
 
 const (
@@ -75,12 +77,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 
+	case signUpRes:
+		m.debug = fmt.Sprint(msg)
 	case signInMsg:
 		m.stage = signIn
-		m.inputs.Children = createInputs(m.common, signIn)
+		m.inputs.Children = signInInputs(m.common)
 	case signUpMsg:
 		m.stage = signUp
-		m.inputs.Children = createInputs(m.common, signUp)
+		m.inputs.Children = signUpInputs(m.common)
 	case tea.KeyMsg:
 		switch {
 		}
@@ -110,6 +114,8 @@ func (m *Model) View() string {
 
 	sb.WriteString(m.common.Global.AuthState.Cookie)
 	sb.WriteString("\n")
+	sb.WriteString(m.debug)
+	sb.WriteString("\n")
 
 	if m.stage == picker {
 		sb.WriteString(m.buttons.View())
@@ -131,8 +137,8 @@ func (m *Model) View() string {
 	return sb.String()
 }
 
-func createInputs(c common.Common, numInputs int) []common.Component {
-	inputs := make([]common.Component, 0, 3)
+func signUpInputs(c common.Common) []common.Component {
+	inputs := make([]common.Component, 0, 5)
 
 	ic := common.Common{
 		Width:  c.Width,
@@ -140,19 +146,21 @@ func createInputs(c common.Common, numInputs int) []common.Component {
 		Global: c.Global,
 	}
 
-	for i := 0; i < numInputs; i++ {
+	for i := 0; i < 4; i++ {
 		input := textfield.New(ic)
 		input.CursorStyle(cursorStyle)
 		input.CharLimit(80)
 
 		switch i {
 		case 0:
-			input.Placeholder("Email")
+			input.Placeholder("Name")
 			input.Focus()
 		case 1:
+			input.Placeholder("Email")
+		case 2:
 			input.Placeholder("Password")
 			input.EchoMode(textinput.EchoPassword)
-		case 2:
+		case 3:
 			input.Placeholder("Retype password")
 			input.EchoMode(textinput.EchoPassword)
 		}
@@ -166,24 +174,62 @@ func createInputs(c common.Common, numInputs int) []common.Component {
 		Global: c.Global,
 	}
 
-	var callback tea.Cmd
-	if numInputs == signIn {
-		callback = func() tea.Msg {
-			return postSignIn(bc.Global.HttpClient, authData{
-				inputs[0].(*textfield.Model).Value(),
-				inputs[1].(*textfield.Model).Value(),
-			})
+	button := button.New(bc, "Sign up", func() tea.Msg {
+		if inputs[2].(*textfield.Model).Value() != inputs[3].(*textfield.Model).Value() {
+			return signUpRes{false, "non mathcing password"}
 		}
-	} else {
-		callback = func() tea.Msg {
-			return postSignIn(bc.Global.HttpClient, authData{
-				inputs[0].(*textfield.Model).Value(),
-				inputs[1].(*textfield.Model).Value(),
-			})
-		}
+
+		return postSignUp(bc.Global.HttpClient, signUpData{
+			inputs[0].(*textfield.Model).Value(),
+			inputs[1].(*textfield.Model).Value(),
+			inputs[2].(*textfield.Model).Value(),
+		})
+	})
+
+	inputs = append(inputs, button)
+
+	return inputs
+}
+
+func signInInputs(c common.Common) []common.Component {
+	inputs := make([]common.Component, 0, 3)
+
+	ic := common.Common{
+		Width:  c.Width,
+		Height: 3, // TODO does nothing
+		Global: c.Global,
 	}
 
-	button := button.New(bc, "Submit", callback)
+	for i := 0; i < 2; i++ {
+		input := textfield.New(ic)
+		input.CursorStyle(cursorStyle)
+		input.CharLimit(80)
+
+		switch i {
+		case 0:
+			input.Placeholder("Email")
+			input.Focus()
+		case 1:
+			input.Placeholder("Password")
+			input.EchoMode(textinput.EchoPassword)
+		}
+
+		inputs = append(inputs, input)
+	}
+
+	bc := common.Common{
+		Width:  c.Width,
+		Height: 1, // TODO does nothing
+		Global: c.Global,
+	}
+
+	button := button.New(bc, "Sign in", func() tea.Msg {
+		return postSignIn(bc.Global.HttpClient, signInData{
+			inputs[0].(*textfield.Model).Value(),
+			inputs[1].(*textfield.Model).Value(),
+		})
+	})
+
 	inputs = append(inputs, button)
 
 	return inputs
