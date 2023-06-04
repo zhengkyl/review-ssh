@@ -1,7 +1,6 @@
 package account
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -15,6 +14,7 @@ import (
 
 var (
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	errStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("197"))
 	cursorStyle  = focusedStyle.Copy()
 )
 
@@ -26,7 +26,7 @@ type Model struct {
 	buttons    *vlist.Model
 	focusIndex int
 	stage      int
-	debug      string
+	err        string
 }
 
 const (
@@ -58,6 +58,14 @@ func New(c common.Common) *Model {
 	return m
 }
 
+func (m *Model) Height() int {
+	return m.common.Height
+}
+
+func (m *Model) Width() int {
+	return m.common.Width
+}
+
 func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
@@ -78,7 +86,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.SetSize(msg.Width, msg.Height)
 
 	case signUpRes:
-		m.debug = fmt.Sprint(msg)
+		m.err = msg.err
+	case signInRes:
+		m.err = msg.err
 	case signInMsg:
 		m.stage = signIn
 		m.inputs.Children = signInInputs(m.common)
@@ -103,18 +113,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	// return "-0\n1\n2\n3\n4\n5\n6\n7\n8\n-9"
-	// return fmt.Sprintf("ITEM: %p\n1\n2\n3\n4\n5\n6\n7", m)
-
-	// if m.global.AuthState.Authed {
-	// 	return m.global.AuthState.User.Name
-	// }
-
 	sb := strings.Builder{}
 
 	sb.WriteString(m.common.Global.AuthState.Cookie)
-	sb.WriteString("\n")
-	sb.WriteString(m.debug)
 	sb.WriteString("\n")
 
 	if m.stage == picker {
@@ -129,10 +130,11 @@ func (m *Model) View() string {
 
 		sb.WriteString("\n")
 		sb.WriteString(m.inputs.View())
+		// if m.err != "" {
+		sb.WriteString(errStyle.Render(m.err))
+		// }
 
 	}
-
-	// sections = append(sections, m.global.AuthState.Cookie)
 
 	return sb.String()
 }
@@ -176,7 +178,7 @@ func signUpInputs(c common.Common) []common.Component {
 
 	button := button.New(bc, "Sign up", func() tea.Msg {
 		if inputs[2].(*textfield.Model).Value() != inputs[3].(*textfield.Model).Value() {
-			return signUpRes{false, "non mathcing password"}
+			return signUpRes{false, "Passwords do not match."}
 		}
 
 		return postSignUp(bc.Global.HttpClient, signUpData{
@@ -185,6 +187,8 @@ func signUpInputs(c common.Common) []common.Component {
 			inputs[2].(*textfield.Model).Value(),
 		})
 	})
+	button.Style.Normal.Margin(0, 1)
+	button.Style.Active.Margin(0, 1)
 
 	inputs = append(inputs, button)
 
@@ -229,6 +233,8 @@ func signInInputs(c common.Common) []common.Component {
 			inputs[1].(*textfield.Model).Value(),
 		})
 	})
+	button.Style.Normal.Margin(0, 1)
+	button.Style.Active.Margin(0, 1)
 
 	inputs = append(inputs, button)
 

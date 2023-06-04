@@ -98,11 +98,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// TODO all other focusables
+
 		if !m.searchField.Focused() {
 
-			if key.Matches(msg, m.common.Global.KeyMap.Search) {
-				return m, m.searchField.Focus()
-			}
+			// if key.Matches(msg, m.common.Global.KeyMap.Search) {
+			// 	return m, m.searchField.Focus()
+			// }
 
 		}
 
@@ -130,13 +131,14 @@ func (m *Model) View() string {
 
 	if !m.common.Global.AuthState.Authed {
 		view.WriteString(m.accountPage.View())
-		// view.WriteString(m.scrollView.View())
 		return view.String()
 	}
-	// view.WriteString(m.scrollView.View())
+
+	view.WriteString(m.listsPage.View())
 
 	// parent := m.common.Global.Styles.App.Render(view.String())
 	parent := view.String()
+
 	return util.RenderOverlay(parent, docStyle.Render("hello there\nthis should be an overlay\ndid it work?"), 5, 20)
 
 }

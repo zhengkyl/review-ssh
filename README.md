@@ -45,18 +45,32 @@ import (
 )
 
 type Model struct {
-	common common.Common
+	common  common.Common
+	focused bool
 }
 
 func New(c common.Common) *Model {
 	return &Model{
 		common: c,
+		focus: false,
 	}
 }
 
-func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+func (m *Model) Focused() bool {
+	return m.focused
+}
+
+func (m *Model) Focus() tea.Cmd {
+	m.focused = true
+	return nil
+}
+
+func (m *Model) Blur() {
+	m.focused = false
+}
+
+func (m *Model) SetSize(h, w int) {
+
 }
 
 func (m *Model) Height() int {

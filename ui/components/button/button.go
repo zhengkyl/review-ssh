@@ -12,7 +12,7 @@ type Model struct {
 	Style    Style
 	text     string
 	callback tea.Cmd
-	focus    bool
+	focused  bool
 }
 
 type Style struct {
@@ -29,25 +29,21 @@ func New(c common.Common, text string, callback tea.Cmd) *Model {
 		},
 		text:     text,
 		callback: callback,
-		focus:    false,
+		focused:  false,
 	}
 }
 
 func (m *Model) Focused() bool {
-	return m.focus
+	return m.focused
 }
 
 func (m *Model) Focus() tea.Cmd {
-	m.focus = true
+	m.focused = true
 	return nil
 }
 
 func (m *Model) Blur() {
-	m.focus = false
-}
-
-func (m *Model) SetSize(h, w int) {
-
+	m.focused = false
 }
 func (m *Model) Height() int {
 	return m.common.Height
@@ -56,12 +52,16 @@ func (m *Model) Width() int {
 	return m.common.Width
 }
 
+func (m *Model) SetSize(h, w int) {
+
+}
+
 func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.focus {
+	if m.focused {
 
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
@@ -77,7 +77,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	if m.focus {
+	if m.focused {
 		return m.Style.Active.Render(m.text)
 	}
 

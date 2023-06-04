@@ -20,35 +20,32 @@ type signUpRes struct {
 	err string
 }
 
-func postSignUp(client *retryablehttp.Client, data signUpData) tea.Cmd {
-	return func() tea.Msg {
+func postSignUp(client *retryablehttp.Client, data signUpData) tea.Msg {
+	bsLoginData, err := json.Marshal(data)
 
-		bsLoginData, err := json.Marshal(data)
-
-		if err != nil {
-			return signUpRes{false, err.Error()}
-		}
-
-		resp, err := client.Post("https://review-api.fly.dev/users", "application/json", bytes.NewBuffer(bsLoginData))
-
-		if err != nil {
-			return signUpRes{false, err.Error()}
-		}
-
-		if resp.StatusCode != 200 {
-			return signUpRes{false, err.Error()}
-		}
-
-		var user common.User
-
-		err = json.NewDecoder(resp.Body).Decode(&user)
-
-		if err != nil {
-			return signUpRes{false, err.Error()}
-		}
-
-		return signUpRes{true, err.Error()}
+	if err != nil {
+		return signUpRes{false, err.Error()}
 	}
+
+	resp, err := client.Post("https://review-api.fly.dev/users", "application/json", bytes.NewBuffer(bsLoginData))
+
+	if err != nil {
+		return signUpRes{false, err.Error()}
+	}
+
+	if resp.StatusCode != 200 {
+		return signUpRes{false, err.Error()}
+	}
+
+	var user common.User
+
+	err = json.NewDecoder(resp.Body).Decode(&user)
+
+	if err != nil {
+		return signUpRes{false, err.Error()}
+	}
+
+	return signUpRes{true, err.Error()}
 }
 
 type signInData struct {
@@ -56,42 +53,43 @@ type signInData struct {
 	Password string `json:"password"`
 }
 
-type signInErr struct {
+type signInRes struct {
+	ok  bool
+	err string
 }
 
-func postSignIn(client *retryablehttp.Client, data signInData) tea.Cmd {
-	return func() tea.Msg {
+func postSignIn(client *retryablehttp.Client, data signInData) tea.Msg {
+	// return signInRes{false, "hello there"}
 
-		bsLoginData, err := json.Marshal(data)
+	bsLoginData, err := json.Marshal(data)
 
-		if err != nil {
-			return signInErr{}
-		}
+	if err != nil {
+		return signInRes{false, err.Error()}
+	}
 
-		resp, err := client.Post("https://review-api.fly.dev/auth", "application/json", bytes.NewBuffer(bsLoginData))
+	resp, err := client.Post("https://review-api.fly.dev/auth", "application/json", bytes.NewBuffer(bsLoginData))
 
-		if err != nil {
-			return signInErr{}
-		}
+	if err != nil {
+		return signInRes{false, err.Error()}
+	}
 
-		if resp.StatusCode != 200 {
-			return signInErr{}
-		}
+	if resp.StatusCode != 200 {
+		return signInRes{false, "Wrong email or password."}
+	}
 
-		cookie := resp.Header.Get("Set-Cookie")
+	cookie := resp.Header.Get("Set-Cookie")
 
-		var user common.User
+	var user common.User
 
-		err = json.NewDecoder(resp.Body).Decode(&user)
+	err = json.NewDecoder(resp.Body).Decode(&user)
 
-		if err != nil {
-			return signInErr{}
-		}
+	if err != nil {
+		return signInRes{false, err.Error()}
+	}
 
-		return common.AuthState{
-			Authed: true,
-			Cookie: cookie,
-			User:   user,
-		}
+	return common.AuthState{
+		Authed: true,
+		Cookie: cookie,
+		User:   user,
 	}
 }
