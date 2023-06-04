@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/ansi"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
@@ -23,7 +24,8 @@ var (
 )
 
 var (
-	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185"))
+	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185")).Padding(0, 1)
+	title      = titleStyle.Render("movielo")
 )
 
 type Model struct {
@@ -65,10 +67,12 @@ func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
 
-	m.searchField.SetSize(width-20, 3)
+	m.searchField.SetSize(width-lipgloss.Width(title), 3)
 
 	contentHeight := height - 3
-	m.accountPage.SetSize(width, contentHeight)
+
+	m.accountPage.SetSize(util.Max(width/2, 30), contentHeight)
+
 	m.listsPage.SetSize(width, contentHeight)
 	m.searchPage.SetSize(width, contentHeight)
 	m.moviePage.SetSize(width, contentHeight)
@@ -123,22 +127,25 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	view := strings.Builder{}
-
-	bar := lipgloss.JoinHorizontal(lipgloss.Center, titleStyle.Render("movielo"), m.searchField.View())
-	view.WriteString(bar)
-	view.WriteString("\n")
 
 	if !m.common.Global.AuthState.Authed {
-		view.WriteString(m.accountPage.View())
-		return view.String()
+
+		// 3 tall to match search bar + fullwidth to allow centering accountPage view
+		margin := util.Max(m.common.Width-ansi.PrintableRuneWidth(title), 0)
+		topSpacing := "\n " + title + strings.Repeat(" ", margin) + "\n"
+
+		centered := lipgloss.JoinVertical(lipgloss.Center, topSpacing, m.accountPage.View())
+		return centered
 	}
+
+	view := strings.Builder{}
+	appBar := lipgloss.JoinHorizontal(lipgloss.Center, title, " ", m.searchField.View())
+	view.WriteString(appBar)
+	view.WriteString("\n")
 
 	view.WriteString(m.listsPage.View())
 
-	// parent := m.common.Global.Styles.App.Render(view.String())
-	parent := view.String()
-
+	parent := m.common.Global.Styles.App.Render(view.String())
 	return util.RenderOverlay(parent, docStyle.Render("hello there\nthis should be an overlay\ndid it work?"), 5, 20)
 
 }

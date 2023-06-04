@@ -68,8 +68,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:

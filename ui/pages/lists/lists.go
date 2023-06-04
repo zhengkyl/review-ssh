@@ -39,7 +39,7 @@ type Model struct {
 func New(c common.Common) *Model {
 	return &Model{
 		common:    c,
-		tabs:      make([]common.Component, NUM_LISTS),
+		tabs:      make([]common.Component, 0, NUM_LISTS),
 		activeTab: 0,
 	}
 }
@@ -61,22 +61,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case common.AuthState:
 		m.common.Global.AuthState = msg
-	case tea.WindowSizeMsg:
-		frameW, frameH := m.common.Global.Styles.App.GetFrameSize()
 
-		viewW, viewH := msg.Width-frameW, msg.Height-frameH
-
-		m.SetSize(viewW, viewH)
-
-		// for _, tab := range m.tabs {
-		// 	_, cmd := tab.Update(msg)
-		// 	// m.tabs[i] = tabModel.(common.PageComponent)
-
-		// 	tab.SetSize(viewW, viewH-4)
-
-		// 	cmds = append(cmds, cmd)
-		// }
-	// Is it a key press?
 	case tea.KeyMsg:
 		switch m.activeTab {
 		}
@@ -95,6 +80,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
+	if len(m.tabs) == 0 {
+		return ""
+	}
 	view := strings.Builder{}
 	names := []string{}
 

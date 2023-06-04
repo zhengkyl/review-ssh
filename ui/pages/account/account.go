@@ -82,8 +82,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.SetSize(msg.Width, msg.Height)
 
 	case signUpRes:
 		m.err = msg.err
@@ -115,8 +113,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() string {
 	sb := strings.Builder{}
 
-	sb.WriteString(m.common.Global.AuthState.Cookie)
-	sb.WriteString("\n")
+	// sb.WriteString(m.common.Global.AuthState.Cookie)
+	// sb.WriteString("\n")
 
 	if m.stage == picker {
 		sb.WriteString(m.buttons.View())
