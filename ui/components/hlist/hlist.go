@@ -65,13 +65,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		prevActive := m.active
 		switch {
-		case key.Matches(msg, m.common.Global.KeyMap.Left):
+		case key.Matches(msg, m.common.Global.KeyMap.Right):
 			m.active = util.Min(m.active+1, len(m.Children)-1)
 
 			if m.active == m.offset+m.visibleItems {
 				m.offset = m.active
 			}
-		case key.Matches(msg, m.common.Global.KeyMap.Right):
+		case key.Matches(msg, m.common.Global.KeyMap.Left):
 			m.active = util.Max(m.active-1, 0)
 
 			if m.active == m.offset-1 {

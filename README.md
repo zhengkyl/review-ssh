@@ -69,7 +69,7 @@ func (m *Model) Blur() {
 	m.focused = false
 }
 
-func (m *Model) SetSize(h, w int) {
+func (m *Model) SetSize(width, height int) {
 
 }
 

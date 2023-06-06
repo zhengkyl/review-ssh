@@ -8,6 +8,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/ansi"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/components/button"
+	"github.com/zhengkyl/review-ssh/ui/components/dialog"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
 	"github.com/zhengkyl/review-ssh/ui/pages/lists"
@@ -36,6 +38,7 @@ type Model struct {
 	searchPage  *search.Model
 	moviePage   *movie.Model
 	focused     bool
+	dialog      *dialog.Model
 	// scrollView  *vlist.Model
 }
 
@@ -56,6 +59,10 @@ func New(c common.Common) *Model {
 		// 	account.New(c), account.New(c), account.New(c), account.New(c), account.New(c),
 		// }),
 	}
+	m.dialog =
+		dialog.New(c, "Exit program?", *button.New(c, "Yes", tea.Quit), *button.New(c, "No", func() tea.Msg {
+			return m.Focus()
+		}))
 
 	m.SetSize(c.Width, c.Height)
 
@@ -91,6 +98,8 @@ func (m *Model) SetSize(width, height int) {
 	m.listsPage.SetSize(width, contentHeight)
 	m.searchPage.SetSize(width, contentHeight)
 	m.moviePage.SetSize(width, contentHeight)
+
+	m.dialog.SetSize(10, 4)
 	// m.scrollView.SetSize(width, contentHeight)
 }
 
@@ -123,13 +132,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// TODO all other focusables
 
-		if !m.searchField.Focused() {
+		// if !m.searchField.Focused() {
 
-			// if key.Matches(msg, m.common.Global.KeyMap.Search) {
-			// 	return m, m.searchField.Focus()
-			// }
+		// if key.Matches(msg, m.common.Global.KeyMap.Search) {
+		// 	return m, m.searchField.Focus()
+		// }
 
-		}
+		// }
 
 	}
 
@@ -138,6 +147,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	} else {
 		_, cmd := m.accountPage.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+
+	if !m.focused {
+		_, cmd := m.dialog.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -163,6 +177,6 @@ func (m *Model) View() string {
 	}
 
 	parent := m.common.Global.Styles.App.Render(view.String())
-	return util.RenderOverlay(parent, docStyle.Render("Exit movielo?"), 5, 20)
+	return util.RenderOverlay(parent, m.dialog.View(), 2, 20)
 
 }
