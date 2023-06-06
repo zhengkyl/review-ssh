@@ -52,7 +52,7 @@ type Model struct {
 func New(c common.Common) *Model {
 	return &Model{
 		common: c,
-		focus: false,
+		focused: false,
 	}
 }
 

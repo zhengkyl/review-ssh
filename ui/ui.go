@@ -35,6 +35,7 @@ type Model struct {
 	listsPage   *lists.Model
 	searchPage  *search.Model
 	moviePage   *movie.Model
+	focused     bool
 	// scrollView  *vlist.Model
 }
 
@@ -61,13 +62,27 @@ func New(c common.Common) *Model {
 	return m
 }
 
+func (m *Model) Focused() bool {
+	return m.focused
+}
+
+func (m *Model) Focus() tea.Cmd {
+	m.focused = true
+	return nil
+}
+
+func (m *Model) Blur() {
+	m.focused = false
+}
+
 func (m *Model) SetSize(width, height int) {
 	// wm, hm := ui.getMargins()
 
 	m.common.Width = width
 	m.common.Height = height
 
-	m.searchField.SetSize(width-lipgloss.Width(title), 3)
+	// title + " " + searchField = width
+	m.searchField.SetSize(width-lipgloss.Width(title)-1, 3)
 
 	contentHeight := height - 3
 
@@ -98,6 +113,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		if key.Matches(msg, m.common.Global.KeyMap.Quit) {
+			if m.focused {
+				m.Blur()
+				return m, nil
+			}
+
 			return m, tea.Quit
 		}
 
@@ -120,32 +140,29 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, cmd := m.accountPage.Update(msg)
 		cmds = append(cmds, cmd)
 	}
-	// _, cmd := m.scrollView.Update(msg)
-	// cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {
 
+	view := strings.Builder{}
 	if !m.common.Global.AuthState.Authed {
-
 		// 3 tall to match search bar + fullwidth to allow centering accountPage view
 		margin := util.Max(m.common.Width-ansi.PrintableRuneWidth(title), 0)
-		topSpacing := "\n " + title + strings.Repeat(" ", margin) + "\n"
+		topSpacing := "\n" + title + strings.Repeat(" ", margin) + "\n"
 
 		centered := lipgloss.JoinVertical(lipgloss.Center, topSpacing, m.accountPage.View())
-		return centered
+		view.WriteString(centered)
+	} else {
+		appBar := lipgloss.JoinHorizontal(lipgloss.Center, title, " ", m.searchField.View())
+		view.WriteString(appBar)
+		view.WriteString("\n")
+
+		view.WriteString(m.listsPage.View())
 	}
 
-	view := strings.Builder{}
-	appBar := lipgloss.JoinHorizontal(lipgloss.Center, title, " ", m.searchField.View())
-	view.WriteString(appBar)
-	view.WriteString("\n")
-
-	view.WriteString(m.listsPage.View())
-
 	parent := m.common.Global.Styles.App.Render(view.String())
-	return util.RenderOverlay(parent, docStyle.Render("hello there\nthis should be an overlay\ndid it work?"), 5, 20)
+	return util.RenderOverlay(parent, docStyle.Render("Exit movielo?"), 5, 20)
 
 }

@@ -60,7 +60,7 @@ func (m *Model) SetSize(w, h int) {
 	m.common.Height = h
 
 	// Left right border + padding + > indicator
-	m.inner.Width = w - 6
+	m.inner.Width = w - 5
 
 	if m.placeholder != "" {
 		m.Placeholder(m.placeholder)
