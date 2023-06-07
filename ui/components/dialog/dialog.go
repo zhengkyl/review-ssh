@@ -5,9 +5,14 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/button"
 	"github.com/zhengkyl/review-ssh/ui/util"
+)
+
+var (
+	dialogStyle = lipgloss.NewStyle().Padding(1, 3).Border(lipgloss.RoundedBorder(), true)
 )
 
 type Model struct {
@@ -15,32 +20,42 @@ type Model struct {
 	text    string
 	buttons []button.Model
 	active  int
+	focused bool
 }
 
-func New(c common.Common, text string, buttons ...button.Model) *Model {
+func New(c common.Common, text string) *Model {
 	m := &Model{
-		common:  c,
-		text:    text,
-		buttons: buttons,
-		active:  0,
+		common: c,
+		text:   text,
 	}
-
-	m.buttons[0].Focus()
 
 	return m
 }
 
-func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+func (m *Model) Buttons(buttons ...button.Model) {
+	m.buttons = buttons
+
+	m.active = 0
+	m.buttons[0].Focus()
 }
 
-func (m *Model) Height() int {
-	return m.common.Height
+func (m *Model) Focused() bool {
+	return m.focused
 }
 
-func (m *Model) Width() int {
-	return m.common.Width
+func (m *Model) Focus() tea.Cmd {
+	if m.active != 0 {
+		m.buttons[m.active].Blur()
+		m.active = 0
+		m.buttons[m.active].Focus()
+	}
+
+	m.focused = true
+	return nil
+}
+
+func (m *Model) Blur() {
+	m.focused = false
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -53,9 +68,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		prevActive := m.active
 		switch {
-		case key.Matches(msg, m.common.Global.KeyMap.Right):
+		case key.Matches(msg, m.common.Global.KeyMap.NextInput):
 			m.active = util.Min(m.active+1, len(m.buttons)-1)
-		case key.Matches(msg, m.common.Global.KeyMap.Left):
+		case key.Matches(msg, m.common.Global.KeyMap.PrevInput):
 			m.active = util.Max(m.active-1, 0)
 		}
 
@@ -77,10 +92,10 @@ func (m *Model) View() string {
 	sb := strings.Builder{}
 
 	sb.WriteString(m.text)
-	sb.WriteString("\n")
+	sb.WriteString("\n\n")
 	for _, button := range m.buttons {
 		sb.WriteString(button.View())
+		sb.WriteString(" ")
 	}
-	sb.WriteString("\n")
-	return sb.String()
+	return dialogStyle.Render(sb.String())
 }

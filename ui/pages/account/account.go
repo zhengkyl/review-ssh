@@ -3,6 +3,8 @@ package account
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -16,6 +18,7 @@ var (
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	errStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("197"))
 	cursorStyle  = focusedStyle.Copy()
+	accountStyle = lipgloss.NewStyle().Padding(1, 3).Border(lipgloss.RoundedBorder(), true)
 )
 
 const SUBMIT_INDEX = 2
@@ -27,6 +30,7 @@ type Model struct {
 	focusIndex int
 	stage      int
 	err        string
+	help       help.Model
 }
 
 const (
@@ -45,14 +49,15 @@ func New(c common.Common) *Model {
 		button.New(c, "Continue as guest", func() tea.Msg { return common.GuestAuthState }),
 	)
 
-	b.Style.Active = lipgloss.NewStyle().MarginTop(1)
-	b.Style.Normal = lipgloss.NewStyle().MarginTop(1)
+	b.Style.Active = lipgloss.NewStyle().Margin(1, 0)
+	b.Style.Normal = lipgloss.NewStyle().Margin(1, 0)
 
 	m := &Model{
 		common:     c,
 		inputs:     vlist.New(c),
 		buttons:    b,
 		focusIndex: 0,
+		help:       help.New(),
 	}
 
 	return m
@@ -69,6 +74,8 @@ func (m *Model) Width() int {
 func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
+
+	m.help.Width = width
 
 	m.inputs.SetSize(width, height)
 	m.buttons.SetSize(width, height)
@@ -95,6 +102,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.inputs.Children = signUpInputs(m.common)
 	case tea.KeyMsg:
 		switch {
+		case key.Matches(msg, m.common.Global.KeyMap.Back):
+			if m.stage != 0 {
+				m.stage = 0
+			}
 		}
 	}
 
@@ -117,6 +128,7 @@ func (m *Model) View() string {
 	// sb.WriteString("\n")
 
 	if m.stage == picker {
+		sb.WriteString("Ahoy there!\n")
 		sb.WriteString(m.buttons.View())
 	} else {
 
@@ -125,8 +137,8 @@ func (m *Model) View() string {
 		} else if m.stage == signUp {
 			sb.WriteString("Sign up")
 		}
-
 		sb.WriteString("\n")
+
 		sb.WriteString(m.inputs.View())
 		// if m.err != "" {
 		sb.WriteString(errStyle.Render(m.err))
@@ -134,7 +146,7 @@ func (m *Model) View() string {
 
 	}
 
-	return sb.String()
+	return accountStyle.Render(sb.String())
 }
 
 func signUpInputs(c common.Common) []common.Component {

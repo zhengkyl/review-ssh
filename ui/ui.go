@@ -3,6 +3,7 @@ package ui
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -19,9 +20,7 @@ import (
 )
 
 var (
-	// highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
-	docStyle = lipgloss.NewStyle().Background(lipgloss.Color("#7D56F4")).Padding(1, 2)
-
+// highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 // windowStyle    = lipgloss.NewStyle().BorderForeground(highlightColor)
 )
 
@@ -37,8 +36,8 @@ type Model struct {
 	listsPage   *lists.Model
 	searchPage  *search.Model
 	moviePage   *movie.Model
-	focused     bool
 	dialog      *dialog.Model
+	help        help.Model
 	// scrollView  *vlist.Model
 }
 
@@ -55,31 +54,23 @@ func New(c common.Common) *Model {
 		listsPage:   lists.New(c),
 		searchPage:  search.New(c),
 		moviePage:   movie.New(c),
+		dialog:      dialog.New(c, "Quit program?"),
+		help:        help.New(),
 		// scrollView: vlist.New(c, []tea.Model{
 		// 	account.New(c), account.New(c), account.New(c), account.New(c), account.New(c),
 		// }),
 	}
-	m.dialog =
-		dialog.New(c, "Exit program?", *button.New(c, "Yes", tea.Quit), *button.New(c, "No", func() tea.Msg {
-			return m.Focus()
+
+	m.dialog.Buttons(
+		*button.New(c, "Yes", tea.Quit),
+		*button.New(c, "No", func() tea.Msg {
+			m.dialog.Blur()
+			return nil
 		}))
 
 	m.SetSize(c.Width, c.Height)
 
 	return m
-}
-
-func (m *Model) Focused() bool {
-	return m.focused
-}
-
-func (m *Model) Focus() tea.Cmd {
-	m.focused = true
-	return nil
-}
-
-func (m *Model) Blur() {
-	m.focused = false
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -99,8 +90,9 @@ func (m *Model) SetSize(width, height int) {
 	m.searchPage.SetSize(width, contentHeight)
 	m.moviePage.SetSize(width, contentHeight)
 
-	m.dialog.SetSize(10, 4)
 	// m.scrollView.SetSize(width, contentHeight)
+
+	m.help.Width = width
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -116,18 +108,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		frameW, frameH := m.common.Global.Styles.App.GetFrameSize()
 
-		viewW, viewH := msg.Width-frameW, msg.Height-frameH
+		viewW, viewH := msg.Width-frameW, msg.Height-frameH-1 // -1 for help
 
 		m.SetSize(viewW, viewH)
 
 	case tea.KeyMsg:
 		if key.Matches(msg, m.common.Global.KeyMap.Quit) {
-			if m.focused {
-				m.Blur()
-				return m, nil
+			if m.dialog.Focused() {
+				return m, tea.Quit
 			}
-
-			return m, tea.Quit
+			return m, m.dialog.Focus()
+		} else if key.Matches(msg, m.common.Global.KeyMap.Back) {
+			if m.dialog.Focused() {
+				m.dialog.Blur()
+			}
 		}
 
 		// TODO all other focusables
@@ -142,18 +136,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	}
 
+	var cmd tea.Cmd
 	if m.searchField.Focused() {
-		_, cmd := m.searchField.Update(msg)
+		_, cmd = m.searchField.Update(msg)
+		cmds = append(cmds, cmd)
+	} else if m.dialog.Focused() {
+		_, cmd = m.dialog.Update(msg)
 		cmds = append(cmds, cmd)
 	} else {
-		_, cmd := m.accountPage.Update(msg)
+		_, cmd = m.accountPage.Update(msg)
 		cmds = append(cmds, cmd)
 	}
-
-	if !m.focused {
-		_, cmd := m.dialog.Update(msg)
-		cmds = append(cmds, cmd)
-	}
+	m.help, cmd = m.help.Update(msg)
+	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
@@ -176,7 +171,28 @@ func (m *Model) View() string {
 		view.WriteString(m.listsPage.View())
 	}
 
-	parent := m.common.Global.Styles.App.Render(view.String())
-	return util.RenderOverlay(parent, m.dialog.View(), 2, 20)
+	vGap := m.common.Height - lipgloss.Height(view.String())
+
+	if vGap > 0 {
+		view.WriteString(strings.Repeat("\n", vGap))
+	}
+	// view.WriteString("\n")
+	view.WriteString(m.help.View(m.common.Global.KeyMap))
+
+	app := view.String()
+
+	if m.dialog.Focused() {
+		dialogView := m.dialog.View()
+
+		dialogW := lipgloss.Width(dialogView)
+		dialogH := lipgloss.Height(dialogView)
+
+		xOffset := util.Max((m.common.Width-dialogW)/2, 0)
+		yOffset := util.Max((m.common.Height-dialogH)/2-3, 0)
+
+		app = util.RenderOverlay(app, m.dialog.View(), xOffset, yOffset)
+	}
+
+	return m.common.Global.Styles.App.Render(app)
 
 }

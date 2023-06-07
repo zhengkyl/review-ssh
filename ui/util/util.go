@@ -111,7 +111,7 @@ func styleByLine(view string) []string {
 	return styledLines
 }
 
-func RenderOverlay(parentView, overlayView string, top, left int) string {
+func RenderOverlay(parentView, overlayView string, left, top int) string {
 	parentLines := strings.Split(parentView, "\n")
 	overlayLines := styleByLine(overlayView)
 
@@ -206,6 +206,10 @@ func RenderOverlay(parentView, overlayView string, top, left int) string {
 		}
 
 		if shouldOverlay {
+			if !overlayStart {
+				sb.WriteString(strings.Repeat(" ", left))
+				sb.WriteString(overlayLines[overlayIndex])
+			}
 			finalLines[i] = sb.String()
 		} else {
 			finalLines[i] = parentLine

@@ -12,7 +12,7 @@ type Styles struct {
 func DefaultStyles() *Styles {
 
 	return &Styles{
-		App:         lipgloss.NewStyle().Margin(1, 2),
+		App:         lipgloss.NewStyle().Margin(0, 1),
 		SearchInput: lipgloss.NewStyle(),
 	}
 }
