@@ -15,7 +15,7 @@ type Model struct {
 	Style        Style
 	Children     []common.Component
 	offset       int
-	active       int
+	Active       int
 	visibleItems int
 }
 
@@ -33,12 +33,12 @@ func New(c common.Common, children ...common.Component) *Model {
 		},
 		Children:     children,
 		offset:       0,
-		active:       0,
+		Active:       0,
 		visibleItems: c.Height, // set to highest possible ie 1 height items, set in Update()
 	}
 
 	if len(children) > 0 {
-		switch current := m.Children[m.active].(type) {
+		switch current := m.Children[m.Active].(type) {
 		case common.FocusableComponent:
 			current.Focus()
 		}
@@ -64,29 +64,29 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		prevActive := m.active
+		prevActive := m.Active
 		switch {
 		case key.Matches(msg, m.common.Global.KeyMap.Down):
-			m.active = util.Min(m.active+1, len(m.Children)-1)
+			m.Active = util.Min(m.Active+1, len(m.Children)-1)
 
-			if m.active == m.offset+m.visibleItems {
-				m.offset = m.active
+			if m.Active == m.offset+m.visibleItems {
+				m.offset = m.Active
 			}
 		case key.Matches(msg, m.common.Global.KeyMap.Up):
-			m.active = util.Max(m.active-1, 0)
+			m.Active = util.Max(m.Active-1, 0)
 
-			if m.active == m.offset-1 {
-				m.offset = m.active
+			if m.Active == m.offset-1 {
+				m.offset = m.Active
 			}
 		}
 
-		if prevActive != m.active {
+		if prevActive != m.Active {
 			switch prev := m.Children[prevActive].(type) {
 			case common.FocusableComponent:
 				prev.Blur()
 			}
 
-			switch current := m.Children[m.active].(type) {
+			switch current := m.Children[m.Active].(type) {
 			case common.FocusableComponent:
 				current.Focus()
 			}
@@ -110,7 +110,7 @@ func (m *Model) View() string {
 	for i := m.offset; i < len(m.Children); i++ {
 		section := m.Children[i].View()
 
-		if i == m.active {
+		if i == m.Active {
 			section = m.Style.Active.Render(section)
 		} else {
 			section = m.Style.Normal.Render(section)

@@ -97,9 +97,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case signInMsg:
 		m.stage = signIn
 		m.inputs.Children = signInInputs(m.common)
+		m.inputs.Active = 0
+		m.err = ""
 	case signUpMsg:
 		m.stage = signUp
 		m.inputs.Children = signUpInputs(m.common)
+		m.inputs.Active = 0
+		m.err = ""
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.common.Global.KeyMap.Back):
@@ -133,11 +137,11 @@ func (m *Model) View() string {
 	} else {
 
 		if m.stage == signIn {
-			sb.WriteString("Sign in")
+			sb.WriteString(" Sign in")
 		} else if m.stage == signUp {
-			sb.WriteString("Sign up")
+			sb.WriteString(" Sign up")
 		}
-		sb.WriteString("\n")
+		sb.WriteString("\n\n")
 
 		sb.WriteString(m.inputs.View())
 		// if m.err != "" {
@@ -197,8 +201,8 @@ func signUpInputs(c common.Common) []common.Component {
 			inputs[2].(*textfield.Model).Value(),
 		})
 	})
-	button.Style.Normal.Margin(0, 1)
-	button.Style.Active.Margin(0, 1)
+	button.Style.Normal.Margin(1).MarginBottom(0)
+	button.Style.Active.Margin(1).MarginBottom(0)
 
 	inputs = append(inputs, button)
 
@@ -243,8 +247,8 @@ func signInInputs(c common.Common) []common.Component {
 			inputs[1].(*textfield.Model).Value(),
 		})
 	})
-	button.Style.Normal.Margin(0, 1)
-	button.Style.Active.Margin(0, 1)
+	button.Style.Normal.Margin(1).MarginBottom(0)
+	button.Style.Active.Margin(1).MarginBottom(0)
 
 	inputs = append(inputs, button)
 

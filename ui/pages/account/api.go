@@ -34,7 +34,7 @@ func postSignUp(client *retryablehttp.Client, data signUpData) tea.Msg {
 	}
 
 	if resp.StatusCode != 200 {
-		return signUpRes{false, err.Error()}
+		return signUpRes{false, "Email already registered."}
 	}
 
 	var user common.User
@@ -59,8 +59,6 @@ type signInRes struct {
 }
 
 func postSignIn(client *retryablehttp.Client, data signInData) tea.Msg {
-	// return signInRes{false, "hello there"}
-
 	bsLoginData, err := json.Marshal(data)
 
 	if err != nil {

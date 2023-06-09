@@ -45,6 +45,7 @@ func (m *Model) Focus() tea.Cmd {
 func (m *Model) Blur() {
 	m.focused = false
 }
+
 func (m *Model) Height() int {
 	return m.common.Height
 }

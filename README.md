@@ -1,17 +1,20 @@
 # review-ssh
 
-A terminal user-interface for `review-api` over ssh
+A terminal user-interface for [`review-api`](https://github.com/zhengkyl/review-api) over ssh
+
+## Sign in/up flow
+
+<img alt="account flow" src="./assets/account.gif" width="600" />
 
 ## Ahoy there!
 
 All ye brave souls who wish to delve within this repo, heed me warnings!
 
 - I be new to Go and this be me maiden voyage.
-  - This is my first project with go, so I don't understand best practices, and I'm more concerned with a working app.
 - [@charmbracelet/soft-serve](https://github.com/charmbracelet/soft-serve) be the siren I follow, but bountiful booty or the depths of the sea, where does it lead?
-  - Bubble tea is a nice framework for terminal user interfaces (TUI) using Go, but that doesn't mean ANYONE should write TUI apps in Go. It's still very non-ergonomic and I don't think it scales well with more complex apps with deeply nested views. The [component library](https://github.com/charmbracelet/bubbles) can be annoying to work with and it's hard to create general use components. I think it makes more sense to make specific components for each use case.
+  - Bubble tea is a nice framework for terminal user interfaces (TUI) using Go, but it's still very non-ergonomic and I don't think it scales well with deeply nested views. It's hard to create general use components. I think it makes more sense to make specific components for each use case.
 - Ye must lose your landlubber ways if ye wish to conquer these high seas!
-  - Talk like a pirate.
+  - Working on this project has made me a bit crazy.
 
 ### Things of note
 
