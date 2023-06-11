@@ -139,16 +139,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	if m.searchField.Focused() {
 		_, cmd = m.searchField.Update(msg)
-		cmds = append(cmds, cmd)
 	} else if m.dialog.Focused() {
 		_, cmd = m.dialog.Update(msg)
-		cmds = append(cmds, cmd)
+	} else if m.common.Global.AuthState.Authed {
+		_, cmd = m.listsPage.Update(msg)
 	} else {
 		_, cmd = m.accountPage.Update(msg)
-		cmds = append(cmds, cmd)
 	}
-	m.help, cmd = m.help.Update(msg)
 	cmds = append(cmds, cmd)
+
+	// m.help, cmd = m.help.Update(msg)
+	// cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
@@ -158,10 +159,10 @@ func (m *Model) View() string {
 	view := strings.Builder{}
 	if !m.common.Global.AuthState.Authed {
 		// 3 tall to match search bar + fullwidth to allow centering accountPage view
-		margin := util.Max(m.common.Width-ansi.PrintableRuneWidth(title), 0)
-		topSpacing := "\n" + title + strings.Repeat(" ", margin) + "\n"
+		rightPad := util.Max(m.common.Width-ansi.PrintableRuneWidth(title), 0)
+		appBar := "\n" + title + strings.Repeat(" ", rightPad) + "\n"
 
-		centered := lipgloss.JoinVertical(lipgloss.Center, topSpacing, m.accountPage.View())
+		centered := lipgloss.JoinVertical(lipgloss.Center, appBar, m.accountPage.View())
 		view.WriteString(centered)
 	} else {
 		appBar := lipgloss.JoinHorizontal(lipgloss.Center, title, " ", m.searchField.View())

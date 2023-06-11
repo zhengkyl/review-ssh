@@ -16,8 +16,16 @@ func main() {
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = nil
 
+	tmdbKey, ok := os.LookupEnv("TMDB_API_KEY")
+	if !ok {
+		panic("TMDB_API_KEY missing")
+	}
+
 	c := common.Common{
 		Global: common.Global{
+			Config: common.Config{
+				TMDB_API_KEY: tmdbKey,
+			},
 			Styles:     styles.DefaultStyles(),
 			KeyMap:     keymap.DefaultKeyMap(),
 			HttpClient: httpClient,

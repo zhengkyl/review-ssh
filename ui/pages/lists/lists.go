@@ -7,10 +7,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/pages/lists/reviewlist"
 )
 
 const (
-	WATCHING_LIST = iota
+	ALL_LIST = iota
+	WATCHING_LIST
 	PLAN_TO_WATCH_LIST
 	COMPLETED_LIST
 	DROPPED_LIST
@@ -18,6 +20,7 @@ const (
 )
 
 var tabNames = []string{
+	"all",
 	"watching",
 	"plan to watch",
 	"completed",
@@ -26,20 +29,20 @@ var tabNames = []string{
 
 var (
 	tabBorder      = lipgloss.NormalBorder()
-	tabStyle       = lipgloss.NewStyle().Padding(0, 1).BorderForeground(lipgloss.Color("#7D56F4")).Border(tabBorder, true)
+	tabStyle       = lipgloss.NewStyle().Padding(0, 1).Border(tabBorder, true)
 	activeTabStyle = lipgloss.NewStyle().Padding(0, 1).BorderForeground(lipgloss.Color("#7D56F4")).Border(tabBorder, true)
 )
 
 type Model struct {
 	common    common.Common
-	tabs      []common.Component
 	activeTab int
+	list      *reviewlist.Model
 }
 
 func New(c common.Common) *Model {
 	return &Model{
 		common:    c,
-		tabs:      make([]common.Component, 0, NUM_LISTS),
+		list:      reviewlist.New(c),
 		activeTab: 0,
 	}
 }
@@ -48,19 +51,18 @@ func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
 
-	// for _, tab := range m.tabs {
-	// 	tab.SetSize(width, height-3)
-	// }
+	m.list.SetSize(width, height-3)
 }
 
 func (m *Model) Init() tea.Cmd {
-	return nil
+	return getReviewsCmd(m.common.Global.HttpClient, m.common.Global.AuthState.User.Id)
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case common.AuthState:
-		m.common.Global.AuthState = msg
+	case []common.Review:
+		m.list.SetReviews(msg)
+		return m, nil
 
 	case tea.KeyMsg:
 		switch m.activeTab {
@@ -75,23 +77,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	_, cmd := m.tabs[m.activeTab].Update(msg)
+	_, cmd := m.list.Update(msg)
 	return m, cmd
 }
 
 func (m *Model) View() string {
-	if len(m.tabs) == 0 {
-		return ""
-	}
 	view := strings.Builder{}
 	names := []string{}
 
-	for i, name := range tabNames {
+	for i, tabName := range tabNames {
+		var name string
 		if i == m.activeTab {
-			names = append(names, activeTabStyle.Render(name))
+			name = activeTabStyle.Render(tabName)
 		} else {
-			names = append(names, tabStyle.Render(name))
+			name = tabStyle.Render(tabName)
 		}
+		names = append(names, name)
 	}
 
 	tabs := lipgloss.JoinHorizontal(lipgloss.Top,
@@ -100,6 +101,6 @@ func (m *Model) View() string {
 
 	view.WriteString(tabs + "\n\n")
 
-	view.WriteString(m.tabs[m.activeTab].View())
-	return ""
+	view.WriteString(m.list.View())
+	return view.String()
 }
