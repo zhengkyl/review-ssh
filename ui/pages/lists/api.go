@@ -2,7 +2,6 @@ package lists
 
 import (
 	"encoding/json"
-	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hashicorp/go-retryablehttp"
@@ -24,11 +23,12 @@ type getResponse struct {
 
 type params map[string]string
 
-const reviewsEndpoint = "https://review-api.fly.dev/reviews"
+const reviewsEndpoint = "https://review-api.fly.dev/reviews?category=Film"
 
 func getReviewsCmd(client *retryablehttp.Client, user_id int) tea.Cmd {
 	return func() tea.Msg {
-		return getReviews(client, params{"user_id": strconv.Itoa(user_id)})
+		return getReviews(client, params{})
+		// return getReviews(client, params{"user_id": strconv.Itoa(user_id)})
 	}
 }
 

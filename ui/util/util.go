@@ -207,7 +207,8 @@ func RenderOverlay(parentView, overlayView string, left, top int) string {
 
 		if shouldOverlay {
 			if !overlayStart {
-				sb.WriteString(strings.Repeat(" ", left))
+				sb.WriteString(parentLine)
+				sb.WriteString(strings.Repeat(" ", left-n))
 				sb.WriteString(overlayLines[overlayIndex])
 			}
 			finalLines[i] = sb.String()

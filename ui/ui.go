@@ -104,7 +104,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case common.AuthState:
-		m.common.Global.AuthState = msg
+		m.common.Global.AuthState.Authed = msg.Authed
+		m.common.Global.AuthState.Cookie = msg.Cookie
+		m.common.Global.AuthState.User = msg.User
+		return m, m.listsPage.Init()
 	case tea.WindowSizeMsg:
 		frameW, frameH := m.common.Global.Styles.App.GetFrameSize()
 

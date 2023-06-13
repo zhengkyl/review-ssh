@@ -1,6 +1,7 @@
 package reviewlist
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -11,15 +12,15 @@ import (
 )
 
 type Model struct {
-	common    common.Common
-	reviews   []common.Review
-	movieInfo map[int]common.Movie
-	inflight  map[int]struct{}
-	// showInfo     map[int]common.Show
+	common       common.Common
+	reviews      []common.Review
+	movieMap     map[int]common.Movie
+	inflight     map[int]struct{}
 	Style        Style
 	offset       int
 	active       int
 	visibleItems int
+	results      []res
 }
 
 type Style struct {
@@ -29,16 +30,17 @@ type Style struct {
 
 func New(c common.Common) *Model {
 	m := &Model{
-		common:    c,
-		movieInfo: map[int]common.Movie{},
-		inflight:  map[int]struct{}{},
+		common:   c,
+		movieMap: map[int]common.Movie{},
+		inflight: map[int]struct{}{},
 		Style: Style{
 			Normal: lipgloss.NewStyle(),
 			Active: lipgloss.NewStyle(),
 		},
-		offset:       0,
-		active:       0,
-		visibleItems: c.Height, // set to highest possible ie 1 height items, set in Update()
+		offset: 0,
+		active: 0,
+		// visibleItems: c.Height / 4,
+		visibleItems: 10,
 	}
 
 	return m
@@ -47,6 +49,8 @@ func New(c common.Common) *Model {
 func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
+
+	// m.visibleItems = m.common.Height / 4
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
@@ -66,13 +70,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-
+	case res:
+		m.results = append(m.results, msg)
 	case common.Movie:
-		m.movieInfo[msg.Id] = msg
-
-	// case common.Show:
-	// 	m.showInfo[msg.Id] = msg
-
+		m.movieMap[msg.Id] = msg
+		delete(m.inflight, msg.Id)
 	case tea.KeyMsg:
 		prevActive := m.active
 		switch {
@@ -95,14 +97,30 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
+		review := m.reviews[i]
+		_, ok := m.movieMap[review.Tmdb_id]
+		if ok {
+			continue
+		}
+		_, inflight := m.inflight[review.Tmdb_id]
+		if inflight {
+			continue
+		}
+
+		m.inflight[review.Tmdb_id] = struct{}{}
+
+		cmds = append(cmds, func() tea.Msg {
+			return getMovie(m.common.Global.HttpClient, m.common.Global.Config.TMDB_API_KEY, review.Tmdb_id)
+		})
+	}
+
 	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {
 	sb := strings.Builder{}
 	height := 1
-
-	m.visibleItems = 0
 
 	for i := m.offset; i < len(m.reviews); i++ {
 
@@ -121,7 +139,6 @@ func (m *Model) View() string {
 		}
 
 		height += sectionHeight
-		m.visibleItems++
 
 		if i > m.offset {
 			sb.WriteString("\n")
@@ -132,10 +149,24 @@ func (m *Model) View() string {
 
 	// TODO paginatation
 	sb.WriteString("")
+	sb.WriteString(fmt.Sprint(m.results))
 
 	return sb.String()
 }
 
+var loadingMovie = common.Movie{
+	Id:           -1,
+	Title:        "Loading",
+	Overview:     "Loading description",
+	Poster_path:  "poster path? I barely know her",
+	Release_date: "0000-00-00",
+}
+
 func (m *Model) renderReview(review common.Review) string {
-	return ""
+	var movie common.Movie
+	movie, ok := m.movieMap[review.Tmdb_id]
+	if !ok {
+		movie = loadingMovie
+	}
+	return movie.Title + " " + review.Status
 }

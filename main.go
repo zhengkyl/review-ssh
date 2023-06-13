@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/joho/godotenv"
 	"github.com/zhengkyl/review-ssh/ui"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/keymap"
@@ -13,16 +15,24 @@ import (
 )
 
 func main() {
-	httpClient := retryablehttp.NewClient()
-	httpClient.Logger = nil
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	tmdbKey, ok := os.LookupEnv("TMDB_API_KEY")
 	if !ok {
-		panic("TMDB_API_KEY missing")
+		log.Fatal("TMDB_API_KEY missing")
 	}
+
+	httpClient := retryablehttp.NewClient()
+	httpClient.Logger = nil
 
 	c := common.Common{
 		Global: common.Global{
+			AuthState: &common.AuthState{
+				Authed: false,
+			},
 			Config: common.Config{
 				TMDB_API_KEY: tmdbKey,
 			},

@@ -21,6 +21,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.2
+	github.com/joho/godotenv v1.5.1
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect

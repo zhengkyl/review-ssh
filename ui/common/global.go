@@ -7,7 +7,7 @@ import (
 )
 
 type Global struct {
-	AuthState  AuthState
+	AuthState  *AuthState
 	Config     Config
 	HttpClient *retryablehttp.Client
 	Styles     *styles.Styles
