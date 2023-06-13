@@ -1,7 +1,6 @@
 package reviewlist
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -34,7 +33,7 @@ func New(c common.Common) *Model {
 		inflight:     map[int]struct{}{},
 		offset:       0,
 		active:       0,
-		visibleItems: c.Height / 4,
+		visibleItems: c.Height / 2,
 	}
 
 	return m
@@ -43,7 +42,7 @@ func New(c common.Common) *Model {
 func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
-	m.visibleItems = m.common.Height / 4
+	m.visibleItems = m.common.Height / 2
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
@@ -112,12 +111,39 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	sb := strings.Builder{}
-	height := 1
+	viewSb := strings.Builder{}
 
 	for i := m.offset; i < len(m.reviews); i++ {
 
-		section := m.renderReview(m.reviews[i])
+		review := m.reviews[i]
+		var movie common.Movie
+		movie, ok := m.movieMap[review.Tmdb_id]
+		if !ok {
+			movie = loadingMovie
+		}
+
+		sectionSb := strings.Builder{}
+
+		sectionSb.WriteString(util.TruncOrPadASCII(movie.Title, m.common.Width-50))
+
+		ratingIndex := 0
+		if review.Fun_before {
+			ratingIndex += 1
+		}
+		if review.Fun_during {
+			ratingIndex += 2
+		}
+		if review.Fun_after {
+			ratingIndex += 4
+		}
+		sectionSb.WriteString(" ")
+		sectionSb.WriteString(ratings[ratingIndex])
+
+		sectionSb.WriteString(" ")
+		sectionSb.WriteString(review.Status)
+		sectionSb.WriteString("\n")
+
+		section := sectionSb.String()
 
 		if i == m.active {
 			section = active.Render(section)
@@ -125,26 +151,16 @@ func (m *Model) View() string {
 			section = normal.Render(section)
 		}
 
-		sectionHeight := lipgloss.Height(section)
-
-		if height+sectionHeight > m.common.Height {
-			break
-		}
-
-		height += sectionHeight
-
 		if i > m.offset {
-			sb.WriteString("\n")
+			viewSb.WriteString("\n")
 		}
 
-		sb.WriteString(section)
+		viewSb.WriteString(section)
 	}
 
 	// TODO paginatation
-	sb.WriteString("")
-	sb.WriteString(fmt.Sprint(m.results))
 
-	return sb.String()
+	return viewSb.String()
 }
 
 var loadingMovie = common.Movie{
@@ -153,13 +169,4 @@ var loadingMovie = common.Movie{
 	Overview:     "Loading description",
 	Poster_path:  "poster path? I barely know her",
 	Release_date: "0000-00-00",
-}
-
-func (m *Model) renderReview(review common.Review) string {
-	var movie common.Movie
-	movie, ok := m.movieMap[review.Tmdb_id]
-	if !ok {
-		movie = loadingMovie
-	}
-	return lipgloss.JoinHorizontal(lipgloss.Center, movie.Title, review.Status, RenderRating(review.Fun_before, review.Fun_during, review.Fun_after))
 }

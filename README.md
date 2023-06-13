@@ -2,6 +2,10 @@
 
 A terminal user-interface for [`review-api`](https://github.com/zhengkyl/review-api) over ssh
 
+# Progress
+
+<img alt="movie review list" src="./assets/list.png" width="600" />
+
 ## Sign in/up flow
 
 <img alt="account flow" src="./assets/account.gif" width="600" />
