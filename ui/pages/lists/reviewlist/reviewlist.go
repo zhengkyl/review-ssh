@@ -16,31 +16,25 @@ type Model struct {
 	reviews      []common.Review
 	movieMap     map[int]common.Movie
 	inflight     map[int]struct{}
-	Style        Style
 	offset       int
 	active       int
 	visibleItems int
 	results      []res
 }
 
-type Style struct {
-	Normal lipgloss.Style
-	Active lipgloss.Style
-}
+var (
+	normal = lipgloss.NewStyle()
+	active = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
+)
 
 func New(c common.Common) *Model {
 	m := &Model{
-		common:   c,
-		movieMap: map[int]common.Movie{},
-		inflight: map[int]struct{}{},
-		Style: Style{
-			Normal: lipgloss.NewStyle(),
-			Active: lipgloss.NewStyle(),
-		},
-		offset: 0,
-		active: 0,
-		// visibleItems: c.Height / 4,
-		visibleItems: 10,
+		common:       c,
+		movieMap:     map[int]common.Movie{},
+		inflight:     map[int]struct{}{},
+		offset:       0,
+		active:       0,
+		visibleItems: c.Height / 4,
 	}
 
 	return m
@@ -49,8 +43,7 @@ func New(c common.Common) *Model {
 func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
-
-	// m.visibleItems = m.common.Height / 4
+	m.visibleItems = m.common.Height / 4
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
@@ -127,9 +120,9 @@ func (m *Model) View() string {
 		section := m.renderReview(m.reviews[i])
 
 		if i == m.active {
-			section = m.Style.Active.Render(section)
+			section = active.Render(section)
 		} else {
-			section = m.Style.Normal.Render(section)
+			section = normal.Render(section)
 		}
 
 		sectionHeight := lipgloss.Height(section)
@@ -168,5 +161,5 @@ func (m *Model) renderReview(review common.Review) string {
 	if !ok {
 		movie = loadingMovie
 	}
-	return movie.Title + " " + review.Status
+	return lipgloss.JoinHorizontal(lipgloss.Center, movie.Title, review.Status, RenderRating(review.Fun_before, review.Fun_during, review.Fun_after))
 }

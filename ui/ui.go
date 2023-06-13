@@ -100,8 +100,6 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
 	case common.AuthState:
 		m.common.Global.AuthState.Authed = msg.Authed
@@ -149,12 +147,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else {
 		_, cmd = m.accountPage.Update(msg)
 	}
-	cmds = append(cmds, cmd)
 
 	// m.help, cmd = m.help.Update(msg)
 	// cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return m, cmd
 }
 
 func (m *Model) View() string {
