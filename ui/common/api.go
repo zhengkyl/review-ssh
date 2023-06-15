@@ -9,7 +9,7 @@ type User struct {
 	Updated_at time.Time `json:"updated_at"`
 }
 
-type Movie struct {
+type Film struct {
 	Id           int
 	Title        string
 	Overview     string

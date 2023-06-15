@@ -28,7 +28,7 @@ type itemJson struct {
 func New(common common.Common) *Model {
 
 	input := textinput.New()
-	input.Placeholder = "Search for movies and shows..."
+	input.Placeholder = "Search for films and shows..."
 	input.Focus()
 	input.CharLimit = 80
 

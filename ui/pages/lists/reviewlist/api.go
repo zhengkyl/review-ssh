@@ -16,7 +16,7 @@ type res struct {
 	err string
 }
 
-func getMovie(client *retryablehttp.Client, apiKey string, movieId int) tea.Msg {
+func getFilm(client *retryablehttp.Client, apiKey string, movieId int) tea.Msg {
 	resp, err := client.Get(endpoint + strconv.Itoa(movieId) + "?api_key=" + apiKey)
 
 	if err != nil {
@@ -27,7 +27,7 @@ func getMovie(client *retryablehttp.Client, apiKey string, movieId int) tea.Msg 
 		return res{false, "Something went wrong."}
 	}
 
-	var response common.Movie
+	var response common.Film
 	err = json.NewDecoder(resp.Body).Decode(&response)
 
 	if err != nil {

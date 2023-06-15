@@ -13,8 +13,8 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/components/dialog"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
+	"github.com/zhengkyl/review-ssh/ui/pages/film"
 	"github.com/zhengkyl/review-ssh/ui/pages/lists"
-	"github.com/zhengkyl/review-ssh/ui/pages/movie"
 	"github.com/zhengkyl/review-ssh/ui/pages/search"
 	"github.com/zhengkyl/review-ssh/ui/util"
 )
@@ -35,7 +35,7 @@ type Model struct {
 	accountPage *account.Model
 	listsPage   *lists.Model
 	searchPage  *search.Model
-	moviePage   *movie.Model
+	filmPage    *film.Model
 	dialog      *dialog.Model
 	help        help.Model
 	// scrollView  *vlist.Model
@@ -45,7 +45,7 @@ func New(c common.Common) *Model {
 
 	searchField := textfield.New(c)
 	searchField.CharLimit(80)
-	searchField.Placeholder("(s)earch for movies...")
+	searchField.Placeholder("(s)earch for films...")
 
 	m := &Model{
 		common:      c,
@@ -53,7 +53,7 @@ func New(c common.Common) *Model {
 		accountPage: account.New(c),
 		listsPage:   lists.New(c),
 		searchPage:  search.New(c),
-		moviePage:   movie.New(c),
+		filmPage:    film.New(c),
 		dialog:      dialog.New(c, "Quit program?"),
 		help:        help.New(),
 		// scrollView: vlist.New(c, []tea.Model{
@@ -88,7 +88,7 @@ func (m *Model) SetSize(width, height int) {
 
 	m.listsPage.SetSize(width, contentHeight)
 	m.searchPage.SetSize(width, contentHeight)
-	m.moviePage.SetSize(width, contentHeight)
+	m.filmPage.SetSize(width, contentHeight)
 
 	// m.scrollView.SetSize(width, contentHeight)
 

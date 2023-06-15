@@ -13,7 +13,7 @@ import (
 type Model struct {
 	common       common.Common
 	reviews      []common.Review
-	movieMap     map[int]common.Movie
+	filmMap      map[int]common.Film
 	inflight     map[int]struct{}
 	offset       int
 	active       int
@@ -29,7 +29,7 @@ var (
 func New(c common.Common) *Model {
 	m := &Model{
 		common:       c,
-		movieMap:     map[int]common.Movie{},
+		filmMap:      map[int]common.Film{},
 		inflight:     map[int]struct{}{},
 		offset:       0,
 		active:       0,
@@ -64,8 +64,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case res:
 		m.results = append(m.results, msg)
-	case common.Movie:
-		m.movieMap[msg.Id] = msg
+	case common.Film:
+		m.filmMap[msg.Id] = msg
 		delete(m.inflight, msg.Id)
 	case tea.KeyMsg:
 		prevActive := m.active
@@ -91,7 +91,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 		review := m.reviews[i]
-		_, ok := m.movieMap[review.Tmdb_id]
+		_, ok := m.filmMap[review.Tmdb_id]
 		if ok {
 			continue
 		}
@@ -103,7 +103,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.inflight[review.Tmdb_id] = struct{}{}
 
 		cmds = append(cmds, func() tea.Msg {
-			return getMovie(m.common.Global.HttpClient, m.common.Global.Config.TMDB_API_KEY, review.Tmdb_id)
+			return getFilm(m.common.Global.HttpClient, m.common.Global.Config.TMDB_API_KEY, review.Tmdb_id)
 		})
 	}
 
@@ -116,15 +116,15 @@ func (m *Model) View() string {
 	for i := m.offset; i < len(m.reviews); i++ {
 
 		review := m.reviews[i]
-		var movie common.Movie
-		movie, ok := m.movieMap[review.Tmdb_id]
+		var film common.Film
+		film, ok := m.filmMap[review.Tmdb_id]
 		if !ok {
-			movie = loadingMovie
+			film = loadingFilm
 		}
 
 		sectionSb := strings.Builder{}
 
-		sectionSb.WriteString(util.TruncOrPadASCII(movie.Title, m.common.Width-50))
+		sectionSb.WriteString(util.TruncOrPadASCII(film.Title, m.common.Width-50))
 
 		ratingIndex := 0
 		if review.Fun_before {
@@ -163,7 +163,7 @@ func (m *Model) View() string {
 	return viewSb.String()
 }
 
-var loadingMovie = common.Movie{
+var loadingFilm = common.Film{
 	Id:           -1,
 	Title:        "Loading",
 	Overview:     "Loading description",

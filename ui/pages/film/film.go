@@ -1,4 +1,4 @@
-package movie
+package film
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
