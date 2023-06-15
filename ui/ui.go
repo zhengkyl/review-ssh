@@ -20,11 +20,6 @@ import (
 )
 
 var (
-// highlightColor = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
-// windowStyle    = lipgloss.NewStyle().BorderForeground(highlightColor)
-)
-
-var (
 	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185")).Padding(0, 1)
 	title      = titleStyle.Render("review-ssh")
 )

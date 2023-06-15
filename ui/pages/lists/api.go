@@ -24,7 +24,8 @@ type getResponse struct {
 
 type params map[string]string
 
-const reviewsEndpoint = "https://review-api.fly.dev/reviews?category=Film"
+// TODO use pagination, but for now 50 is more than enough
+const reviewsEndpoint = "https://review-api.fly.dev/reviews?per_page=50"
 
 func getReviewsCmd(client *retryablehttp.Client, user_id int) tea.Cmd {
 	return func() tea.Msg {

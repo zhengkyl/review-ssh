@@ -1,38 +1,21 @@
 package reviewlist
 
 import (
-	"encoding/json"
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
 )
 
-const endpoint = "https://api.themoviedb.org/3/movie/"
+const filmEndpoint = "https://api.themoviedb.org/3/movie/"
+const showEndpoint = "https://api.themoviedb.org/3/tv/"
 
-type res struct {
-	ok  bool
-	err string
+func getFilmCmd(g common.Global, filmId int) tea.Cmd {
+	url := (filmEndpoint + strconv.Itoa(filmId) + "?api_key=" + g.Config.TMDB_API_KEY)
+	return common.GetCmd[common.Film](g.HttpClient, url)
 }
 
-func getFilm(client *retryablehttp.Client, apiKey string, movieId int) tea.Msg {
-	resp, err := client.Get(endpoint + strconv.Itoa(movieId) + "?api_key=" + apiKey)
-
-	if err != nil {
-		return res{false, err.Error()}
-	}
-
-	if resp.StatusCode != 200 {
-		return res{false, "Something went wrong."}
-	}
-
-	var response common.Film
-	err = json.NewDecoder(resp.Body).Decode(&response)
-
-	if err != nil {
-		return res{false, err.Error()}
-	}
-
-	return response
+func getShowCmd(g common.Global, showId int) tea.Cmd {
+	url := (showEndpoint + strconv.Itoa(showId) + "?api_key=" + g.Config.TMDB_API_KEY)
+	return common.GetCmd[common.Show](g.HttpClient, url)
 }

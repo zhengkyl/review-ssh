@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/common/enums"
 	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
@@ -14,11 +15,11 @@ type Model struct {
 	common       common.Common
 	reviews      []common.Review
 	filmMap      map[int]common.Film
+	showMap      map[int]common.Show
 	inflight     map[int]struct{}
 	offset       int
 	active       int
 	visibleItems int
-	results      []res
 }
 
 var (
@@ -30,6 +31,7 @@ func New(c common.Common) *Model {
 	m := &Model{
 		common:       c,
 		filmMap:      map[int]common.Film{},
+		showMap:      map[int]common.Show{},
 		inflight:     map[int]struct{}{},
 		offset:       0,
 		active:       0,
@@ -62,11 +64,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-	case res:
-		m.results = append(m.results, msg)
-	case common.Film:
-		m.filmMap[msg.Id] = msg
-		delete(m.inflight, msg.Id)
+	case common.GetResponse[common.Film]:
+		if msg.Ok {
+			film := msg.Data
+			m.filmMap[film.Id] = film
+			delete(m.inflight, film.Id)
+		} else {
+		}
+	case common.GetResponse[common.Show]:
+		if msg.Ok {
+			show := msg.Data
+			m.showMap[show.Id] = show
+			delete(m.inflight, show.Id)
+		} else {
+		}
 	case tea.KeyMsg:
 		prevActive := m.active
 		switch {
@@ -91,20 +102,37 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 		review := m.reviews[i]
-		_, ok := m.filmMap[review.Tmdb_id]
-		if ok {
-			continue
-		}
-		_, inflight := m.inflight[review.Tmdb_id]
-		if inflight {
-			continue
+
+		switch review.Category {
+		case enums.Film:
+			_, ok := m.filmMap[review.Tmdb_id]
+			if ok {
+				continue
+			}
+
+			_, inflight := m.inflight[review.Key()]
+			if inflight {
+				continue
+			}
+			m.inflight[review.Key()] = struct{}{}
+
+			cmds = append(cmds, getFilmCmd(m.common.Global, review.Tmdb_id))
+
+		case enums.Show:
+			_, ok := m.showMap[review.Tmdb_id]
+			if ok {
+				continue
+			}
+
+			_, inflight := m.inflight[review.Key()]
+			if inflight {
+				continue
+			}
+			m.inflight[review.Key()] = struct{}{}
+
+			cmds = append(cmds, getShowCmd(m.common.Global, review.Tmdb_id))
 		}
 
-		m.inflight[review.Tmdb_id] = struct{}{}
-
-		cmds = append(cmds, func() tea.Msg {
-			return getFilm(m.common.Global.HttpClient, m.common.Global.Config.TMDB_API_KEY, review.Tmdb_id)
-		})
 	}
 
 	return m, tea.Batch(cmds...)
@@ -116,15 +144,27 @@ func (m *Model) View() string {
 	for i := m.offset; i < len(m.reviews); i++ {
 
 		review := m.reviews[i]
-		var film common.Film
-		film, ok := m.filmMap[review.Tmdb_id]
-		if !ok {
-			film = loadingFilm
+
+		info := loadingMedia
+
+		switch review.Category {
+		case enums.Film:
+			film, ok := m.filmMap[review.Tmdb_id]
+			if ok {
+				info.Title = film.Title
+				info.Overview = film.Overview
+			}
+		case enums.Show:
+			show, ok := m.showMap[review.Tmdb_id]
+			if ok {
+				info.Title = show.Name
+				info.Overview = show.Overview
+			}
 		}
 
 		sectionSb := strings.Builder{}
 
-		sectionSb.WriteString(util.TruncOrPadASCII(film.Title, m.common.Width-50))
+		sectionSb.WriteString(util.TruncOrPadASCII(info.Title, m.common.Width-50))
 
 		ratingIndex := 0
 		if review.Fun_before {
@@ -140,7 +180,7 @@ func (m *Model) View() string {
 		sectionSb.WriteString(ratings[ratingIndex])
 
 		sectionSb.WriteString(" ")
-		sectionSb.WriteString(review.Status)
+		sectionSb.WriteString(review.Status.String())
 		sectionSb.WriteString("\n")
 
 		section := sectionSb.String()
@@ -163,10 +203,12 @@ func (m *Model) View() string {
 	return viewSb.String()
 }
 
-var loadingFilm = common.Film{
-	Id:           -1,
-	Title:        "Loading",
-	Overview:     "Loading description",
-	Poster_path:  "poster path? I barely know her",
-	Release_date: "0000-00-00",
+var loadingMedia = mediaInfo{
+	Title:    "Loading",
+	Overview: "Loading description",
+}
+
+type mediaInfo struct {
+	Title    string
+	Overview string
 }

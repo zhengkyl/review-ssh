@@ -8,25 +8,28 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/common/enums"
 	"github.com/zhengkyl/review-ssh/ui/pages/lists/reviewlist"
-)
-
-const (
-	ALL_LIST = iota
-	WATCHING_LIST
-	PLAN_TO_WATCH_LIST
-	COMPLETED_LIST
-	DROPPED_LIST
-	NUM_LISTS
 )
 
 var tabNames = []string{
 	"All",
 	"Watching",
-	"Plan to Watch",
+	"Plan To Watch",
 	"Completed",
 	"Dropped",
 }
+
+// This must match the order of tabNames
+var tabStatuses = []enums.Status{
+	255, // This should never be accessed
+	enums.Watching,
+	enums.PlanToWatch,
+	enums.Completed,
+	enums.Dropped,
+}
+
+var NUM_LISTS = len(tabNames)
 
 var (
 	tabBorder      = lipgloss.NormalBorder()
@@ -35,19 +38,19 @@ var (
 )
 
 type Model struct {
-	common        common.Common
-	activeTab     int
-	filmReviewMap map[int]common.Review
-	list          *reviewlist.Model
-	// showReviewMap map[int]common.Review
+	common    common.Common
+	activeTab int
+	reviewMap map[int]common.Review
+	list      *reviewlist.Model
+	err       string
 }
 
 func New(c common.Common) *Model {
 	return &Model{
-		common:        c,
-		activeTab:     0,
-		filmReviewMap: make(map[int]common.Review),
-		list:          reviewlist.New(c),
+		common:    c,
+		activeTab: 0,
+		reviewMap: make(map[int]common.Review),
+		list:      reviewlist.New(c),
 	}
 }
 
@@ -64,11 +67,14 @@ func (m *Model) Init() tea.Cmd {
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case res:
+		m.err = msg.err
 	case []common.Review:
 		for _, review := range msg {
-			m.filmReviewMap[review.Tmdb_id] = review
+			m.reviewMap[review.Key()] = review
 		}
 		m.list.SetReviews(msg)
+		msg = nil
 
 	case tea.KeyMsg:
 		switch m.activeTab {
@@ -82,9 +88,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.activeTab != prevActive {
 			filtered := make([]common.Review, 0)
-			for _, review := range m.filmReviewMap {
-				if m.activeTab == 0 || review.Status == tabNames[m.activeTab] {
+
+			if m.activeTab == 0 {
+				for _, review := range m.reviewMap {
 					filtered = append(filtered, review)
+				}
+			} else {
+				for _, review := range m.reviewMap {
+					if tabStatuses[m.activeTab] == review.Status {
+						filtered = append(filtered, review)
+					}
 				}
 			}
 
@@ -120,5 +133,8 @@ func (m *Model) View() string {
 	view.WriteString(tabs + "\n\n")
 
 	view.WriteString(m.list.View())
+
+	view.WriteString(m.err)
+
 	return view.String()
 }
