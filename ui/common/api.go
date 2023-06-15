@@ -53,3 +53,9 @@ type ReviewNew struct {
 	Status   string `json:"status"`
 	// Season     int     //`json:"season"`
 }
+
+type ByUpdatedAt []Review
+
+func (a ByUpdatedAt) Len() int           { return len(a) }
+func (a ByUpdatedAt) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByUpdatedAt) Less(i, j int) bool { return a[i].Updated_at.Before(a[j].Updated_at) }

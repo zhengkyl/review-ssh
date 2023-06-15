@@ -1,6 +1,7 @@
 package lists
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -20,11 +21,11 @@ const (
 )
 
 var tabNames = []string{
-	"all",
-	"watching",
-	"plan to watch",
-	"completed",
-	"dropped",
+	"All",
+	"Watching",
+	"Plan to Watch",
+	"Completed",
+	"Dropped",
 }
 
 var (
@@ -34,16 +35,19 @@ var (
 )
 
 type Model struct {
-	common    common.Common
-	activeTab int
-	list      *reviewlist.Model
+	common        common.Common
+	activeTab     int
+	filmReviewMap map[int]common.Review
+	list          *reviewlist.Model
+	// showReviewMap map[int]common.Review
 }
 
 func New(c common.Common) *Model {
 	return &Model{
-		common:    c,
-		list:      reviewlist.New(c),
-		activeTab: 0,
+		common:        c,
+		activeTab:     0,
+		filmReviewMap: make(map[int]common.Review),
+		list:          reviewlist.New(c),
 	}
 }
 
@@ -61,19 +65,34 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case []common.Review:
+		for _, review := range msg {
+			m.filmReviewMap[review.Tmdb_id] = review
+		}
 		m.list.SetReviews(msg)
 
 	case tea.KeyMsg:
 		switch m.activeTab {
 		}
-
+		prevActive := m.activeTab
 		if key.Matches(msg, m.common.Global.KeyMap.NextTab) {
 			m.activeTab = (m.activeTab + 1) % NUM_LISTS
-			// return m, nil
 		} else if key.Matches(msg, m.common.Global.KeyMap.PrevTab) {
 			m.activeTab = (m.activeTab - 1 + NUM_LISTS) % NUM_LISTS
-			// return m, nil
 		}
+
+		if m.activeTab != prevActive {
+			filtered := make([]common.Review, 0)
+			for _, review := range m.filmReviewMap {
+				if m.activeTab == 0 || review.Status == tabNames[m.activeTab] {
+					filtered = append(filtered, review)
+				}
+			}
+
+			sort.Sort(common.ByUpdatedAt(filtered))
+
+			m.list.SetReviews(filtered)
+		}
+
 	}
 
 	_, cmd := m.list.Update(msg)

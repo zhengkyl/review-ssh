@@ -26,7 +26,7 @@ var (
 
 var (
 	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185")).Padding(0, 1)
-	title      = titleStyle.Render("movielo")
+	title      = titleStyle.Render("review-ssh")
 )
 
 type Model struct {
