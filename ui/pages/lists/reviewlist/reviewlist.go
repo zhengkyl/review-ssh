@@ -23,8 +23,9 @@ type Model struct {
 }
 
 var (
-	normal = lipgloss.NewStyle()
-	active = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
+	normalStyle = lipgloss.NewStyle()
+	activeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
+	listStyle   = lipgloss.NewStyle().Margin(1)
 )
 
 func New(c common.Common) *Model {
@@ -35,7 +36,7 @@ func New(c common.Common) *Model {
 		inflight:     map[int]struct{}{},
 		offset:       0,
 		active:       0,
-		visibleItems: c.Height / 2,
+		visibleItems: (c.Height - 2) / 2,
 	}
 
 	return m
@@ -44,7 +45,7 @@ func New(c common.Common) *Model {
 func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
-	m.visibleItems = m.common.Height / 2
+	m.visibleItems = (height - 2) / 2
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
@@ -85,7 +86,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.active = util.Min(m.active+1, len(m.reviews)-1)
 
 			if m.active == m.offset+m.visibleItems {
-				m.offset = m.active
+				m.offset++
 			}
 		case key.Matches(msg, m.common.Global.KeyMap.Up):
 			m.active = util.Max(m.active-1, 0)
@@ -100,7 +101,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
+	for i := m.offset; i < m.offset+m.visibleItems+2 && i < len(m.reviews); i++ {
 		review := m.reviews[i]
 
 		switch review.Category {
@@ -141,7 +142,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() string {
 	viewSb := strings.Builder{}
 
-	for i := m.offset; i < len(m.reviews); i++ {
+	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 
 		review := m.reviews[i]
 
@@ -186,9 +187,9 @@ func (m *Model) View() string {
 		section := sectionSb.String()
 
 		if i == m.active {
-			section = active.Render(section)
+			section = activeStyle.Render(section)
 		} else {
-			section = normal.Render(section)
+			section = normalStyle.Render(section)
 		}
 
 		if i > m.offset {
@@ -198,9 +199,10 @@ func (m *Model) View() string {
 		viewSb.WriteString(section)
 	}
 
-	// TODO paginatation
+	scrollPositions := len(m.reviews) - m.visibleItems + 1 // initial + all nonvisible
+	scrollBar := renderScrollbar(m.common.Height, scrollPositions, m.offset)
 
-	return viewSb.String()
+	return lipgloss.JoinHorizontal(lipgloss.Top, listStyle.Render(viewSb.String()), scrollBar)
 }
 
 var loadingMedia = mediaInfo{

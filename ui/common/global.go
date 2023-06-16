@@ -3,14 +3,12 @@ package common
 import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/keymap"
-	"github.com/zhengkyl/review-ssh/ui/styles"
 )
 
 type Global struct {
 	AuthState  *AuthState
 	Config     Config
 	HttpClient *retryablehttp.Client
-	Styles     *styles.Styles
 	KeyMap     *keymap.KeyMap
 }
 

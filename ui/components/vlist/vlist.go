@@ -70,7 +70,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Active = util.Min(m.Active+1, len(m.Children)-1)
 
 			if m.Active == m.offset+m.visibleItems {
-				m.offset = m.Active
+				m.offset++
 			}
 		case key.Matches(msg, m.common.Global.KeyMap.Up):
 			m.Active = util.Max(m.Active-1, 0)

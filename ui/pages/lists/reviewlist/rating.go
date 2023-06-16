@@ -25,9 +25,9 @@ func RenderRating(before, during, after bool) string {
 	var sections []string
 
 	if before {
-		sections = append(sections, active.Render(t))
+		sections = append(sections, activeStyle.Render(t))
 	} else {
-		sections = append(sections, active.Render(f))
+		sections = append(sections, activeStyle.Render(f))
 	}
 
 	sections = append(sections, tt)

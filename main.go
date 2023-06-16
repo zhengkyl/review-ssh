@@ -11,7 +11,6 @@ import (
 	"github.com/zhengkyl/review-ssh/ui"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/keymap"
-	"github.com/zhengkyl/review-ssh/ui/styles"
 )
 
 func main() {
@@ -36,7 +35,6 @@ func main() {
 			Config: common.Config{
 				TMDB_API_KEY: tmdbKey,
 			},
-			Styles:     styles.DefaultStyles(),
 			KeyMap:     keymap.DefaultKeyMap(),
 			HttpClient: httpClient,
 		},

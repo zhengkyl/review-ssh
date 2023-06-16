@@ -22,6 +22,7 @@ import (
 var (
 	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185")).Padding(0, 1)
 	title      = titleStyle.Render("review-ssh")
+	appStyle   = lipgloss.NewStyle().MarginBottom(1)
 )
 
 type Model struct {
@@ -69,23 +70,22 @@ func New(c common.Common) *Model {
 }
 
 func (m *Model) SetSize(width, height int) {
-	// wm, hm := ui.getMargins()
-
 	m.common.Width = width
 	m.common.Height = height
 
+	viewW := width
+	viewH := height - 2 // 1 for bottom margin + 1 for help
+
 	// title + " " + searchField = width
-	m.searchField.SetSize(width-lipgloss.Width(title)-1, 3)
+	m.searchField.SetSize(viewW-lipgloss.Width(title)-1, 3)
 
-	contentHeight := height - 3
+	contentHeight := viewH - 3
 
-	m.accountPage.SetSize(util.Max(width/2, 30), contentHeight)
+	m.accountPage.SetSize(util.Max(viewW/2, 30), contentHeight)
 
-	m.listsPage.SetSize(width, contentHeight)
-	m.searchPage.SetSize(width, contentHeight)
-	m.filmPage.SetSize(width, contentHeight)
-
-	// m.scrollView.SetSize(width, contentHeight)
+	m.listsPage.SetSize(viewW, contentHeight)
+	m.searchPage.SetSize(viewW, contentHeight)
+	m.filmPage.SetSize(viewW, contentHeight)
 
 	m.help.Width = width
 }
@@ -102,11 +102,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.common.Global.AuthState.User = msg.User
 		return m, m.listsPage.Init()
 	case tea.WindowSizeMsg:
-		frameW, frameH := m.common.Global.Styles.App.GetFrameSize()
-
-		viewW, viewH := msg.Width-frameW, msg.Height-frameH-1 // -1 for help
-
-		m.SetSize(viewW, viewH)
+		m.SetSize(msg.Width, msg.Height)
 
 	case tea.KeyMsg:
 		if key.Matches(msg, m.common.Global.KeyMap.Quit) {
@@ -167,12 +163,13 @@ func (m *Model) View() string {
 		view.WriteString(m.listsPage.View())
 	}
 
-	vGap := m.common.Height - lipgloss.Height(view.String())
+	vGap := m.common.Height - 2 - lipgloss.Height(view.String())
 
 	if vGap > 0 {
 		view.WriteString(strings.Repeat("\n", vGap))
 	}
-	// view.WriteString("\n")
+
+	view.WriteString("\n")
 	view.WriteString(m.help.View(m.common.Global.KeyMap))
 
 	app := view.String()
@@ -189,6 +186,6 @@ func (m *Model) View() string {
 		app = util.RenderOverlay(app, m.dialog.View(), xOffset, yOffset)
 	}
 
-	return m.common.Global.Styles.App.Render(app)
+	return appStyle.Render(app)
 
 }

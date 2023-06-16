@@ -130,7 +130,8 @@ func (m *Model) View() string {
 		names...,
 	)
 
-	view.WriteString(tabs + "\n\n")
+	view.WriteString(tabs)
+	view.WriteString("\n")
 
 	view.WriteString(m.list.View())
 
