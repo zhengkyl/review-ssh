@@ -54,6 +54,11 @@ func (m *Model) SetSize(width, height int) {
 	for _, child := range m.Children {
 		child.SetSize(width, child.Height())
 	}
+
+	// Try to keep active item same pos from top when resizing
+	maxIndex := util.Max(m.visibleItems-1, 0)
+	newIndex := util.Min(m.Active-m.offset, maxIndex)
+	m.offset = m.Active - newIndex
 }
 
 func (m *Model) Init() tea.Cmd {

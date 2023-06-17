@@ -2,8 +2,10 @@ package reviewlist
 
 import (
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
@@ -20,24 +22,29 @@ type Model struct {
 	offset       int
 	active       int
 	visibleItems int
+
+	itemSpinner spinner.Model
+	spinning    bool
 }
 
 var (
 	normalStyle = lipgloss.NewStyle()
 	activeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
 	listStyle   = lipgloss.NewStyle().Margin(1)
+	dotdotdot   = spinner.Spinner{Frames: []string{".", ".. ", "...", ".."}, FPS: time.Second / 3}
 )
 
 func New(c common.Common) *Model {
 	m := &Model{
-		common:       c,
-		filmMap:      map[int]common.Film{},
-		showMap:      map[int]common.Show{},
-		inflight:     map[int]struct{}{},
-		offset:       0,
-		active:       0,
-		visibleItems: (c.Height - 2) / 2,
+		common:      c,
+		filmMap:     map[int]common.Film{},
+		showMap:     map[int]common.Show{},
+		inflight:    map[int]struct{}{},
+		active:      0,
+		itemSpinner: spinner.New(spinner.WithSpinner(dotdotdot)),
+		spinning:    false,
 	}
+	m.SetSize(c.Width, c.Height)
 
 	return m
 }
@@ -45,7 +52,14 @@ func New(c common.Common) *Model {
 func (m *Model) SetSize(width, height int) {
 	m.common.Width = width
 	m.common.Height = height
-	m.visibleItems = (height - 2) / 2
+
+	vf := listStyle.GetVerticalFrameSize()
+	m.visibleItems = util.Max((height-vf)/2, 0)
+
+	// Try to keep active item same pos from top when resizing
+	maxIndex := util.Max(m.visibleItems-1, 0)
+	newIndex := util.Min(m.active-m.offset, maxIndex)
+	m.offset = m.active - newIndex
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
@@ -64,7 +78,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmds []tea.Cmd
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
+	case spinner.TickMsg:
+		if m.spinning {
+			m.itemSpinner, cmd = m.itemSpinner.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 	case common.GetResponse[common.Film]:
 		if msg.Ok {
 			film := msg.Data
@@ -136,52 +157,59 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	}
 
+	loading := len(m.inflight) > 0
+
+	if m.spinning && !loading {
+		m.spinning = false
+	} else if !m.spinning && loading {
+		m.spinning = true
+		cmds = append(cmds, m.itemSpinner.Tick)
+	}
+
 	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {
+	if len(m.reviews) == 0 {
+		return ""
+	}
+
+	spinner := m.itemSpinner.View()
+
 	viewSb := strings.Builder{}
 
 	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 
 		review := m.reviews[i]
 
-		info := loadingMedia
+		title := "Loading" + spinner
 
 		switch review.Category {
 		case enums.Film:
 			film, ok := m.filmMap[review.Tmdb_id]
 			if ok {
-				info.Title = film.Title
-				info.Overview = film.Overview
+				title = film.Title
 			}
 		case enums.Show:
 			show, ok := m.showMap[review.Tmdb_id]
 			if ok {
-				info.Title = show.Name
-				info.Overview = show.Overview
+				title = show.Name
 			}
 		}
 
 		sectionSb := strings.Builder{}
 
-		sectionSb.WriteString(util.TruncOrPadASCII(info.Title, m.common.Width-50))
+		sectionSb.WriteString(util.TruncOrPadASCII(title, 30))
 
-		ratingIndex := 0
-		if review.Fun_before {
-			ratingIndex += 1
-		}
-		if review.Fun_during {
-			ratingIndex += 2
-		}
-		if review.Fun_after {
-			ratingIndex += 4
-		}
 		sectionSb.WriteString(" ")
-		sectionSb.WriteString(ratings[ratingIndex])
+		sectionSb.WriteString(renderThinRating(review.Fun_before, review.Fun_during, review.Fun_after))
 
 		sectionSb.WriteString(" ")
 		sectionSb.WriteString(review.Status.String())
+
+		// sectionSb.WriteString(" ")
+		// sectionSb.WriteString(util.TruncOrPadASCII(review.Text, 20))
+
 		sectionSb.WriteString("\n")
 
 		section := sectionSb.String()
@@ -203,14 +231,4 @@ func (m *Model) View() string {
 	scrollBar := renderScrollbar(m.common.Height, scrollPositions, m.offset)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, listStyle.Render(viewSb.String()), scrollBar)
-}
-
-var loadingMedia = mediaInfo{
-	Title:    "Loading",
-	Overview: "Loading description",
-}
-
-type mediaInfo struct {
-	Title    string
-	Overview string
 }

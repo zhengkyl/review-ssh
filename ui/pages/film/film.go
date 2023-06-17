@@ -10,9 +10,11 @@ type Model struct {
 }
 
 func New(c common.Common) *Model {
-	return &Model{
+	m := &Model{
 		common: c,
 	}
+
+	return m
 }
 
 func (m *Model) SetSize(width, height int) {

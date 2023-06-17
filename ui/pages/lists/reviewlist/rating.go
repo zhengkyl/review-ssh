@@ -21,7 +21,20 @@ var (
 	ft = " \n/\n "
 )
 
-func RenderRating(before, during, after bool) string {
+func renderThinRating(before, during, after bool) string {
+	ratingIndex := 0
+	if before {
+		ratingIndex += 1
+	}
+	if during {
+		ratingIndex += 2
+	}
+	if after {
+		ratingIndex += 4
+	}
+	return ratings[ratingIndex]
+}
+func renderThickRating(before, during, after bool) string {
 	var sections []string
 
 	if before {

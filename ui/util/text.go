@@ -14,3 +14,19 @@ func TruncOrPadASCII(text string, length int) string {
 
 	return text[:length-1] + "…"
 }
+
+// still doesn't work for emojies
+// line := strings.Split(text, "\n")[0]
+// lineLen := runewidth.StringWidth(line)
+
+// if lineLen <= length {
+// 	return line + strings.Repeat(" ", length-lineLen)
+// }
+
+// runewidth.Truncate(line, length, "")
+
+// if line[length-2] == ' ' {
+// 	return runewidth.Truncate(line, length-2, "… ")
+// }
+
+// return runewidth.Truncate(line, length-1, "… ")
