@@ -8,7 +8,7 @@ import (
 )
 
 type Model struct {
-	common   common.Common
+	props    common.Props
 	Style    Style
 	text     string
 	callback tea.Cmd
@@ -20,9 +20,9 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(c common.Common, text string, callback tea.Cmd) *Model {
+func New(p common.Props, text string, callback tea.Cmd) *Model {
 	return &Model{
-		common: c,
+		props: p,
 		Style: Style{
 			Normal: lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF7DB")).Background(lipgloss.Color("#888B7E")).Padding(0, 1),
 			Active: lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF7DB")).Background(lipgloss.Color("#F25D94")).Padding(0, 1),
@@ -47,10 +47,10 @@ func (m *Model) Blur() {
 }
 
 func (m *Model) Height() int {
-	return m.common.Height
+	return m.props.Height
 }
 func (m *Model) Width() int {
-	return m.common.Width
+	return m.props.Width
 }
 
 func (m *Model) SetSize(h, w int) {
@@ -67,7 +67,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch {
-			case key.Matches(msg, m.common.Global.KeyMap.Select):
+			case key.Matches(msg, m.props.Global.KeyMap.Select):
 				return m, m.callback
 			}
 		}

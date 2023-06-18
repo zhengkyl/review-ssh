@@ -16,17 +16,17 @@ var (
 )
 
 type Model struct {
-	common  common.Common
+	props   common.Props
 	text    string
 	buttons []button.Model
 	active  int
 	focused bool
 }
 
-func New(c common.Common, text string) *Model {
+func New(p common.Props, text string) *Model {
 	m := &Model{
-		common: c,
-		text:   text,
+		props: p,
+		text:  text,
 	}
 
 	return m
@@ -68,9 +68,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		prevActive := m.active
 		switch {
-		case key.Matches(msg, m.common.Global.KeyMap.NextInput):
+		case key.Matches(msg, m.props.Global.KeyMap.NextInput):
 			m.active = util.Min(m.active+1, len(m.buttons)-1)
-		case key.Matches(msg, m.common.Global.KeyMap.PrevInput):
+		case key.Matches(msg, m.props.Global.KeyMap.PrevInput):
 			m.active = util.Max(m.active-1, 0)
 		}
 

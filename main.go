@@ -27,7 +27,7 @@ func main() {
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = nil
 
-	c := common.Common{
+	c := common.Props{
 		Global: common.Global{
 			AuthState: &common.AuthState{
 				Authed: false,
@@ -35,6 +35,10 @@ func main() {
 			Config: common.Config{
 				TMDB_API_KEY: tmdbKey,
 			},
+
+			ReviewMap:  map[int]common.Review{},
+			FilmCache:  common.Cache[common.Film]{},
+			ShowCache:  common.Cache[common.Show]{},
 			KeyMap:     keymap.DefaultKeyMap(),
 			HttpClient: httpClient,
 		},

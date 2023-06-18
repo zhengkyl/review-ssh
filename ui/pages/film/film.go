@@ -6,20 +6,20 @@ import (
 )
 
 type Model struct {
-	common common.Common
+	props common.Props
 }
 
-func New(c common.Common) *Model {
+func New(p common.Props) *Model {
 	m := &Model{
-		common: c,
+		props: p,
 	}
 
 	return m
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 }
 
 func (m *Model) Init() tea.Cmd {

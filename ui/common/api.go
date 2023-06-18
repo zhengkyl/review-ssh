@@ -73,6 +73,14 @@ func (a ByUpdatedAt) Less(i, j int) bool {
 	return a[i].Updated_at.After(a[j].Updated_at)
 }
 
+func (s Show) Key() int {
+	return s.Id
+}
+
+func (f Film) Key() int {
+	return -f.Id
+}
+
 // tmdb_id overlaps for movies and tv series and is not unique per season
 func (r Review) Key() int {
 	switch r.Category {
@@ -86,16 +94,28 @@ func (r Review) Key() int {
 	}
 }
 
-type Resource interface {
-	Film | Show
+type Paginated interface {
+	Review
 }
-type GetResponse[T Resource] struct {
+
+type PageResult[T Paginated] struct {
+	Results       []T
+	Page          int
+	Total_Pages   int
+	Total_Results int
+}
+
+type Gettable interface {
+	PageResult[Review] | Film | Show
+}
+
+type GetResponse[T Gettable] struct {
 	Ok   bool
 	Data T
 	Err  string
 }
 
-func GetCmd[T Resource](client *retryablehttp.Client, url string) tea.Cmd {
+func GetCmd[T Gettable](client *retryablehttp.Client, url string) tea.Cmd {
 	return func() tea.Msg {
 		resp, err := client.Get(url)
 

@@ -26,7 +26,7 @@ var (
 )
 
 type Model struct {
-	common      common.Common
+	props       common.Props
 	searchField *textfield.Model
 	accountPage *account.Model
 	listsPage   *lists.Model
@@ -37,41 +37,41 @@ type Model struct {
 	// scrollView  *vlist.Model
 }
 
-func New(c common.Common) *Model {
+func New(p common.Props) *Model {
 
-	searchField := textfield.New(c)
+	searchField := textfield.New(p)
 	searchField.CharLimit(80)
 	searchField.Placeholder("(s)earch for films...")
 
 	m := &Model{
-		common:      c,
+		props:       p,
 		searchField: searchField,
-		accountPage: account.New(c),
-		listsPage:   lists.New(c),
-		searchPage:  search.New(c),
-		filmPage:    film.New(c),
-		dialog:      dialog.New(c, "Quit program?"),
+		accountPage: account.New(p),
+		listsPage:   lists.New(p),
+		searchPage:  search.New(p),
+		filmPage:    film.New(p),
+		dialog:      dialog.New(p, "Quit program?"),
 		help:        help.New(),
-		// scrollView: vlist.New(c, []tea.Model{
+		// scrollView: vlist.New(p, []tea.Model{
 		// 	account.New(c), account.New(c), account.New(c), account.New(c), account.New(c),
 		// }),
 	}
 
 	m.dialog.Buttons(
-		*button.New(c, "Yes", tea.Quit),
-		*button.New(c, "No", func() tea.Msg {
+		*button.New(p, "Yes", tea.Quit),
+		*button.New(p, "No", func() tea.Msg {
 			m.dialog.Blur()
 			return nil
 		}))
 
-	m.SetSize(c.Width, c.Height)
+	m.SetSize(p.Width, p.Height)
 
 	return m
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 
 	viewW := width
 	viewH := height - 2 // 1 for bottom margin + 1 for help
@@ -97,20 +97,20 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case common.AuthState:
-		m.common.Global.AuthState.Authed = msg.Authed
-		m.common.Global.AuthState.Cookie = msg.Cookie
-		m.common.Global.AuthState.User = msg.User
+		m.props.Global.AuthState.Authed = msg.Authed
+		m.props.Global.AuthState.Cookie = msg.Cookie
+		m.props.Global.AuthState.User = msg.User
 		return m, m.listsPage.Init()
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 
 	case tea.KeyMsg:
-		if key.Matches(msg, m.common.Global.KeyMap.Quit) {
+		if key.Matches(msg, m.props.Global.KeyMap.Quit) {
 			if m.dialog.Focused() {
 				return m, tea.Quit
 			}
 			return m, m.dialog.Focus()
-		} else if key.Matches(msg, m.common.Global.KeyMap.Back) {
+		} else if key.Matches(msg, m.props.Global.KeyMap.Back) {
 			if m.dialog.Focused() {
 				m.dialog.Blur()
 			}
@@ -120,12 +120,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// if !m.searchField.Focused() {
 
-		// if key.Matches(msg, m.common.Global.KeyMap.Search) {
+		// if key.Matches(msg, m.props.Global.KeyMap.Search) {
 		// 	return m, m.searchField.Focus()
 		// }
 
 		// }
 
+	case common.GetResponse[common.Film]:
+		if msg.Ok {
+			film := msg.Data
+			m.props.Global.FilmCache.Set(film.Id, film)
+		} else {
+		}
+	case common.GetResponse[common.Show]:
+		if msg.Ok {
+			show := msg.Data
+			m.props.Global.ShowCache.Set(show.Id, show)
+		} else {
+		}
 	}
 
 	var cmd tea.Cmd
@@ -133,7 +145,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, cmd = m.searchField.Update(msg)
 	} else if m.dialog.Focused() {
 		_, cmd = m.dialog.Update(msg)
-	} else if m.common.Global.AuthState.Authed {
+	} else if m.props.Global.AuthState.Authed {
 		_, cmd = m.listsPage.Update(msg)
 	} else {
 		_, cmd = m.accountPage.Update(msg)
@@ -148,9 +160,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() string {
 
 	view := strings.Builder{}
-	if !m.common.Global.AuthState.Authed {
+	if !m.props.Global.AuthState.Authed {
 		// 3 tall to match search bar + fullwidth to allow centering accountPage view
-		rightPad := util.Max(m.common.Width-ansi.PrintableRuneWidth(title), 0)
+		rightPad := util.Max(m.props.Width-ansi.PrintableRuneWidth(title), 0)
 		appBar := "\n" + title + strings.Repeat(" ", rightPad) + "\n"
 
 		centered := lipgloss.JoinVertical(lipgloss.Center, appBar, m.accountPage.View())
@@ -163,14 +175,14 @@ func (m *Model) View() string {
 		view.WriteString(m.listsPage.View())
 	}
 
-	vGap := m.common.Height - 2 - lipgloss.Height(view.String())
+	vGap := m.props.Height - 2 - lipgloss.Height(view.String())
 
 	if vGap > 0 {
 		view.WriteString(strings.Repeat("\n", vGap))
 	}
 
 	view.WriteString("\n")
-	view.WriteString(m.help.View(m.common.Global.KeyMap))
+	view.WriteString(m.help.View(m.props.Global.KeyMap))
 
 	app := view.String()
 
@@ -180,8 +192,8 @@ func (m *Model) View() string {
 		dialogW := lipgloss.Width(dialogView)
 		dialogH := lipgloss.Height(dialogView)
 
-		xOffset := util.Max((m.common.Width-dialogW)/2, 0)
-		yOffset := util.Max((m.common.Height-dialogH)/2-3, 0)
+		xOffset := util.Max((m.props.Width-dialogW)/2, 0)
+		yOffset := util.Max((m.props.Height-dialogH)/2-3, 0)
 
 		app = util.RenderOverlay(app, m.dialog.View(), xOffset, yOffset)
 	}

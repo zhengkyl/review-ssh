@@ -1,6 +1,6 @@
 package common
 
-type Common struct {
+type Props struct {
 	Width  int
 	Height int
 	Global Global

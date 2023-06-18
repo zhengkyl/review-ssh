@@ -38,51 +38,47 @@ var (
 )
 
 type Model struct {
-	common    common.Common
+	props     common.Props
 	activeTab int
-	reviewMap map[int]common.Review
 	list      *reviewlist.Model
 	err       string
 }
 
-func New(c common.Common) *Model {
+func New(p common.Props) *Model {
 	return &Model{
-		common:    c,
+		props:     p,
 		activeTab: 0,
-		reviewMap: make(map[int]common.Review),
-		list:      reviewlist.New(c),
+		list:      reviewlist.New(p),
 	}
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 
 	m.list.SetSize(width, height-3)
 }
 
 func (m *Model) Init() tea.Cmd {
-	return getReviewsCmd(m.common.Global.HttpClient, m.common.Global.AuthState.User.Id)
+	return getReviewsCmd(m.props.Global.HttpClient, m.props.Global.AuthState.User.Id)
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case res:
-		m.err = msg.err
-	case []common.Review:
-		for _, review := range msg {
-			m.reviewMap[review.Key()] = review
+	case common.GetResponse[common.PageResult[common.Review]]:
+		if msg.Ok {
+			reviews := msg.Data.Results
+			sort.Sort(common.ByUpdatedAt(reviews))
+			m.list.SetReviews(reviews)
+		} else {
 		}
-		m.list.SetReviews(msg)
-		msg = nil
-
 	case tea.KeyMsg:
 		switch m.activeTab {
 		}
 		prevActive := m.activeTab
-		if key.Matches(msg, m.common.Global.KeyMap.NextTab) {
+		if key.Matches(msg, m.props.Global.KeyMap.NextTab) {
 			m.activeTab = (m.activeTab + 1) % NUM_LISTS
-		} else if key.Matches(msg, m.common.Global.KeyMap.PrevTab) {
+		} else if key.Matches(msg, m.props.Global.KeyMap.PrevTab) {
 			m.activeTab = (m.activeTab - 1 + NUM_LISTS) % NUM_LISTS
 		}
 
@@ -90,11 +86,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			filtered := make([]common.Review, 0)
 
 			if m.activeTab == 0 {
-				for _, review := range m.reviewMap {
+				for _, review := range m.props.Global.ReviewMap {
 					filtered = append(filtered, review)
 				}
 			} else {
-				for _, review := range m.reviewMap {
+				for _, review := range m.props.Global.ReviewMap {
 					if tabStatuses[m.activeTab] == review.Status {
 						filtered = append(filtered, review)
 					}

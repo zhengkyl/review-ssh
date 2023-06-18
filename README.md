@@ -54,13 +54,13 @@ import (
 )
 
 type Model struct {
-	common  common.Common
+	props 	common.Props
 	focused bool
 }
 
-func New(c common.Common) *Model {
+func New(p common.Props) *Model {
 	return &Model{
-		common: c,
+		props: p,
 		focused: false,
 	}
 }
@@ -83,11 +83,11 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) Height() int {
-	return m.common.Height
+	return m.props.Height
 }
 
 func (m *Model) Width() int {
-	return m.common.Width
+	return m.props.Width
 }
 
 func (m *Model) Init() tea.Cmd {

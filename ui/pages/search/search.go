@@ -9,9 +9,9 @@ import (
 )
 
 type Model struct {
-	common common.Common
-	input  textinput.Model
-	list   list.Model
+	props common.Props
+	input textinput.Model
+	list  list.Model
 }
 
 // const film_url = "https://review-api.fly.dev/search/Film"
@@ -25,7 +25,7 @@ type itemJson struct {
 	Release_date string
 }
 
-func New(common common.Common) *Model {
+func New(props common.Props) *Model {
 
 	input := textinput.New()
 	input.Placeholder = "Search for films and shows..."
@@ -33,19 +33,19 @@ func New(common common.Common) *Model {
 	input.CharLimit = 80
 
 	m := &Model{
-		input:  input,
-		common: common,
-		list:   list.New([]list.Item{}, itemDelegate{}, 0, 0),
+		input: input,
+		props: props,
+		list:  list.New([]list.Item{}, itemDelegate{}, 0, 0),
 	}
 
-	m.SetSize(common.Width, common.Height)
+	m.SetSize(props.Width, props.Height)
 
 	return m
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 
 	m.list.SetSize(width, height)
 	// wm, hm := m.getMargins()
@@ -71,7 +71,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			cmds = append(cmds, getSearchCmd(m.common.Global.HttpClient, m.input.Value()))
+			cmds = append(cmds, getSearchCmd(m.props.Global.HttpClient, m.input.Value()))
 		}
 
 	case []list.Item:
@@ -102,7 +102,7 @@ func (m *Model) View() string {
 
 	wm, _ := m.getMargins()
 
-	ss := lipgloss.NewStyle().Width(m.common.Width - wm)
+	ss := lipgloss.NewStyle().Width(m.props.Width - wm)
 	view = ss.Render(m.input.View())
 	view += ss.Render(m.list.View())
 

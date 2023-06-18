@@ -24,17 +24,17 @@ var (
 )
 
 type Model struct {
-	common      common.Common
+	props       common.Props
 	inner       textinput.Model
 	placeholder string
 }
 
-func New(c common.Common) *Model {
+func New(p common.Props) *Model {
 	inner := textinput.New()
 
-	m := &Model{c, inner, ""}
+	m := &Model{p, inner, ""}
 
-	m.SetSize(c.Width, c.Height)
+	m.SetSize(p.Width, p.Height)
 
 	return m
 }
@@ -56,8 +56,8 @@ func (m *Model) Blur() {
 }
 
 func (m *Model) SetSize(w, h int) {
-	m.common.Width = w
-	m.common.Height = h
+	m.props.Width = w
+	m.props.Height = h
 
 	// Left right border + padding + > indicator
 	m.inner.Width = w - 5
@@ -68,10 +68,10 @@ func (m *Model) SetSize(w, h int) {
 }
 
 func (m *Model) Height() int {
-	return m.common.Height
+	return m.props.Height
 }
 func (m *Model) Width() int {
-	return m.common.Width
+	return m.props.Width
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -84,7 +84,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if key.Matches(msg, m.common.Global.KeyMap.Back) {
+		if key.Matches(msg, m.props.Global.KeyMap.Back) {
 			m.Blur()
 		}
 

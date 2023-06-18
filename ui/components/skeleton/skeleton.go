@@ -28,15 +28,15 @@ func nextID() int {
 }
 
 type SkeletonModel struct {
-	common common.Common
-	id     int
-	frame  int
+	props common.Props
+	id    int
+	frame int
 }
 
-func New(common common.Common) *SkeletonModel {
+func New(props common.Props) *SkeletonModel {
 	m := &SkeletonModel{
-		common: common,
-		id:     nextID(),
+		props: props,
+		id:    nextID(),
 	}
 
 	return m
@@ -69,12 +69,12 @@ func (m *SkeletonModel) View() string {
 
 	view := ""
 
-	for y := 0; y < m.common.Height; y++ {
-		for x := 0; x < m.common.Width; x++ {
+	for y := 0; y < m.props.Height; y++ {
+		for x := 0; x < m.props.Width; x++ {
 			view += (" ")
 		}
 
-		if y == m.common.Height-1 {
+		if y == m.props.Height-1 {
 			break
 		}
 

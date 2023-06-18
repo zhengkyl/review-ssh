@@ -11,7 +11,7 @@ import (
 )
 
 type Model struct {
-	common       common.Common
+	props        common.Props
 	Style        Style
 	Children     []common.Component
 	offset       int
@@ -24,9 +24,9 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(c common.Common, children ...common.Component) *Model {
+func New(p common.Props, children ...common.Component) *Model {
 	m := &Model{
-		common: c,
+		props: p,
 		Style: Style{
 			Normal: lipgloss.NewStyle(),
 			Active: lipgloss.NewStyle(),
@@ -34,7 +34,7 @@ func New(c common.Common, children ...common.Component) *Model {
 		Children:     children,
 		offset:       0,
 		Active:       0,
-		visibleItems: c.Height, // set to highest possible ie 1 height items, set in Update()
+		visibleItems: p.Height, // set to highest possible ie 1 height items, set in Update()
 	}
 
 	if len(children) > 0 {
@@ -48,8 +48,8 @@ func New(c common.Common, children ...common.Component) *Model {
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 
 	for _, child := range m.Children {
 		child.SetSize(width, child.Height())
@@ -71,13 +71,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		prevActive := m.Active
 		switch {
-		case key.Matches(msg, m.common.Global.KeyMap.Down):
+		case key.Matches(msg, m.props.Global.KeyMap.Down):
 			m.Active = util.Min(m.Active+1, len(m.Children)-1)
 
 			if m.Active == m.offset+m.visibleItems {
 				m.offset++
 			}
-		case key.Matches(msg, m.common.Global.KeyMap.Up):
+		case key.Matches(msg, m.props.Global.KeyMap.Up):
 			m.Active = util.Max(m.Active-1, 0)
 
 			if m.Active == m.offset-1 {
@@ -123,7 +123,7 @@ func (m *Model) View() string {
 
 		sectionHeight := lipgloss.Height(section)
 
-		if height+sectionHeight > m.common.Height {
+		if height+sectionHeight > m.props.Height {
 			break
 		}
 

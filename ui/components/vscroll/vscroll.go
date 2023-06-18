@@ -11,22 +11,22 @@ import (
 )
 
 type Model struct {
-	common   common.Common
+	props    common.Props
 	children []tea.Model
 	offset   int
 }
 
-func New(c common.Common, children []tea.Model) *Model {
+func New(p common.Props, children []tea.Model) *Model {
 	return &Model{
-		common:   c,
+		props:    p,
 		children: children,
 		offset:   0,
 	}
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -38,11 +38,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.common.Global.KeyMap.Down):
+		case key.Matches(msg, m.props.Global.KeyMap.Down):
 			m.offset++
 			// TODO how do upper bound for dynamic height
 
-		case key.Matches(msg, m.common.Global.KeyMap.Up):
+		case key.Matches(msg, m.props.Global.KeyMap.Up):
 			m.offset = util.Max(m.offset-1, 0)
 		}
 	}
@@ -60,7 +60,7 @@ func (m *Model) View() string {
 	height := 0
 
 	for _, child := range m.children {
-		heightLeft := m.common.Height + m.offset - height
+		heightLeft := m.props.Height + m.offset - height
 
 		if heightLeft <= 0 {
 			break
@@ -95,7 +95,7 @@ func (m *Model) View() string {
 
 		sb.WriteString(section)
 
-		if height < m.common.Height {
+		if height < m.props.Height {
 			sb.WriteString("\n")
 		}
 	}

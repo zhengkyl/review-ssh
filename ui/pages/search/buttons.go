@@ -8,36 +8,36 @@ import (
 )
 
 type ButtonsModel struct {
-	common       common.Common
+	props        common.Props
 	activeButton int
 	buttons      []*button.Model
 }
 
-func NewButtons(c common.Common) *ButtonsModel {
+func NewButtons(p common.Props) *ButtonsModel {
 	return &ButtonsModel{
-		common: c,
+		props: p,
 		buttons: []*button.Model{
 			// button.New(common, "Show more",
 			// 	func() tea.Msg {
 			// 		return nil
 			// 	},
 			// ),
-			button.New(c, ":D",
+			button.New(p, ":D",
 				func() tea.Msg {
 					return nil
 				},
 			),
-			button.New(c, "<3",
+			button.New(p, "<3",
 				func() tea.Msg {
 					return nil
 				},
 			),
-			button.New(c, "au",
+			button.New(p, "au",
 				func() tea.Msg {
 					return nil
 				},
 			),
-			button.New(c, "",
+			button.New(p, "",
 				func() tea.Msg {
 					return nil
 				},

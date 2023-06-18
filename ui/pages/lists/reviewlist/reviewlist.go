@@ -14,11 +14,8 @@ import (
 )
 
 type Model struct {
-	common       common.Common
+	props        common.Props
 	reviews      []common.Review
-	filmMap      map[int]common.Film
-	showMap      map[int]common.Show
-	inflight     map[int]struct{}
 	offset       int
 	active       int
 	visibleItems int
@@ -34,24 +31,21 @@ var (
 	dotdotdot   = spinner.Spinner{Frames: []string{".", ".. ", "...", ".."}, FPS: time.Second / 3}
 )
 
-func New(c common.Common) *Model {
+func New(p common.Props) *Model {
 	m := &Model{
-		common:      c,
-		filmMap:     map[int]common.Film{},
-		showMap:     map[int]common.Show{},
-		inflight:    map[int]struct{}{},
+		props:       p,
 		active:      0,
 		itemSpinner: spinner.New(spinner.WithSpinner(dotdotdot)),
 		spinning:    false,
 	}
-	m.SetSize(c.Width, c.Height)
+	m.SetSize(p.Width, p.Height)
 
 	return m
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 
 	vf := listStyle.GetVerticalFrameSize()
 	m.visibleItems = util.Max((height-vf)/2, 0)
@@ -86,30 +80,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.itemSpinner, cmd = m.itemSpinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
-	case common.GetResponse[common.Film]:
-		if msg.Ok {
-			film := msg.Data
-			m.filmMap[film.Id] = film
-			delete(m.inflight, film.Id)
-		} else {
-		}
-	case common.GetResponse[common.Show]:
-		if msg.Ok {
-			show := msg.Data
-			m.showMap[show.Id] = show
-			delete(m.inflight, show.Id)
-		} else {
-		}
 	case tea.KeyMsg:
 		prevActive := m.active
 		switch {
-		case key.Matches(msg, m.common.Global.KeyMap.Down):
+		case key.Matches(msg, m.props.Global.KeyMap.Down):
 			m.active = util.Min(m.active+1, len(m.reviews)-1)
 
 			if m.active == m.offset+m.visibleItems {
 				m.offset++
 			}
-		case key.Matches(msg, m.common.Global.KeyMap.Up):
+		case key.Matches(msg, m.props.Global.KeyMap.Up):
 			m.active = util.Max(m.active-1, 0)
 
 			if m.active == m.offset-1 {
@@ -122,46 +102,42 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	itemsLoading := false
+
 	for i := m.offset; i < m.offset+m.visibleItems+2 && i < len(m.reviews); i++ {
 		review := m.reviews[i]
 
 		switch review.Category {
 		case enums.Film:
-			_, ok := m.filmMap[review.Tmdb_id]
+			ok, loading, _ := m.props.Global.FilmCache.Get(review.Tmdb_id)
 			if ok {
 				continue
 			}
-
-			_, inflight := m.inflight[review.Key()]
-			if inflight {
+			if loading {
+				itemsLoading = true
 				continue
 			}
-			m.inflight[review.Key()] = struct{}{}
-
-			cmds = append(cmds, getFilmCmd(m.common.Global, review.Tmdb_id))
+			m.props.Global.FilmCache.SetLoading(review.Tmdb_id)
+			cmds = append(cmds, getFilmCmd(m.props.Global, review.Tmdb_id))
 
 		case enums.Show:
-			_, ok := m.showMap[review.Tmdb_id]
+			ok, loading, _ := m.props.Global.ShowCache.Get(review.Tmdb_id)
 			if ok {
 				continue
 			}
-
-			_, inflight := m.inflight[review.Key()]
-			if inflight {
+			if loading {
+				itemsLoading = true
 				continue
 			}
-			m.inflight[review.Key()] = struct{}{}
-
-			cmds = append(cmds, getShowCmd(m.common.Global, review.Tmdb_id))
+			m.props.Global.ShowCache.SetLoading(review.Tmdb_id)
+			cmds = append(cmds, getShowCmd(m.props.Global, review.Tmdb_id))
 		}
 
 	}
 
-	loading := len(m.inflight) > 0
-
-	if m.spinning && !loading {
+	if m.spinning && !itemsLoading {
 		m.spinning = false
-	} else if !m.spinning && loading {
+	} else if !m.spinning && itemsLoading {
 		m.spinning = true
 		cmds = append(cmds, m.itemSpinner.Tick)
 	}
@@ -186,13 +162,13 @@ func (m *Model) View() string {
 
 		switch review.Category {
 		case enums.Film:
-			film, ok := m.filmMap[review.Tmdb_id]
-			if ok {
+			ok, loading, film := m.props.Global.FilmCache.Get(review.Tmdb_id)
+			if ok && !loading {
 				title = film.Title
 			}
 		case enums.Show:
-			show, ok := m.showMap[review.Tmdb_id]
-			if ok {
+			ok, loading, show := m.props.Global.ShowCache.Get(review.Tmdb_id)
+			if ok && !loading {
 				title = show.Name
 			}
 		}
@@ -228,7 +204,7 @@ func (m *Model) View() string {
 	}
 
 	scrollPositions := len(m.reviews) - m.visibleItems + 1 // initial + all nonvisible
-	scrollBar := renderScrollbar(m.common.Height, scrollPositions, m.offset)
+	scrollBar := renderScrollbar(m.props.Height, scrollPositions, m.offset)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, listStyle.Render(viewSb.String()), scrollBar)
 }

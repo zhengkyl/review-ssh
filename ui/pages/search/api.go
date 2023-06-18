@@ -49,8 +49,8 @@ func getSearchCmd(client *retryablehttp.Client, query string) tea.Cmd {
 				r.Title,
 				r.Overview,
 				r.Release_date,
-				poster.New(common.Common{Width: POSTER_WIDTH, Height: POSTER_HEIGHT}, "https://image.tmdb.org/t/p/w200"+r.Poster_path),
-				NewButtons(common.Common{Width: 0, Height: 0}),
+				poster.New(common.Props{Width: POSTER_WIDTH, Height: POSTER_HEIGHT}, "https://image.tmdb.org/t/p/w200"+r.Poster_path),
+				NewButtons(common.Props{Width: 0, Height: 0}),
 			}
 			itemResults = append(itemResults, i)
 		}

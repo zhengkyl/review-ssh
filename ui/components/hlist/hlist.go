@@ -9,7 +9,7 @@ import (
 )
 
 type Model struct {
-	common       common.Common
+	props        common.Props
 	Style        Style
 	Children     []common.Component
 	offset       int
@@ -22,9 +22,9 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(c common.Common, children ...common.Component) *Model {
+func New(p common.Props, children ...common.Component) *Model {
 	m := &Model{
-		common: c,
+		props: p,
 		Style: Style{
 			Normal: lipgloss.NewStyle(),
 			Active: lipgloss.NewStyle(),
@@ -32,7 +32,7 @@ func New(c common.Common, children ...common.Component) *Model {
 		Children:     children,
 		offset:       0,
 		active:       0,
-		visibleItems: c.Width, // set to highest possible ie 1 width items, set in Update()
+		visibleItems: p.Width, // set to highest possible ie 1 width items, set in Update()
 	}
 
 	if len(children) > 0 {
@@ -46,8 +46,8 @@ func New(c common.Common, children ...common.Component) *Model {
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 
 	// TODO should vlist and hlist have expanding children?
 	// for _, child := range m.Children {
@@ -65,13 +65,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		prevActive := m.active
 		switch {
-		case key.Matches(msg, m.common.Global.KeyMap.Right):
+		case key.Matches(msg, m.props.Global.KeyMap.Right):
 			m.active = util.Min(m.active+1, len(m.Children)-1)
 
 			if m.active == m.offset+m.visibleItems {
 				m.offset = m.active
 			}
-		case key.Matches(msg, m.common.Global.KeyMap.Left):
+		case key.Matches(msg, m.props.Global.KeyMap.Left):
 			m.active = util.Max(m.active-1, 0)
 
 			if m.active == m.offset-1 {
@@ -117,7 +117,7 @@ func (m *Model) View() string {
 
 		sectionWidth := lipgloss.Width(section)
 
-		if width+sectionWidth > m.common.Width {
+		if width+sectionWidth > m.props.Width {
 			break
 		}
 

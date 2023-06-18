@@ -10,6 +10,11 @@ type Global struct {
 	Config     Config
 	HttpClient *retryablehttp.Client
 	KeyMap     *keymap.KeyMap
+
+	// ReviewCache Cache[Review]
+	ReviewMap map[int]Review
+	FilmCache Cache[Film]
+	ShowCache Cache[Show]
 }
 
 type Config struct {

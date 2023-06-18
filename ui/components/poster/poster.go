@@ -19,7 +19,7 @@ import (
 )
 
 type PosterModel struct {
-	common   common.Common
+	props    common.Props
 	src      string
 	image    image.Image
 	loaded   bool
@@ -57,17 +57,17 @@ func getSrc(src string) tea.Cmd {
 
 // The image pixel width is 1/2 of common.Width
 // The block characters used to render an image are exactly 3 characters wide
-func New(common common.Common, src string) *PosterModel {
+func New(props common.Props, src string) *PosterModel {
 	// common.Width = 6
 	// common.Height = 9
 	errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
 
-	skeleton := skeleton.New(common)
+	skeleton := skeleton.New(props)
 
 	m := &PosterModel{
 		src:      src,
-		common:   common,
+		props:    props,
 		image:    errImg,
 		skeleton: *skeleton,
 	}
@@ -76,8 +76,8 @@ func New(common common.Common, src string) *PosterModel {
 }
 
 func (m *PosterModel) SetSize(width, height int) {
-	m.common.Width = width
-	m.common.Height = height
+	m.props.Width = width
+	m.props.Height = height
 	// if not loaded ,set skeleton size
 	// wm, hm := m.getMargins()
 
@@ -119,7 +119,7 @@ func (m *PosterModel) View() string {
 	base := lipgloss.NewStyle() //.Inline(true)
 	// base := lipgloss.NewStyle().Inline(true)
 
-	dst := image.NewRGBA(image.Rect(0, 0, m.common.Width, m.common.Height))
+	dst := image.NewRGBA(image.Rect(0, 0, m.props.Width, m.props.Height))
 
 	draw.CatmullRom.Scale(dst, dst.Rect, m.image, m.image.Bounds(), draw.Over, nil)
 
