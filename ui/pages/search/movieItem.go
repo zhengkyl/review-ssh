@@ -31,7 +31,7 @@ type item struct {
 	title        string
 	overview     string
 	release_date string
-	poster       *poster.PosterModel
+	poster       *poster.Model
 	buttons      *ButtonsModel
 }
 

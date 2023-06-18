@@ -95,6 +95,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.active == m.offset-1 {
 				m.offset = m.active
 			}
+		case key.Matches(msg, m.props.Global.KeyMap.Select):
+			cmd = func() tea.Msg {
+				return common.ShowPage{
+					Category: m.reviews[m.active].Category,
+					Tmdb_id:  m.reviews[m.active].Tmdb_id,
+					Season:   m.reviews[m.active].Season,
+				}
+			}
+			cmds = append(cmds, cmd)
 		}
 
 		if prevActive != m.active {
@@ -118,7 +127,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				continue
 			}
 			m.props.Global.FilmCache.SetLoading(review.Tmdb_id)
-			cmds = append(cmds, getFilmCmd(m.props.Global, review.Tmdb_id))
+			cmds = append(cmds, common.GetFilmCmd(m.props.Global, review.Tmdb_id))
 
 		case enums.Show:
 			ok, loading, _ := m.props.Global.ShowCache.Get(review.Tmdb_id)
@@ -130,7 +139,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				continue
 			}
 			m.props.Global.ShowCache.SetLoading(review.Tmdb_id)
-			cmds = append(cmds, getShowCmd(m.props.Global, review.Tmdb_id))
+			cmds = append(cmds, common.GetShowCmd(m.props.Global, review.Tmdb_id))
 		}
 
 	}

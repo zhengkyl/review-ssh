@@ -18,12 +18,13 @@ import (
 	_ "image/png"
 )
 
-type PosterModel struct {
+type Model struct {
 	props    common.Props
 	src      string
 	image    image.Image
+	scaled   *image.RGBA
 	loaded   bool
-	skeleton skeleton.SkeletonModel
+	skeleton *skeleton.Model
 }
 
 type PosterMsg = struct {
@@ -31,12 +32,9 @@ type PosterMsg = struct {
 	image image.Image
 }
 
-func getSrc(src string) tea.Cmd {
+func getSrcCmd(client *retryablehttp.Client, src string) tea.Cmd {
 
 	return func() tea.Msg {
-		// client.Logger = &noopLogger{}
-		client := retryablehttp.NewClient()
-		client.Logger = nil
 		resp, err := client.Get(src)
 
 		if err != nil {
@@ -56,45 +54,31 @@ func getSrc(src string) tea.Cmd {
 }
 
 // The image pixel width is 1/2 of common.Width
-// The block characters used to render an image are exactly 3 characters wide
-func New(props common.Props, src string) *PosterModel {
-	// common.Width = 6
-	// common.Height = 9
+func New(p common.Props, src string) *Model {
 	errImg := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	errImg.Set(0, 0, color.RGBA{252, 52, 2, 0xff})
 
-	skeleton := skeleton.New(props)
-
-	m := &PosterModel{
+	m := &Model{
 		src:      src,
-		props:    props,
+		props:    p,
 		image:    errImg,
-		skeleton: *skeleton,
+		skeleton: skeleton.New(p),
 	}
-	// m.SetSize(common.Width, common.Height)
 	return m
 }
 
-func (m *PosterModel) SetSize(width, height int) {
+func (m *Model) SetSize(width, height int) {
 	m.props.Width = width
 	m.props.Height = height
-	// if not loaded ,set skeleton size
-	// wm, hm := m.getMargins()
 
+	m.skeleton.SetSize(width, height)
 }
 
-func (m *PosterModel) getMargins() (wm, hm int) {
-	wm = 0
-	hm = 0
-
-	return
+func (m *Model) Init() tea.Cmd {
+	return tea.Batch(getSrcCmd(m.props.Global.HttpClient, m.src), m.skeleton.Tick)
 }
 
-func (m *PosterModel) Init() tea.Cmd {
-	return tea.Batch(getSrc(m.src), m.skeleton.Tick)
-}
-
-func (m *PosterModel) Update(msg tea.Msg) (*PosterModel, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case PosterMsg:
 		if msg.src == m.src {
@@ -110,25 +94,24 @@ func (m *PosterModel) Update(msg tea.Msg) (*PosterModel, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *PosterModel) View() string {
+func (m *Model) View() string {
 
 	if !m.loaded {
 		return m.skeleton.View()
 	}
 
-	base := lipgloss.NewStyle() //.Inline(true)
-	// base := lipgloss.NewStyle().Inline(true)
-
-	dst := image.NewRGBA(image.Rect(0, 0, m.props.Width, m.props.Height))
-
-	draw.CatmullRom.Scale(dst, dst.Rect, m.image, m.image.Bounds(), draw.Over, nil)
-
 	view := ""
+	if m.scaled == nil ||
+		m.scaled.Bounds().Max.X != m.props.Width ||
+		m.scaled.Bounds().Max.Y != m.props.Height {
 
-	for y := dst.Bounds().Min.Y; y < dst.Bounds().Max.Y; y++ {
+		m.scaled = image.NewRGBA(image.Rect(0, 0, m.props.Width, m.props.Height))
+		draw.CatmullRom.Scale(m.scaled, m.scaled.Rect, m.image, m.image.Bounds(), draw.Over, nil)
+	}
+	for y := m.scaled.Bounds().Min.Y; y < m.scaled.Bounds().Max.Y; y++ {
 
-		for x := dst.Bounds().Min.X; x < dst.Bounds().Max.X; x++ {
-			r, g, b, _ := dst.At(x, y).RGBA()
+		for x := m.scaled.Bounds().Min.X; x < m.scaled.Bounds().Max.X; x++ {
+			r, g, b, _ := m.scaled.At(x, y).RGBA()
 
 			// colors are on a scale from 0 - 65535
 			r = r >> 8
@@ -136,13 +119,13 @@ func (m *PosterModel) View() string {
 			b = b >> 8
 
 			// view += fmt.Sprintf("%v, %v, %v", r, g, b)
-			pixel := base.Copy().Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
+			pixel := lipgloss.NewStyle().Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
 
 			view += pixel.Render(" ")
 
 		}
 
-		if y == dst.Bounds().Max.Y-1 {
+		if y == m.scaled.Bounds().Max.Y-1 {
 			break
 		}
 

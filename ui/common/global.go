@@ -11,7 +11,6 @@ type Global struct {
 	HttpClient *retryablehttp.Client
 	KeyMap     *keymap.KeyMap
 
-	// ReviewCache Cache[Review]
 	ReviewMap map[int]Review
 	FilmCache Cache[Film]
 	ShowCache Cache[Show]

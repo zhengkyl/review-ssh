@@ -9,11 +9,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/ansi"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/common/enums"
 	"github.com/zhengkyl/review-ssh/ui/components/button"
 	"github.com/zhengkyl/review-ssh/ui/components/dialog"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
-	"github.com/zhengkyl/review-ssh/ui/pages/film"
+	"github.com/zhengkyl/review-ssh/ui/pages/filmdetails"
 	"github.com/zhengkyl/review-ssh/ui/pages/lists"
 	"github.com/zhengkyl/review-ssh/ui/pages/search"
 	"github.com/zhengkyl/review-ssh/ui/util"
@@ -25,15 +26,23 @@ var (
 	appStyle   = lipgloss.NewStyle().MarginBottom(1)
 )
 
+type page int
+
+const (
+	LISTS page = iota
+	FILMDETAILS
+)
+
 type Model struct {
 	props       common.Props
 	searchField *textfield.Model
 	accountPage *account.Model
 	listsPage   *lists.Model
 	searchPage  *search.Model
-	filmPage    *film.Model
+	filmPage    *filmdetails.Model
 	dialog      *dialog.Model
 	help        help.Model
+	page        page
 	// scrollView  *vlist.Model
 }
 
@@ -49,9 +58,9 @@ func New(p common.Props) *Model {
 		accountPage: account.New(p),
 		listsPage:   lists.New(p),
 		searchPage:  search.New(p),
-		filmPage:    film.New(p),
 		dialog:      dialog.New(p, "Quit program?"),
 		help:        help.New(),
+		filmPage:    filmdetails.New(p),
 		// scrollView: vlist.New(p, []tea.Model{
 		// 	account.New(c), account.New(c), account.New(c), account.New(c), account.New(c),
 		// }),
@@ -115,6 +124,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.dialog.Blur()
 			}
 		}
+	case common.ShowPage:
+		switch msg.Category {
+		case enums.Film:
+			m.filmPage.SetFilm(msg.Tmdb_id)
+			m.page = FILMDETAILS
+		}
 
 		// TODO all other focusables
 
@@ -146,7 +161,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else if m.dialog.Focused() {
 		_, cmd = m.dialog.Update(msg)
 	} else if m.props.Global.AuthState.Authed {
-		_, cmd = m.listsPage.Update(msg)
+		switch m.page {
+		case FILMDETAILS:
+			_, cmd = m.filmPage.Update(msg)
+		default:
+			_, cmd = m.listsPage.Update(msg)
+		}
 	} else {
 		_, cmd = m.accountPage.Update(msg)
 	}
@@ -172,7 +192,12 @@ func (m *Model) View() string {
 		view.WriteString(appBar)
 		view.WriteString("\n")
 
-		view.WriteString(m.listsPage.View())
+		switch m.page {
+		case FILMDETAILS:
+			view.WriteString(m.filmPage.View())
+		default:
+			view.WriteString(m.listsPage.View())
+		}
 	}
 
 	vGap := m.props.Height - 2 - lipgloss.Height(view.String())

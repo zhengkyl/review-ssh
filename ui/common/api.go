@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -136,4 +137,17 @@ func GetCmd[T Gettable](client *retryablehttp.Client, url string) tea.Cmd {
 
 		return GetResponse[T]{true, data, ""}
 	}
+}
+
+const filmEndpoint = "https://api.themoviedb.org/3/movie/"
+const showEndpoint = "https://api.themoviedb.org/3/tv/"
+
+func GetFilmCmd(g Global, filmId int) tea.Cmd {
+	url := (filmEndpoint + strconv.Itoa(filmId) + "?api_key=" + g.Config.TMDB_API_KEY)
+	return GetCmd[Film](g.HttpClient, url)
+}
+
+func GetShowCmd(g Global, showId int) tea.Cmd {
+	url := (showEndpoint + strconv.Itoa(showId) + "?api_key=" + g.Config.TMDB_API_KEY)
+	return GetCmd[Show](g.HttpClient, url)
 }

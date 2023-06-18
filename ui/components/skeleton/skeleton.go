@@ -3,6 +3,7 @@ package skeleton
 import (
 	"fmt"
 	"math"
+	"strings"
 	"sync"
 	"time"
 
@@ -27,14 +28,14 @@ func nextID() int {
 	return lastID
 }
 
-type SkeletonModel struct {
+type Model struct {
 	props common.Props
 	id    int
 	frame int
 }
 
-func New(props common.Props) *SkeletonModel {
-	m := &SkeletonModel{
+func New(props common.Props) *Model {
+	m := &Model{
 		props: props,
 		id:    nextID(),
 	}
@@ -42,11 +43,16 @@ func New(props common.Props) *SkeletonModel {
 	return m
 }
 
-func (m *SkeletonModel) Init() tea.Cmd {
+func (m *Model) SetSize(width, height int) {
+	m.props.Width = width
+	m.props.Height = height
+}
+
+func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *SkeletonModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
 	case TickMsg:
 		m.frame = (m.frame + 1) % NUM_FRAMES
@@ -62,33 +68,22 @@ type TickMsg struct {
 	ID   int
 }
 
-func (m *SkeletonModel) View() string {
+func (m *Model) View() string {
 	rgb := loopInt(40, 100, float64(m.frame)/NUM_FRAMES)
 
 	base := lipgloss.NewStyle().Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", rgb, rgb, rgb)))
 
-	view := ""
+	line := strings.Repeat(" ", m.props.Width) + "\n"
+	view := strings.Repeat(line, m.props.Height)
 
-	for y := 0; y < m.props.Height; y++ {
-		for x := 0; x < m.props.Width; x++ {
-			view += (" ")
-		}
-
-		if y == m.props.Height-1 {
-			break
-		}
-
-		view += "\n"
-	}
-
-	return base.Render(view)
+	return base.Render(view[:len(view)-1])
 }
 
 func loopInt(min int, max int, frac float64) int {
 	return int(math.Abs(0.5-frac)*float64(max-min)) + min
 }
 
-func (m *SkeletonModel) Tick() tea.Msg {
+func (m *Model) Tick() tea.Msg {
 	if m.id != 1 {
 		return nil
 	}
@@ -98,7 +93,7 @@ func (m *SkeletonModel) Tick() tea.Msg {
 	}
 }
 
-func (m *SkeletonModel) tick() tea.Cmd {
+func (m *Model) tick() tea.Cmd {
 	if m.id != 1 {
 		return nil
 	}
