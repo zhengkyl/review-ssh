@@ -28,7 +28,7 @@ var (
 	normalStyle = lipgloss.NewStyle()
 	activeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
 	listStyle   = lipgloss.NewStyle().Margin(1)
-	dotdotdot   = spinner.Spinner{Frames: []string{".", ".. ", "...", ".."}, FPS: time.Second / 3}
+	dotdotdot   = spinner.Spinner{Frames: []string{"", ".", ".. ", "...", "..", "."}, FPS: time.Second / 3}
 )
 
 func New(p common.Props) *Model {
@@ -122,24 +122,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if ok {
 				continue
 			}
+
 			if loading {
 				itemsLoading = true
-				continue
+			} else {
+				m.props.Global.FilmCache.SetLoading(review.Tmdb_id)
+				cmds = append(cmds, common.GetFilmCmd(m.props.Global, review.Tmdb_id))
 			}
-			m.props.Global.FilmCache.SetLoading(review.Tmdb_id)
-			cmds = append(cmds, common.GetFilmCmd(m.props.Global, review.Tmdb_id))
 
 		case enums.Show:
 			ok, loading, _ := m.props.Global.ShowCache.Get(review.Tmdb_id)
 			if ok {
 				continue
 			}
+
 			if loading {
 				itemsLoading = true
-				continue
+			} else {
+				m.props.Global.ShowCache.SetLoading(review.Tmdb_id)
+				cmds = append(cmds, common.GetShowCmd(m.props.Global, review.Tmdb_id))
 			}
-			m.props.Global.ShowCache.SetLoading(review.Tmdb_id)
-			cmds = append(cmds, common.GetShowCmd(m.props.Global, review.Tmdb_id))
 		}
 
 	}
@@ -155,13 +157,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
+	spinner := m.itemSpinner.View()
 	if len(m.reviews) == 0 {
-		return ""
+		return "Loading reviews..."
 	}
 
-	spinner := m.itemSpinner.View()
-
 	viewSb := strings.Builder{}
+
+	// 3 wide scrollbar
+	hf := listStyle.GetHorizontalFrameSize()
+	titleWidth := m.props.Width - 8 - 13 - 3 - 3 - hf
 
 	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 
@@ -171,28 +176,27 @@ func (m *Model) View() string {
 
 		switch review.Category {
 		case enums.Film:
-			ok, loading, film := m.props.Global.FilmCache.Get(review.Tmdb_id)
-			if ok && !loading {
+			ok, _, film := m.props.Global.FilmCache.Get(review.Tmdb_id)
+			if ok {
 				title = film.Title
 			}
 		case enums.Show:
-			ok, loading, show := m.props.Global.ShowCache.Get(review.Tmdb_id)
-			if ok && !loading {
+			ok, _, show := m.props.Global.ShowCache.Get(review.Tmdb_id)
+			if ok {
 				title = show.Name
 			}
 		}
 
 		sectionSb := strings.Builder{}
 
-		sectionSb.WriteString(util.TruncOrPadASCII(title, 30))
+		sectionSb.WriteString(util.TruncOrPadASCII(title, titleWidth))
 
-		sectionSb.WriteString(" ")
 		sectionSb.WriteString(renderThinRating(review.Fun_before, review.Fun_during, review.Fun_after))
-
 		sectionSb.WriteString(" ")
-		sectionSb.WriteString(review.Status.String())
 
-		// sectionSb.WriteString(" ")
+		sectionSb.WriteString(util.TruncOrPadASCII(review.Status.String(), 13))
+		sectionSb.WriteString(" ")
+
 		// sectionSb.WriteString(util.TruncOrPadASCII(review.Text, 20))
 
 		sectionSb.WriteString("\n")

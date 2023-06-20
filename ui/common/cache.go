@@ -12,14 +12,14 @@ type CacheInfo[T Cacheable] struct {
 type Cache[T Cacheable] map[int]CacheInfo[T]
 
 func (c Cache[T]) Get(id int) (bool, bool, T) {
-	res, ok := c[id]
+	res, exists := c[id]
 
-	if !ok {
+	if !exists {
 		var t T
 		return false, false, t
 	}
 
-	return true, res.Loading, res.Data
+	return !res.Loading, res.Loading, res.Data
 }
 
 func (c Cache[T]) Set(id int, data T) {
