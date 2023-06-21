@@ -94,6 +94,12 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	return m, cmd
 }
 
+const (
+	top = "▀"
+	// bot  = "▄"
+	// full = "█"
+)
+
 func (m *Model) View() string {
 
 	if !m.loaded {
@@ -105,23 +111,44 @@ func (m *Model) View() string {
 		m.scaled.Bounds().Max.X != m.props.Width ||
 		m.scaled.Bounds().Max.Y != m.props.Height {
 
-		m.scaled = image.NewRGBA(image.Rect(0, 0, m.props.Width, m.props.Height))
+		m.scaled = image.NewRGBA(image.Rect(0, 0, m.props.Width, m.props.Height*2))
 		draw.CatmullRom.Scale(m.scaled, m.scaled.Rect, m.image, m.image.Bounds(), draw.Over, nil)
 	}
-	for y := m.scaled.Bounds().Min.Y; y < m.scaled.Bounds().Max.Y; y++ {
+
+	const text = "Spider-Man: Across the Spider-Verse "
+	index := 0
+	for y := m.scaled.Bounds().Min.Y; y < m.scaled.Bounds().Max.Y; y += 2 {
 
 		for x := m.scaled.Bounds().Min.X; x < m.scaled.Bounds().Max.X; x++ {
-			r, g, b, _ := m.scaled.At(x, y).RGBA()
+			var fc, bc lipgloss.Color
+			{
+				r, g, b, _ := m.scaled.At(x, y).RGBA()
 
-			// colors are on a scale from 0 - 65535
-			r = r >> 8
-			g = g >> 8
-			b = b >> 8
+				// colors are on a scale from 0 - 65535
+				r = r >> 8
+				g = g >> 8
+				b = b >> 8
 
-			// view += fmt.Sprintf("%v, %v, %v", r, g, b)
-			pixel := lipgloss.NewStyle().Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
+				// view += fmt.Sprintf("%v, %v, %v", r, g, b)
+				fc = lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
+			}
+			{
+				r, g, b, _ := m.scaled.At(x, y+1).RGBA()
 
-			view += pixel.Render(" ")
+				// colors are on a scale from 0 - 65535
+				r = r >> 8
+				g = g >> 8
+				b = b >> 8
+
+				// view += fmt.Sprintf("%v, %v, %v", r, g, b)
+				bc = lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
+			}
+			// color := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
+			pixel := lipgloss.NewStyle().Foreground(fc).Background(bc)
+
+			// view += pixel.Render(string(text[index%len(text)]))
+			view += pixel.Render(top)
+			index++
 
 		}
 

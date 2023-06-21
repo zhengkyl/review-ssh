@@ -75,6 +75,9 @@ func New(p common.Props) *Model {
 
 	m.SetSize(p.Width, p.Height)
 
+	m.filmPage.SetFilm(569094)
+	m.page = FILMDETAILS
+
 	return m
 }
 

@@ -44,11 +44,13 @@ func New(p common.Props) *Model {
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.props.Width = width
-	m.props.Height = height
-
+	hf := listStyle.GetHorizontalFrameSize()
 	vf := listStyle.GetVerticalFrameSize()
-	m.visibleItems = util.Max((height-vf)/2, 0)
+
+	m.props.Width = width - hf
+	m.props.Height = height - vf
+
+	m.visibleItems = util.Max(height/2, 0)
 
 	// Try to keep active item same pos from top when resizing
 	maxIndex := util.Max(m.visibleItems-1, 0)
@@ -164,9 +166,11 @@ func (m *Model) View() string {
 
 	viewSb := strings.Builder{}
 
+	// 8 wide review
+	// 13 status
+	// 3 gaps
 	// 3 wide scrollbar
-	hf := listStyle.GetHorizontalFrameSize()
-	titleWidth := m.props.Width - 8 - 13 - 3 - 3 - hf
+	titleWidth := m.props.Width - 8 - 13 - 3 - 3
 
 	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 
