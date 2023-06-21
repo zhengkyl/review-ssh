@@ -67,7 +67,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case common.GetResponse[common.PageResult[common.Review]]:
 		if msg.Ok {
-			reviews := msg.Data.Results
+			reviews := make([]common.Review, 0, len(m.props.Global.ReviewMap))
+			for _, review := range m.props.Global.ReviewMap {
+				reviews = append(reviews, review)
+			}
+
 			sort.Sort(common.ByUpdatedAt(reviews))
 			m.list.SetReviews(reviews)
 		} else {

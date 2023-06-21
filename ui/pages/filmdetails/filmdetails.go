@@ -14,8 +14,7 @@ var (
 )
 
 type Model struct {
-	props common.Props
-	// review common.Review
+	props  common.Props
 	poster *poster.Model
 	loaded bool
 	filmId int
@@ -31,9 +30,16 @@ func New(p common.Props) *Model {
 	return m
 }
 
-func (m *Model) SetFilm(filmId int) {
+func (m *Model) InitFilm(filmId int) tea.Cmd {
 	m.filmId = filmId
 	m.loaded = false
+
+	_, ok := m.props.Global.ReviewMap[-m.filmId]
+	if ok {
+		return nil
+	}
+
+	return common.GetMyFilmReviewCmd(m.props.Global, filmId)
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -66,12 +72,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.poster = poster.New(common.Props{Width: 28, Height: 21, Global: m.props.Global}, "https://image.tmdb.org/t/p/w200"+film.Poster_path)
 			cmds = append(cmds, m.poster.Init())
 
-			// for _, review := range m.props.Global.ReviewMap {
-			// 	if review.Category == enums.Film && review.Tmdb_id == m.filmId {
-			// 		m.review = review
-			// 		break
-			// 	}
-			// }
 		}
 	} else {
 		_, cmd := m.poster.Update(msg)
@@ -97,6 +97,14 @@ func (m *Model) View() string {
 	rightSb.WriteString("\n\n")
 	rightSb.WriteString(descStyle.Render(m.film.Overview))
 	rightSb.WriteString("\n\n")
+
+	// see func (r Review) Key() int
+	review, ok := m.props.Global.ReviewMap[-m.filmId]
+
+	if ok {
+		rightSb.WriteString(common.RenderThickRating(review.Fun_before, review.Fun_during, review.Fun_after))
+		rightSb.WriteString("\n\n")
+	}
 
 	// return rightSb.String()
 

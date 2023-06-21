@@ -75,9 +75,6 @@ func New(p common.Props) *Model {
 
 	m.SetSize(p.Width, p.Height)
 
-	m.filmPage.SetFilm(569094)
-	m.page = FILMDETAILS
-
 	return m
 }
 
@@ -103,10 +100,14 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) Init() tea.Cmd {
+	// m.page = FILMDETAILS
+	// return m.filmPage.InitFilm(2108)
 	return nil
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case common.AuthState:
 		m.props.Global.AuthState.Authed = msg.Authed
@@ -130,7 +131,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case common.ShowPage:
 		switch msg.Category {
 		case enums.Film:
-			m.filmPage.SetFilm(msg.Tmdb_id)
+			cmd := m.filmPage.InitFilm(msg.Tmdb_id)
+			cmds = append(cmds, cmd)
 			m.page = FILMDETAILS
 		}
 
@@ -144,6 +146,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// }
 
+	case common.GetResponse[common.PageResult[common.Review]]:
+		if msg.Ok {
+			reviews := msg.Data.Results
+			for _, review := range reviews {
+				m.props.Global.ReviewMap[review.Key()] = review
+			}
+		} else {
+		}
 	case common.GetResponse[common.Film]:
 		if msg.Ok {
 			film := msg.Data
@@ -173,11 +183,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else {
 		_, cmd = m.accountPage.Update(msg)
 	}
+	cmds = append(cmds, cmd)
 
 	// m.help, cmd = m.help.Update(msg)
 	// cmds = append(cmds, cmd)
 
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {

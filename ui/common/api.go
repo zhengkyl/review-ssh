@@ -151,3 +151,21 @@ func GetShowCmd(g Global, showId int) tea.Cmd {
 	url := (showEndpoint + strconv.Itoa(showId) + "?api_key=" + g.Config.TMDB_API_KEY)
 	return GetCmd[Show](g.HttpClient, url)
 }
+
+const filmReviewEndpoint = "https://review-api.fly.dev/reviews?category=Film"
+
+func GetMyFilmReviewCmd(g Global, filmId int) tea.Cmd {
+	url := filmReviewEndpoint +
+		"&tmdb_id=" + strconv.Itoa(filmId) +
+		"&user_id=" + strconv.Itoa(g.AuthState.User.Id)
+	return GetCmd[PageResult[Review]](g.HttpClient, url)
+}
+
+const showReviewsEndpoint = "https://review-api.fly.dev/reviews?category=Show"
+
+func GetMyShowReviewsCmd(g Global, showId int) tea.Cmd {
+	url := showReviewsEndpoint +
+		"&tmdb_id=" + strconv.Itoa(showId) +
+		"&user_id=" + strconv.Itoa(g.AuthState.User.Id)
+	return GetCmd[PageResult[Review]](g.HttpClient, url)
+}

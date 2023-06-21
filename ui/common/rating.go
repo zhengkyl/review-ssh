@@ -1,4 +1,4 @@
-package reviewlist
+package common
 
 import "github.com/charmbracelet/lipgloss"
 
@@ -19,9 +19,11 @@ var (
 	ff = " \n \n-"
 	tf = " \n\\\n "
 	ft = " \n/\n "
+
+	activeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
 )
 
-func renderThinRating(before, during, after bool) string {
+func RenderThinRating(before, during, after bool) string {
 	ratingIndex := 0
 	if before {
 		ratingIndex += 1
@@ -34,7 +36,8 @@ func renderThinRating(before, during, after bool) string {
 	}
 	return ratings[ratingIndex]
 }
-func renderThickRating(before, during, after bool) string {
+
+func RenderThickRating(before, during, after bool) string {
 	var sections []string
 
 	if before {

@@ -195,7 +195,7 @@ func (m *Model) View() string {
 
 		sectionSb.WriteString(util.TruncOrPadASCII(title, titleWidth))
 
-		sectionSb.WriteString(renderThinRating(review.Fun_before, review.Fun_during, review.Fun_after))
+		sectionSb.WriteString(common.RenderThinRating(review.Fun_before, review.Fun_during, review.Fun_after))
 		sectionSb.WriteString(" ")
 
 		sectionSb.WriteString(util.TruncOrPadASCII(review.Status.String(), 13))
