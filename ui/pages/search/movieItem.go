@@ -32,7 +32,6 @@ type item struct {
 	overview     string
 	release_date string
 	poster       *poster.Model
-	buttons      *ButtonsModel
 }
 
 // implement list.Item
@@ -55,9 +54,6 @@ func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 
 		var cmd tea.Cmd
 		_, cmd = i.poster.Update(msg)
-		cmds = append(cmds, cmd)
-
-		_, cmd = i.buttons.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -115,7 +111,6 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	str = lipgloss.JoinVertical(lipgloss.Left, str, textStyle.Width(contentWidth).Render(desc))
 
 	str += "\n\n"
-	str += i.buttons.View()
 
 	str = contentStyle.Render(str)
 

@@ -30,18 +30,6 @@ func New(p common.Props) *Model {
 	return m
 }
 
-func (m *Model) InitFilm(filmId int) tea.Cmd {
-	m.filmId = filmId
-	m.loaded = false
-
-	_, ok := m.props.Global.ReviewMap[-m.filmId]
-	if ok {
-		return nil
-	}
-
-	return common.GetMyFilmReviewCmd(m.props.Global, filmId)
-}
-
 func (m *Model) SetSize(width, height int) {
 	hf := viewStyle.GetHorizontalFrameSize()
 	vf := viewStyle.GetVerticalFrameSize()
@@ -50,12 +38,20 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Height = height - vf
 }
 
-func (m *Model) Init() tea.Cmd {
-	return m.poster.Init()
-}
+type Init int
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+	switch msg := msg.(type) {
+	case Init:
+		m.filmId = int(msg)
+		m.loaded = false
+		_, ok := m.props.Global.ReviewMap[-m.filmId]
+		if ok {
+			return m, nil
+		}
+		return m, common.GetMyFilmReviewCmd(m.props.Global, m.filmId)
+	}
 
 	if !m.loaded {
 
@@ -70,7 +66,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loaded = true
 			m.film = film
 			m.poster = poster.New(common.Props{Width: 28, Height: 21, Global: m.props.Global}, "https://image.tmdb.org/t/p/w200"+film.Poster_path)
-			cmds = append(cmds, m.poster.Init())
+
+			_, cmd := m.poster.Update(poster.Init{})
+			cmds = append(cmds, cmd)
 
 		}
 	} else {

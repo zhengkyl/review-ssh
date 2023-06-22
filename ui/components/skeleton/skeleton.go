@@ -48,11 +48,7 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Height = height
 }
 
-func (m *Model) Init() tea.Cmd {
-	return nil
-}
-
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg.(type) {
 	case TickMsg:
 		m.frame = (m.frame + 1) % NUM_FRAMES

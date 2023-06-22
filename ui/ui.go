@@ -34,15 +34,15 @@ const (
 )
 
 type Model struct {
-	props       common.Props
-	searchField *textfield.Model
-	accountPage *account.Model
-	listsPage   *lists.Model
-	searchPage  *search.Model
-	filmPage    *filmdetails.Model
-	dialog      *dialog.Model
-	help        help.Model
-	page        page
+	props           common.Props
+	searchField     *textfield.Model
+	accountPage     *account.Model
+	listsPage       *lists.Model
+	searchPage      *search.Model
+	filmdetailsPage *filmdetails.Model
+	dialog          *dialog.Model
+	help            help.Model
+	page            page
 	// scrollView  *vlist.Model
 }
 
@@ -53,14 +53,14 @@ func New(p common.Props) *Model {
 	searchField.Placeholder("(s)earch for films...")
 
 	m := &Model{
-		props:       p,
-		searchField: searchField,
-		accountPage: account.New(p),
-		listsPage:   lists.New(p),
-		searchPage:  search.New(p),
-		dialog:      dialog.New(p, "Quit program?"),
-		help:        help.New(),
-		filmPage:    filmdetails.New(p),
+		props:           p,
+		searchField:     searchField,
+		accountPage:     account.New(p),
+		listsPage:       lists.New(p),
+		searchPage:      search.New(p),
+		dialog:          dialog.New(p, "Quit program?"),
+		help:            help.New(),
+		filmdetailsPage: filmdetails.New(p),
 		// scrollView: vlist.New(p, []tea.Model{
 		// 	account.New(c), account.New(c), account.New(c), account.New(c), account.New(c),
 		// }),
@@ -94,14 +94,12 @@ func (m *Model) SetSize(width, height int) {
 
 	m.listsPage.SetSize(viewW, contentHeight)
 	m.searchPage.SetSize(viewW, contentHeight)
-	m.filmPage.SetSize(viewW, contentHeight)
+	m.filmdetailsPage.SetSize(viewW, contentHeight)
 
 	m.help.Width = width
 }
 
 func (m *Model) Init() tea.Cmd {
-	// m.page = FILMDETAILS
-	// return m.filmPage.InitFilm(2108)
 	return nil
 }
 
@@ -113,7 +111,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.props.Global.AuthState.Authed = msg.Authed
 		m.props.Global.AuthState.Cookie = msg.Cookie
 		m.props.Global.AuthState.User = msg.User
-		return m, m.listsPage.Init()
+		_, cmd := m.listsPage.Update(lists.Init{})
+		return m, cmd
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 
@@ -131,7 +130,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case common.ShowPage:
 		switch msg.Category {
 		case enums.Film:
-			cmd := m.filmPage.InitFilm(msg.Tmdb_id)
+			_, cmd := m.filmdetailsPage.Update(filmdetails.Init(msg.Tmdb_id))
 			cmds = append(cmds, cmd)
 			m.page = FILMDETAILS
 		}
@@ -176,7 +175,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else if m.props.Global.AuthState.Authed {
 		switch m.page {
 		case FILMDETAILS:
-			_, cmd = m.filmPage.Update(msg)
+			_, cmd = m.filmdetailsPage.Update(msg)
 		default:
 			_, cmd = m.listsPage.Update(msg)
 		}
@@ -208,7 +207,7 @@ func (m *Model) View() string {
 
 		switch m.page {
 		case FILMDETAILS:
-			view.WriteString(m.filmPage.View())
+			view.WriteString(m.filmdetailsPage.View())
 		default:
 			view.WriteString(m.listsPage.View())
 		}

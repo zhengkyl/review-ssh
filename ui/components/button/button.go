@@ -57,11 +57,7 @@ func (m *Model) SetSize(h, w int) {
 
 }
 
-func (m *Model) Init() tea.Cmd {
-	return nil
-}
-
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	if m.focused {
 
 		switch msg := msg.(type) {

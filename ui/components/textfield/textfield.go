@@ -74,11 +74,7 @@ func (m *Model) Width() int {
 	return m.props.Width
 }
 
-func (m *Model) Init() tea.Cmd {
-	return nil
-}
-
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.inner, cmd = m.inner.Update(msg)
 

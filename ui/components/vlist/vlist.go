@@ -61,11 +61,7 @@ func (m *Model) SetSize(width, height int) {
 	m.offset = m.Active - newIndex
 }
 
-func (m *Model) Init() tea.Cmd {
-	return nil
-}
-
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

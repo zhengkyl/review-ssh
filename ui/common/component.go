@@ -13,7 +13,7 @@ type Sizable interface {
 }
 
 type Component interface {
-	tea.Model
+	Model
 	Sizable
 	// help.KeyMap
 }

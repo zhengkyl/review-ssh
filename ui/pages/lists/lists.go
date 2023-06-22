@@ -59,12 +59,12 @@ func (m *Model) SetSize(width, height int) {
 	m.list.SetSize(width, height-3)
 }
 
-func (m *Model) Init() tea.Cmd {
-	return getReviewsCmd(m.props.Global.HttpClient, m.props.Global.AuthState.User.Id)
-}
+type Init struct{}
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case Init:
+		return m, getReviewsCmd(m.props.Global.HttpClient, m.props.Global.AuthState.User.Id)
 	case common.GetResponse[common.PageResult[common.Review]]:
 		if msg.Ok {
 			reviews := make([]common.Review, 0, len(m.props.Global.ReviewMap))

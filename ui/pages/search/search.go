@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/components/poster"
 )
 
 type Model struct {
@@ -59,15 +60,15 @@ func (m *Model) getMargins() (wm, hm int) {
 	return
 }
 
-func (m *Model) Init() tea.Cmd {
-	return textinput.Blink
-}
+type Init struct{}
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case Init:
+		return m, textinput.Blink
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
@@ -78,7 +79,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.list.SetItems(msg))
 		for _, i := range msg {
 			var j = i.(item)
-			cmds = append(cmds, j.poster.Init(), j.buttons.Init())
+			_, cmd := j.poster.Update(poster.Init{})
+			cmds = append(cmds, cmd)
 		}
 
 	case error:

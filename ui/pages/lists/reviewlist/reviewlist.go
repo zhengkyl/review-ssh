@@ -64,11 +64,7 @@ func (m *Model) SetReviews(reviews []common.Review) {
 	m.offset = 0
 }
 
-func (m *Model) Init() tea.Cmd {
-	return nil
-}
-
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	if len(m.reviews) == 0 {
 		return m, nil
 	}
