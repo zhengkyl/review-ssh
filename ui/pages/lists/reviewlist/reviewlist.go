@@ -44,13 +44,12 @@ func New(p common.Props) *Model {
 }
 
 func (m *Model) SetSize(width, height int) {
-	hf := listStyle.GetHorizontalFrameSize()
+
+	m.props.Width = width
+	m.props.Height = height
+
 	vf := listStyle.GetVerticalFrameSize()
-
-	m.props.Width = width - hf
-	m.props.Height = height - vf
-
-	m.visibleItems = util.Max(height/2, 0)
+	m.visibleItems = util.Max((height-vf)/2, 0)
 
 	// Try to keep active item same pos from top when resizing
 	maxIndex := util.Max(m.visibleItems-1, 0)
@@ -166,7 +165,8 @@ func (m *Model) View() string {
 	// 13 status
 	// 3 gaps
 	// 3 wide scrollbar
-	titleWidth := m.props.Width - 8 - 13 - 3 - 3
+	hf := listStyle.GetHorizontalFrameSize()
+	titleWidth := m.props.Width - 8 - 13 - 3 - 3 - hf
 
 	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 
@@ -217,7 +217,8 @@ func (m *Model) View() string {
 	}
 
 	scrollPositions := len(m.reviews) - m.visibleItems + 1 // initial + all nonvisible
-	scrollBar := renderScrollbar(m.props.Height, scrollPositions, m.offset)
+	vh := listStyle.GetVerticalFrameSize()
+	scrollBar := renderScrollbar(m.props.Height-vh, scrollPositions, m.offset)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, listStyle.Render(viewSb.String()), scrollBar)
 }
