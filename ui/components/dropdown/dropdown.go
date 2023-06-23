@@ -14,9 +14,10 @@ var (
 	tabBorder   = lipgloss.RoundedBorder()
 	closedStyle = lipgloss.NewStyle().Border(tabBorder, true) //.BorderBottom(true)
 	openStyle   = lipgloss.NewStyle().Border(tabBorder, true).BorderBottom(false)
-	itemStyle   = lipgloss.NewStyle().Border(tabBorder, false, true).Padding(0, 1)
-	lastStyle   = lipgloss.NewStyle().Border(tabBorder, false, true, true).Padding(0, 1)
-	activeStyle = lipgloss.NewStyle().Background(lipgloss.Color("227"))
+	itemStyle   = lipgloss.NewStyle().Border(tabBorder, false, true)
+	lastStyle   = lipgloss.NewStyle().Border(tabBorder, false, true, true)
+	activeStyle = lipgloss.NewStyle().Background(lipgloss.Color("227")).Padding(0, 1)
+	normalStyle = lipgloss.NewStyle().Padding(0, 1)
 )
 
 type Option struct {
@@ -117,6 +118,8 @@ func (m *Model) View() string {
 		text := util.TruncOrPadASCII(option.Text, itemWidth)
 		if i == m.active {
 			text = activeStyle.Render(text)
+		} else {
+			text = normalStyle.Render(text)
 		}
 
 		if i == len(m.options)-1 {

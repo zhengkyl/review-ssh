@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/muesli/termenv"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/skeleton"
 	"golang.org/x/image/draw"
@@ -103,9 +104,8 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 }
 
 const (
-	top = "▀"
-	// bot  = "▄"
-	// full = "█"
+	top            = "▀"
+	resetTermStyle = termenv.CSI + termenv.ResetSeq + "m"
 )
 
 func (m *Model) View() string {
@@ -123,8 +123,6 @@ func (m *Model) View() string {
 		draw.CatmullRom.Scale(m.scaled, m.scaled.Rect, m.image, m.image.Bounds(), draw.Over, nil)
 	}
 
-	const text = "Spider-Man: Across the Spider-Verse "
-	index := 0
 	for y := m.scaled.Bounds().Min.Y; y < m.scaled.Bounds().Max.Y; y += 2 {
 
 		for x := m.scaled.Bounds().Min.X; x < m.scaled.Bounds().Max.X; x++ {
@@ -148,25 +146,23 @@ func (m *Model) View() string {
 				g = g >> 8
 				b = b >> 8
 
-				// view += fmt.Sprintf("%v, %v, %v", r, g, b)
 				bc = lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
 			}
-			// color := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", r, g, b))
 			pixel := lipgloss.NewStyle().Foreground(fc).Background(bc)
 
-			// view += pixel.Render(string(text[index%len(text)]))
-			view += pixel.Render(top)
-			index++
+			rendered := pixel.Render(top)
 
+			// esc + [ + 0
+			// Optimization: don't add reset sequence after every "pixel", only every line
+			view += rendered[:len(rendered)-3]
 		}
+		view += resetTermStyle
 
 		if y == m.scaled.Bounds().Max.Y-1 {
 			break
 		}
-
 		view += "\n"
 	}
-	// view += m.skeleton.View()
 
 	return view
 }
