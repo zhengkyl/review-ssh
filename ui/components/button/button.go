@@ -37,9 +37,8 @@ func (m *Model) Focused() bool {
 	return m.focused
 }
 
-func (m *Model) Focus() tea.Cmd {
+func (m *Model) Focus() {
 	m.focused = true
-	return nil
 }
 
 func (m *Model) Blur() {

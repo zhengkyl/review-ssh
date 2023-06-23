@@ -2,6 +2,10 @@ package common
 
 import "github.com/charmbracelet/lipgloss"
 
+// top  = "▀"
+// bot  = "▄"
+// full = "█"
+// ▣ ☑ ☐ 🗹 ▢ ⬚ ⛶ ▢
 var (
 	ratings = []string{
 		"░░ ░░ ░░",
@@ -12,6 +16,16 @@ var (
 		"██ ░░ ██",
 		"░░ ██ ██",
 		"██ ██ ██",
+	}
+	ratings2 = []string{
+		"          \n▄▄  ▄▄  ▄▄\n▀▀  ▀▀  ▀▀",
+		"▄▄        \n▀▀  ▄▄  ▄▄\n    ▀▀  ▀▀",
+		"    ▄▄    \n▄▄  ▀▀  ▄▄\n▀▀      ▀▀",
+		"▄▄  ▄▄    \n▀▀  ▀▀  ▄▄\n        ▀▀",
+		"        ▄▄\n▄▄  ▄▄  ▀▀\n▀▀  ▀▀    ",
+		"▄▄      ▄▄\n▀▀  ▄▄  ▀▀\n    ▀▀    ",
+		"    ▄▄  ▄▄\n▄▄  ▀▀  ▀▀\n▀▀        ",
+		"▄▄  ▄▄  ▄▄\n▀▀  ▀▀  ▀▀\n          ",
 	}
 	t  = "██\n \n░░"
 	f  = "░░\n \n██"
@@ -38,6 +52,18 @@ func RenderThinRating(before, during, after bool) string {
 }
 
 func RenderThickRating(before, during, after bool) string {
+	ratingIndex := 0
+	if before {
+		ratingIndex += 1
+	}
+	if during {
+		ratingIndex += 2
+	}
+	if after {
+		ratingIndex += 4
+	}
+	return ratings2[ratingIndex]
+
 	var sections []string
 
 	if before {

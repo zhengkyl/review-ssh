@@ -26,13 +26,14 @@ var (
 type Model struct {
 	props       common.Props
 	inner       textinput.Model
+	focused     bool
 	placeholder string
 }
 
 func New(p common.Props) *Model {
 	inner := textinput.New()
 
-	m := &Model{p, inner, ""}
+	m := &Model{p, inner, false, ""}
 
 	m.SetSize(p.Width, p.Height)
 
@@ -40,16 +41,17 @@ func New(p common.Props) *Model {
 }
 
 func (m *Model) Focused() bool {
-	return m.inner.Focused()
+	return m.focused
 }
 
-func (m *Model) Focus() tea.Cmd {
+func (m *Model) Focus() {
+	m.focused = true
 	m.inner.PromptStyle = focusedStyle
 	m.inner.TextStyle = focusedStyle
-	return m.inner.Focus()
 }
 
 func (m *Model) Blur() {
+	m.focused = false
 	m.inner.Blur()
 	m.inner.PromptStyle = noStyle
 	m.inner.TextStyle = noStyle
@@ -75,6 +77,10 @@ func (m *Model) Width() int {
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
+	if m.focused && !m.inner.Focused() {
+		return m, m.inner.Focus()
+	}
+
 	var cmd tea.Cmd
 	m.inner, cmd = m.inner.Update(msg)
 

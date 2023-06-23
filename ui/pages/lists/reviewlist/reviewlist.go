@@ -20,8 +20,9 @@ type Model struct {
 	active       int
 	visibleItems int
 
-	itemSpinner spinner.Model
-	spinning    bool
+	itemSpinner   spinner.Model
+	spinning      bool
+	loadedReviews bool
 }
 
 var (
@@ -58,16 +59,14 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
+	m.spinning = true
+	m.loadedReviews = true
 	m.reviews = reviews
 	m.active = 0
 	m.offset = 0
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
-	if len(m.reviews) == 0 {
-		return m, nil
-	}
-
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
@@ -120,12 +119,12 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				continue
 			}
 
-			if loading {
-				itemsLoading = true
-			} else {
+			if !loading {
 				m.props.Global.FilmCache.SetLoading(review.Tmdb_id)
 				cmds = append(cmds, common.GetFilmCmd(m.props.Global, review.Tmdb_id))
 			}
+
+			itemsLoading = true
 
 		case enums.Show:
 			ok, loading, _ := m.props.Global.ShowCache.Get(review.Tmdb_id)
@@ -133,12 +132,12 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				continue
 			}
 
-			if loading {
-				itemsLoading = true
-			} else {
+			if !loading {
 				m.props.Global.ShowCache.SetLoading(review.Tmdb_id)
 				cmds = append(cmds, common.GetShowCmd(m.props.Global, review.Tmdb_id))
 			}
+
+			itemsLoading = true
 		}
 
 	}
@@ -155,8 +154,13 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	spinner := m.itemSpinner.View()
+
+	if !m.loadedReviews {
+		return listStyle.Render("Loading reviews" + spinner)
+	}
+
 	if len(m.reviews) == 0 {
-		return "Loading reviews..."
+		return listStyle.Render("No reviews.")
 	}
 
 	viewSb := strings.Builder{}

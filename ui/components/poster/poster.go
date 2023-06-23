@@ -74,6 +74,14 @@ func (m *Model) SetSize(width, height int) {
 	m.skeleton.SetSize(width, height)
 }
 
+func (m *Model) Height() int {
+	return m.props.Height
+}
+
+func (m *Model) Width() int {
+	return m.props.Width
+}
+
 type Init struct{}
 
 func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {

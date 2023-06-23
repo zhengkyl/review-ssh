@@ -3,9 +3,11 @@ package filmdetails
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/components/dropdown"
 	"github.com/zhengkyl/review-ssh/ui/components/poster"
 )
 
@@ -14,17 +16,27 @@ var (
 )
 
 type Model struct {
-	props  common.Props
-	poster *poster.Model
-	loaded bool
-	filmId int
-	film   common.Film
+	props    common.Props
+	poster   *poster.Model
+	loaded   bool
+	filmId   int
+	film     common.Film
+	dropdown dropdown.Model
 }
 
 func New(p common.Props) *Model {
 	m := &Model{
 		props:  p,
+		poster: &poster.Model{},
 		loaded: false,
+		filmId: 0,
+		film:   common.Film{},
+		dropdown: *dropdown.New(common.Props{Width: 20, Height: 3, Global: p.Global}, "Add movie", []dropdown.Option{
+			{Text: "Plan to Watch", Callback: func() tea.Msg { return nil }},
+			{Text: "Completed", Callback: func() tea.Msg { return nil }},
+			{Text: "Watching", Callback: func() tea.Msg { return nil }},
+			{Text: "Dropped", Callback: func() tea.Msg { return nil }},
+		}),
 	}
 
 	return m
@@ -36,6 +48,9 @@ func (m *Model) SetSize(width, height int) {
 
 	m.props.Width = width - hf
 	m.props.Height = height - vf
+
+	// TODO
+	// m.dropdown.SetSize()
 }
 
 type Init int
@@ -51,6 +66,11 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, common.GetMyFilmReviewCmd(m.props.Global, m.filmId)
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, m.props.Global.KeyMap.Select):
+			m.dropdown.Focus()
+		}
 	}
 
 	if !m.loaded {
@@ -76,6 +96,11 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	if m.dropdown.Focused() {
+		_, cmd := m.dropdown.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -86,14 +111,15 @@ func (m *Model) View() string {
 
 	left := m.poster.View()
 
-	descStyle := lipgloss.NewStyle().Width(m.props.Width - 16 - 1).Height(5)
+	descStyle := lipgloss.NewStyle().Width(m.props.Width - m.poster.Width() - 2).Height(5)
 
 	rightSb := strings.Builder{}
+	rightSb.WriteString("\n")
 	rightSb.WriteString(m.film.Title + " (" + m.film.Release_date[:4] + ")")
 	rightSb.WriteString("\n\n")
 	rightSb.WriteString(m.film.Release_date)
 	rightSb.WriteString("\n\n")
-	rightSb.WriteString(descStyle.Render(m.film.Overview))
+	rightSb.WriteString(m.dropdown.View())
 	rightSb.WriteString("\n\n")
 
 	// see func (r Review) Key() int
@@ -104,7 +130,10 @@ func (m *Model) View() string {
 		rightSb.WriteString("\n\n")
 	}
 
+	rightSb.WriteString(descStyle.Render(m.film.Overview))
+	rightSb.WriteString("\n\n")
+
 	// return rightSb.String()
 
-	return viewStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, left, " ", rightSb.String()))
+	return viewStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, left, "  ", rightSb.String()))
 }

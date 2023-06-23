@@ -100,7 +100,10 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return nil
+	_, cmd := m.filmdetailsPage.Update(filmdetails.Init(109445))
+	m.page = FILMDETAILS
+	return cmd
+	// return nil
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -121,7 +124,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.dialog.Focused() {
 				return m, tea.Quit
 			}
-			return m, m.dialog.Focus()
+			m.dialog.Focus()
+			return m, nil
 		} else if key.Matches(msg, m.props.Global.KeyMap.Back) {
 			if m.dialog.Focused() {
 				m.dialog.Blur()

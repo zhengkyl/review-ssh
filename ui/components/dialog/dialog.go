@@ -43,7 +43,7 @@ func (m *Model) Focused() bool {
 	return m.focused
 }
 
-func (m *Model) Focus() tea.Cmd {
+func (m *Model) Focus() {
 	if m.active != 0 {
 		m.buttons[m.active].Blur()
 		m.active = 0
@@ -51,7 +51,6 @@ func (m *Model) Focus() tea.Cmd {
 	}
 
 	m.focused = true
-	return nil
 }
 
 func (m *Model) Blur() {

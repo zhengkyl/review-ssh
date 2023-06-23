@@ -1,9 +1,6 @@
 package common
 
-import (
-	// "github.com/charmbracelet/bubbles/help"
-	tea "github.com/charmbracelet/bubbletea"
-)
+// "github.com/charmbracelet/bubbles/help"
 
 type Sizable interface {
 	SetSize(width, height int)
@@ -26,6 +23,6 @@ type Component interface {
 type FocusableComponent interface {
 	Component
 	Focused() bool
-	Focus() tea.Cmd
+	Focus()
 	Blur()
 }

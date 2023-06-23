@@ -3,6 +3,13 @@ package util
 import "strings"
 
 func TruncOrPadASCII(text string, length int) string {
+	if length < 1 {
+		return ""
+	}
+	if length == 1 {
+		return "…"
+	}
+
 	pad := length - len(text)
 	if pad > 0 {
 		return text + strings.Repeat(" ", pad)
