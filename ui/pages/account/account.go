@@ -100,9 +100,10 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		m.inputs.Children = signUpInputs(m.props)
 		m.inputs.Active = 0
 		m.err = ""
-	case tea.KeyMsg:
+	case *common.KeyEvent:
 		switch {
-		case key.Matches(msg, m.props.Global.KeyMap.Back):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Back):
+			msg.Handled = true
 			if m.stage != 0 {
 				m.stage = 0
 			}
@@ -149,8 +150,8 @@ func (m *Model) View() string {
 	return accountStyle.Render(sb.String())
 }
 
-func signUpInputs(p common.Props) []common.Component {
-	inputs := make([]common.Component, 0, 5)
+func signUpInputs(p common.Props) []common.FocusableComponent {
+	inputs := make([]common.FocusableComponent, 0, 5)
 
 	ic := common.Props{
 		Width:  p.Width,
@@ -205,8 +206,8 @@ func signUpInputs(p common.Props) []common.Component {
 	return inputs
 }
 
-func signInInputs(p common.Props) []common.Component {
-	inputs := make([]common.Component, 0, 3)
+func signInInputs(p common.Props) []common.FocusableComponent {
+	inputs := make([]common.FocusableComponent, 0, 3)
 
 	ic := common.Props{
 		Width:  p.Width,

@@ -76,14 +76,14 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			m.list.SetReviews(reviews)
 		} else {
 		}
-	case tea.KeyMsg:
-		switch m.activeTab {
-		}
+	case *common.KeyEvent:
 		prevActive := m.activeTab
-		if key.Matches(msg, m.props.Global.KeyMap.NextTab) {
+		if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextTab) {
 			m.activeTab = (m.activeTab + 1) % NUM_LISTS
-		} else if key.Matches(msg, m.props.Global.KeyMap.PrevTab) {
+			msg.Handled = true
+		} else if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.PrevTab) {
 			m.activeTab = (m.activeTab - 1 + NUM_LISTS) % NUM_LISTS
+			msg.Handled = true
 		}
 
 		if m.activeTab != prevActive {

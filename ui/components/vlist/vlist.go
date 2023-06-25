@@ -13,7 +13,7 @@ import (
 type Model struct {
 	props        common.Props
 	Style        Style
-	Children     []common.Component
+	Children     []common.FocusableComponent
 	offset       int
 	Active       int
 	visibleItems int
@@ -24,7 +24,7 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(p common.Props, children ...common.Component) *Model {
+func New(p common.Props, children ...common.FocusableComponent) *Model {
 	m := &Model{
 		props: p,
 		Style: Style{
@@ -38,10 +38,8 @@ func New(p common.Props, children ...common.Component) *Model {
 	}
 
 	if len(children) > 0 {
-		switch current := m.Children[m.Active].(type) {
-		case common.FocusableComponent:
-			current.Focus()
-		}
+		current := m.Children[m.Active]
+		current.Focus()
 	}
 
 	return m
@@ -64,33 +62,36 @@ func (m *Model) SetSize(width, height int) {
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case *common.KeyEvent:
+		_, cmd := m.Children[m.Active].Update(msg)
+		if msg.Handled {
+			return m, cmd
+		}
+
 		prevActive := m.Active
 		switch {
-		case key.Matches(msg, m.props.Global.KeyMap.Down):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
 			m.Active = util.Min(m.Active+1, len(m.Children)-1)
 
 			if m.Active == m.offset+m.visibleItems {
 				m.offset++
 			}
-		case key.Matches(msg, m.props.Global.KeyMap.Up):
+			msg.Handled = true
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
 			m.Active = util.Max(m.Active-1, 0)
 
 			if m.Active == m.offset-1 {
 				m.offset = m.Active
 			}
+			msg.Handled = true
 		}
 
 		if prevActive != m.Active {
-			switch prev := m.Children[prevActive].(type) {
-			case common.FocusableComponent:
-				prev.Blur()
-			}
+			prev := m.Children[prevActive]
+			prev.Blur()
 
-			switch current := m.Children[m.Active].(type) {
-			case common.FocusableComponent:
-				current.Focus()
-			}
+			current := m.Children[m.Active]
+			current.Focus()
 
 		}
 	}

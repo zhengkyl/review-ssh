@@ -77,20 +77,29 @@ func (m *Model) Width() int {
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
+	// TODO fix this
 	if m.focused && !m.inner.Focused() {
 		return m, m.inner.Focus()
 	}
 
 	var cmd tea.Cmd
-	m.inner, cmd = m.inner.Update(msg)
 
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if key.Matches(msg, m.props.Global.KeyMap.Back) {
+	case *common.KeyEvent:
+		if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Back) {
 			m.Blur()
+			msg.Handled = true
+		} else {
+			prevValue := m.inner.Value()
+			m.inner, cmd = m.inner.Update(msg.KeyMsg)
+			if m.inner.Value() != prevValue {
+				msg.Handled = true
+			}
 		}
-
+	default:
+		m.inner, cmd = m.inner.Update(msg)
 	}
+
 	return m, cmd
 }
 

@@ -59,7 +59,7 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
-	m.spinning = true
+	// m.spinning = true
 	m.loadedReviews = true
 	m.reviews = reviews
 	m.active = 0
@@ -76,22 +76,23 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			m.itemSpinner, cmd = m.itemSpinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
-	case tea.KeyMsg:
+	case *common.KeyEvent:
 		prevActive := m.active
+		msg.Handled = true
 		switch {
-		case key.Matches(msg, m.props.Global.KeyMap.Down):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
 			m.active = util.Min(m.active+1, len(m.reviews)-1)
 
 			if m.active == m.offset+m.visibleItems {
 				m.offset++
 			}
-		case key.Matches(msg, m.props.Global.KeyMap.Up):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
 			m.active = util.Max(m.active-1, 0)
 
 			if m.active == m.offset-1 {
 				m.offset = m.active
 			}
-		case key.Matches(msg, m.props.Global.KeyMap.Select):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
 			cmd = func() tea.Msg {
 				return common.ShowPage{
 					Category: m.reviews[m.active].Category,
@@ -100,6 +101,8 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				}
 			}
 			cmds = append(cmds, cmd)
+		default:
+			msg.Handled = false
 		}
 
 		if prevActive != m.active {

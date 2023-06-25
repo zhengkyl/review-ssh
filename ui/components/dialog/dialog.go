@@ -60,13 +60,19 @@ func (m *Model) Blur() {
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case *common.KeyEvent:
 		prevActive := m.active
+
+		msg.Handled = true
 		switch {
-		case key.Matches(msg, m.props.Global.KeyMap.NextInput):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Back):
+			m.Blur()
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextInput):
 			m.active = util.Min(m.active+1, len(m.buttons)-1)
-		case key.Matches(msg, m.props.Global.KeyMap.PrevInput):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.PrevInput):
 			m.active = util.Max(m.active-1, 0)
+		default:
+			msg.Handled = false
 		}
 
 		if prevActive != m.active {

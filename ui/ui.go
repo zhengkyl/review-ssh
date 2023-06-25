@@ -29,7 +29,8 @@ var (
 type page int
 
 const (
-	LISTS page = iota
+	ACCOUNT page = iota
+	LISTS
 	FILMDETAILS
 )
 
@@ -100,10 +101,10 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) Init() tea.Cmd {
-	_, cmd := m.filmdetailsPage.Update(filmdetails.Init(109445))
-	m.page = FILMDETAILS
-	return cmd
-	// return nil
+	// _, cmd := m.filmdetailsPage.Update(filmdetails.Init(109445))
+	// m.page = FILMDETAILS
+	// return cmd
+	return nil
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -115,22 +116,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.props.Global.AuthState.Cookie = msg.Cookie
 		m.props.Global.AuthState.User = msg.User
 		_, cmd := m.listsPage.Update(lists.Init{})
+		m.page = LISTS
 		return m, cmd
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 
-	case tea.KeyMsg:
-		if key.Matches(msg, m.props.Global.KeyMap.Quit) {
-			if m.dialog.Focused() {
-				return m, tea.Quit
-			}
-			m.dialog.Focus()
-			return m, nil
-		} else if key.Matches(msg, m.props.Global.KeyMap.Back) {
-			if m.dialog.Focused() {
-				m.dialog.Blur()
-			}
-		}
 	case common.ShowPage:
 		switch msg.Category {
 		case enums.Film:
@@ -138,16 +128,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 			m.page = FILMDETAILS
 		}
-
-		// TODO all other focusables
-
-		// if !m.searchField.Focused() {
-
-		// if key.Matches(msg, m.props.Global.KeyMap.Search) {
-		// 	return m, m.searchField.Focus()
-		// }
-
-		// }
 
 	case common.GetResponse[common.PageResult[common.Review]]:
 		if msg.Ok {
@@ -169,22 +149,55 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.props.Global.ShowCache.Set(show.Id, show)
 		} else {
 		}
+	case tea.KeyMsg:
+		var cmd tea.Cmd
+		event := &common.KeyEvent{KeyMsg: msg, Handled: false}
+
+		if m.searchField.Focused() {
+			_, cmd = m.searchField.Update(event)
+		} else if m.dialog.Focused() {
+			_, cmd = m.dialog.Update(event)
+		}
+
+		if event.Handled {
+			return m, cmd
+		}
+
+		switch m.page {
+		case ACCOUNT:
+			_, cmd = m.accountPage.Update(event)
+		case LISTS:
+			_, cmd = m.listsPage.Update(event)
+		case FILMDETAILS:
+			_, cmd = m.filmdetailsPage.Update(event)
+		}
+
+		if event.Handled {
+			return m, cmd
+		}
+
+		if key.Matches(msg, m.props.Global.KeyMap.Quit) {
+			if m.dialog.Focused() {
+				return m, tea.Quit
+			}
+			m.dialog.Focus()
+		}
+
+		return m, nil
 	}
 
 	var cmd tea.Cmd
-	if m.searchField.Focused() {
-		_, cmd = m.searchField.Update(msg)
-	} else if m.dialog.Focused() {
-		_, cmd = m.dialog.Update(msg)
-	} else if m.props.Global.AuthState.Authed {
-		switch m.page {
-		case FILMDETAILS:
-			_, cmd = m.filmdetailsPage.Update(msg)
-		default:
-			_, cmd = m.listsPage.Update(msg)
-		}
-	} else {
+	_, cmd = m.searchField.Update(msg)
+	cmds = append(cmds, cmd)
+	_, cmd = m.dialog.Update(msg)
+	cmds = append(cmds, cmd)
+	switch m.page {
+	case ACCOUNT:
 		_, cmd = m.accountPage.Update(msg)
+	case LISTS:
+		_, cmd = m.listsPage.Update(msg)
+	case FILMDETAILS:
+		_, cmd = m.filmdetailsPage.Update(msg)
 	}
 	cmds = append(cmds, cmd)
 
@@ -210,10 +223,10 @@ func (m *Model) View() string {
 		view.WriteString("\n")
 
 		switch m.page {
+		case LISTS:
+			view.WriteString(m.listsPage.View())
 		case FILMDETAILS:
 			view.WriteString(m.filmdetailsPage.View())
-		default:
-			view.WriteString(m.listsPage.View())
 		}
 	}
 

@@ -66,10 +66,11 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, common.GetMyFilmReviewCmd(m.props.Global, m.filmId)
-	case tea.KeyMsg:
+	case *common.KeyEvent:
 		switch {
-		case key.Matches(msg, m.props.Global.KeyMap.Select):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
 			m.dropdown.Focus()
+			msg.Handled = true
 		}
 	}
 

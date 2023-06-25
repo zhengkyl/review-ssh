@@ -77,15 +77,17 @@ func (m *Model) Width() int {
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case *common.KeyEvent:
+		msg.Handled = true
 		switch {
-		case key.Matches(msg, m.props.Global.KeyMap.Back):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Back):
 			m.Blur()
-		case key.Matches(msg, m.props.Global.KeyMap.Down):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
 			m.active = util.Min(m.active+1, len(m.options)-1)
-		case key.Matches(msg, m.props.Global.KeyMap.Up):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
 			m.active = util.Max(m.active-1, 0)
-
+		default:
+			msg.Handled = false
 		}
 	}
 	return m, nil
