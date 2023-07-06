@@ -150,8 +150,8 @@ func (m *Model) View() string {
 	return accountStyle.Render(sb.String())
 }
 
-func signUpInputs(p common.Props) []common.FocusableComponent {
-	inputs := make([]common.FocusableComponent, 0, 5)
+func signUpInputs(p common.Props) []common.Focusable {
+	inputs := make([]common.Focusable, 0, 5)
 
 	ic := common.Props{
 		Width:  p.Width,
@@ -206,8 +206,8 @@ func signUpInputs(p common.Props) []common.FocusableComponent {
 	return inputs
 }
 
-func signInInputs(p common.Props) []common.FocusableComponent {
-	inputs := make([]common.FocusableComponent, 0, 3)
+func signInInputs(p common.Props) []common.Focusable {
+	inputs := make([]common.Focusable, 0, 3)
 
 	ic := common.Props{
 		Width:  p.Width,

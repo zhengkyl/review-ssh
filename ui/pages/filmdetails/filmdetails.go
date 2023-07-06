@@ -7,8 +7,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/components/checkbox"
 	"github.com/zhengkyl/review-ssh/ui/components/dropdown"
 	"github.com/zhengkyl/review-ssh/ui/components/poster"
+	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
 var (
@@ -16,12 +18,17 @@ var (
 )
 
 type Model struct {
-	props    common.Props
-	poster   *poster.Model
-	loaded   bool
-	filmId   int
-	film     common.Film
-	dropdown dropdown.Model
+	props       common.Props
+	poster      *poster.Model
+	loaded      bool
+	filmId      int
+	film        common.Film
+	inputs      []common.Focusable
+	dropdown    *dropdown.Model
+	checkBefore *checkbox.Model
+	checkDuring *checkbox.Model
+	checkAfter  *checkbox.Model
+	focusIndex  int
 }
 
 func New(p common.Props) *Model {
@@ -31,13 +38,19 @@ func New(p common.Props) *Model {
 		loaded: false,
 		filmId: 0,
 		film:   common.Film{},
-		dropdown: *dropdown.New(common.Props{Width: 20, Height: 3, Global: p.Global}, "Add movie", []dropdown.Option{
+		dropdown: dropdown.New(common.Props{Width: 20, Height: 3, Global: p.Global}, "Add movie", []dropdown.Option{
 			{Text: "Plan to Watch", Callback: func() tea.Msg { return nil }},
 			{Text: "Completed", Callback: func() tea.Msg { return nil }},
 			{Text: "Watching", Callback: func() tea.Msg { return nil }},
 			{Text: "Dropped", Callback: func() tea.Msg { return nil }},
 		}),
+		checkBefore: checkbox.New(p),
+		checkDuring: checkbox.New(p),
+		checkAfter:  checkbox.New(p),
+		inputs:      []common.Focusable{},
+		focusIndex:  0,
 	}
+	m.inputs = append(m.inputs, m.dropdown, m.checkBefore, m.checkDuring, m.checkAfter)
 
 	return m
 }
@@ -48,9 +61,6 @@ func (m *Model) SetSize(width, height int) {
 
 	m.props.Width = width - hf
 	m.props.Height = height - vf
-
-	// TODO
-	// m.dropdown.SetSize()
 }
 
 type Init int
@@ -61,16 +71,39 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	case Init:
 		m.filmId = int(msg)
 		m.loaded = false
-		_, ok := m.props.Global.ReviewMap[-m.filmId]
+		review, ok := m.props.Global.ReviewMap[-m.filmId]
+		m.checkBefore.Checked = review.Fun_before
+		m.checkDuring.Checked = review.Fun_during
+		m.checkAfter.Checked = review.Fun_after
+
+		m.dropdown.Focus()
+
 		if ok {
 			return m, nil
 		}
-		return m, common.GetMyFilmReviewCmd(m.props.Global, m.filmId)
+		return m, func() tea.Msg {
+			res := common.GetMyFilmReviewCmd(m.props.Global, m.filmId)().(common.GetResponse[common.PageResult[common.Review]])
+			if res.Ok && len(res.Data.Results) > 0 {
+				review := res.Data.Results[0]
+				m.checkBefore.Checked = review.Fun_before
+				m.checkDuring.Checked = review.Fun_during
+				m.checkAfter.Checked = review.Fun_after
+
+				m.dropdown.Focus()
+			}
+			return res
+		}
 	case *common.KeyEvent:
+		prevFocus := m.focusIndex
 		switch {
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
-			m.dropdown.Focus()
-			msg.Handled = true
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Right):
+			m.focusIndex = util.Min(m.focusIndex+1, 3)
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Left):
+			m.focusIndex = util.Max(m.focusIndex-1, 0)
+		}
+		if m.focusIndex != prevFocus {
+			m.inputs[m.focusIndex].Focus()
+			m.inputs[prevFocus].Blur()
 		}
 	}
 
@@ -97,10 +130,8 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
-	if m.dropdown.Focused() {
-		_, cmd := m.dropdown.Update(msg)
-		cmds = append(cmds, cmd)
-	}
+	_, cmd := m.inputs[m.focusIndex].Update(msg)
+	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
@@ -118,23 +149,23 @@ func (m *Model) View() string {
 	rightSb.WriteString("\n")
 	rightSb.WriteString(m.film.Title + " (" + m.film.Release_date[:4] + ")")
 	rightSb.WriteString("\n\n")
-	rightSb.WriteString(m.film.Release_date)
-	rightSb.WriteString("\n\n")
-	rightSb.WriteString(m.dropdown.View())
+
+	// make place holder for dropdown which needs to be overlaid
+	dropdownView := m.dropdown.View()
+	inputs := lipgloss.JoinHorizontal(lipgloss.Top, strings.Repeat(" ", lipgloss.Width(dropdownView)), " ", m.checkBefore.View(), " ", m.checkDuring.View(), " ", m.checkAfter.View())
+	rightSb.WriteString(inputs)
+
 	rightSb.WriteString("\n\n")
 
 	// see func (r Review) Key() int
-	review, ok := m.props.Global.ReviewMap[-m.filmId]
-
-	if ok {
-		rightSb.WriteString(common.RenderThickRating(review.Fun_before, review.Fun_during, review.Fun_after))
-		rightSb.WriteString("\n\n")
-	}
+	// review, ok := m.props.Global.ReviewMap[-m.filmId]
 
 	rightSb.WriteString(descStyle.Render(m.film.Overview))
 	rightSb.WriteString("\n\n")
 
+	rightView := util.RenderOverlay(rightSb.String(), dropdownView, 0, 3)
+
 	// return rightSb.String()
 
-	return viewStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, left, "  ", rightSb.String()))
+	return viewStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, left, "  ", rightView))
 }

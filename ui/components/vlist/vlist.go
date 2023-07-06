@@ -13,7 +13,7 @@ import (
 type Model struct {
 	props        common.Props
 	Style        Style
-	Children     []common.FocusableComponent
+	Children     []common.Focusable
 	offset       int
 	Active       int
 	visibleItems int
@@ -24,7 +24,7 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(p common.Props, children ...common.FocusableComponent) *Model {
+func New(p common.Props, children ...common.Focusable) *Model {
 	m := &Model{
 		props: p,
 		Style: Style{
@@ -50,7 +50,10 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Height = height
 
 	for _, child := range m.Children {
-		child.SetSize(width, child.Height())
+		sizable, ok := child.(common.Sizable)
+		if ok {
+			sizable.SetSize(width, sizable.Height())
+		}
 	}
 
 	// Try to keep active item same pos from top when resizing

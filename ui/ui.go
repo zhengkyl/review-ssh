@@ -210,7 +210,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() string {
 
 	view := strings.Builder{}
-	if !m.props.Global.AuthState.Authed {
+	if m.props.Global.AuthState.Authed {
 		// 3 tall to match search bar + fullwidth to allow centering accountPage view
 		rightPad := util.Max(m.props.Width-ansi.PrintableRuneWidth(title), 0)
 		appBar := "\n" + title + strings.Repeat(" ", rightPad) + "\n"
