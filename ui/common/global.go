@@ -13,7 +13,6 @@ type Global struct {
 
 	ReviewMap map[int]Review
 	FilmCache Cache[Film]
-	ShowCache Cache[Show]
 }
 
 type Config struct {

@@ -94,11 +94,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			}
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
 			cmd = func() tea.Msg {
-				return common.ShowPage{
-					Category: m.reviews[m.active].Category,
-					Tmdb_id:  m.reviews[m.active].Tmdb_id,
-					Season:   m.reviews[m.active].Season,
-				}
+				return common.ShowFilm(m.reviews[m.active].Tmdb_id)
 			}
 			cmds = append(cmds, cmd)
 		default:
@@ -128,21 +124,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			}
 
 			itemsLoading = true
-
-		case enums.Show:
-			ok, loading, _ := m.props.Global.ShowCache.Get(review.Tmdb_id)
-			if ok {
-				continue
-			}
-
-			if !loading {
-				m.props.Global.ShowCache.SetLoading(review.Tmdb_id)
-				cmds = append(cmds, common.GetShowCmd(m.props.Global, review.Tmdb_id))
-			}
-
-			itemsLoading = true
 		}
-
 	}
 
 	if m.spinning && !itemsLoading {
@@ -187,21 +169,16 @@ func (m *Model) View() string {
 			if ok {
 				title = film.Title
 			}
-		case enums.Show:
-			ok, _, show := m.props.Global.ShowCache.Get(review.Tmdb_id)
-			if ok {
-				title = show.Name
-			}
 		}
 
 		sectionSb := strings.Builder{}
 
 		sectionSb.WriteString(util.TruncOrPadASCII(title, titleWidth))
 
-		sectionSb.WriteString(common.RenderThinRating(review.Fun_before, review.Fun_during, review.Fun_after))
+		sectionSb.WriteString(common.RenderRating(review.Fun_before, review.Fun_during, review.Fun_after))
 		sectionSb.WriteString(" ")
 
-		sectionSb.WriteString(util.TruncOrPadASCII(review.Status.String(), 13))
+		sectionSb.WriteString(util.TruncOrPadASCII(review.Status.DisplayString(), 13))
 		sectionSb.WriteString(" ")
 
 		// sectionSb.WriteString(util.TruncOrPadASCII(review.Text, 20))

@@ -14,19 +14,15 @@ import (
 
 var tabNames = []string{
 	"All",
-	"Watching",
 	"Plan To Watch",
 	"Completed",
-	"Dropped",
 }
 
 // This must match the order of tabNames
 var tabStatuses = []enums.Status{
 	255, // This should never be accessed
-	enums.Watching,
 	enums.PlanToWatch,
 	enums.Completed,
-	enums.Dropped,
 }
 
 var NUM_LISTS = len(tabNames)

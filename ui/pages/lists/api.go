@@ -9,7 +9,7 @@ import (
 )
 
 // TODO use pagination, but for now 50 is more than enough
-const reviewsEndpoint = "https://review-api.fly.dev/reviews?per_page=50"
+const reviewsEndpoint = "https://review-api.fly.dev/reviews?category=Film&per_page=50"
 
 func getReviewsCmd(client *retryablehttp.Client, user_id int) tea.Cmd {
 	if user_id == common.GuestAuthState.User.Id {

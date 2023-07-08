@@ -38,7 +38,6 @@ func main() {
 
 			ReviewMap:  map[int]common.Review{},
 			FilmCache:  common.Cache[common.Film]{},
-			ShowCache:  common.Cache[common.Show]{},
 			KeyMap:     keymap.DefaultKeyMap(),
 			HttpClient: httpClient,
 		},

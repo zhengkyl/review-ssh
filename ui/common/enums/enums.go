@@ -21,19 +21,8 @@ const (
 	Dropped
 )
 
-// Should not be used to marshal json
-func (c Category) String() string {
-	switch c {
-	case Film:
-		return "Film"
-	case Show:
-		return "Show"
-	}
-	return "Invalid Category"
-}
-
 // These are display strings, should not be used to marshal json
-func (s Status) String() string {
+func (s Status) DisplayString() string {
 	switch s {
 	case PlanToWatch:
 		return "Plan To Watch"

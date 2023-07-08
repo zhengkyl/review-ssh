@@ -41,8 +41,6 @@ func New(p common.Props) *Model {
 		dropdown: dropdown.New(common.Props{Width: 20, Height: 3, Global: p.Global}, "Add movie", []dropdown.Option{
 			{Text: "Plan to Watch", Callback: func() tea.Msg { return nil }},
 			{Text: "Completed", Callback: func() tea.Msg { return nil }},
-			{Text: "Watching", Callback: func() tea.Msg { return nil }},
-			{Text: "Dropped", Callback: func() tea.Msg { return nil }},
 		}),
 		checkBefore: checkbox.New(p),
 		checkDuring: checkbox.New(p),
@@ -63,36 +61,36 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Height = height - vf
 }
 
-type Init int
+func (m *Model) Init(filmId int) tea.Cmd {
+	m.filmId = filmId
+	m.loaded = false
+	review, ok := m.props.Global.ReviewMap[m.filmId]
+	m.checkBefore.Checked = review.Fun_before
+	m.checkDuring.Checked = review.Fun_during
+	m.checkAfter.Checked = review.Fun_after
+
+	m.dropdown.Focus()
+
+	if ok {
+		return nil
+	}
+	return func() tea.Msg {
+		res := common.GetMyFilmReviewCmd(m.props.Global, m.filmId)().(common.GetResponse[common.PageResult[common.Review]])
+		if res.Ok && len(res.Data.Results) > 0 {
+			review := res.Data.Results[0]
+			m.checkBefore.Checked = review.Fun_before
+			m.checkDuring.Checked = review.Fun_during
+			m.checkAfter.Checked = review.Fun_after
+
+			m.dropdown.Focus()
+		}
+		return res
+	}
+}
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-	case Init:
-		m.filmId = int(msg)
-		m.loaded = false
-		review, ok := m.props.Global.ReviewMap[-m.filmId]
-		m.checkBefore.Checked = review.Fun_before
-		m.checkDuring.Checked = review.Fun_during
-		m.checkAfter.Checked = review.Fun_after
-
-		m.dropdown.Focus()
-
-		if ok {
-			return m, nil
-		}
-		return m, func() tea.Msg {
-			res := common.GetMyFilmReviewCmd(m.props.Global, m.filmId)().(common.GetResponse[common.PageResult[common.Review]])
-			if res.Ok && len(res.Data.Results) > 0 {
-				review := res.Data.Results[0]
-				m.checkBefore.Checked = review.Fun_before
-				m.checkDuring.Checked = review.Fun_during
-				m.checkAfter.Checked = review.Fun_after
-
-				m.dropdown.Focus()
-			}
-			return res
-		}
 	case *common.KeyEvent:
 		prevFocus := m.focusIndex
 		switch {
@@ -156,9 +154,6 @@ func (m *Model) View() string {
 	rightSb.WriteString(inputs)
 
 	rightSb.WriteString("\n\n")
-
-	// see func (r Review) Key() int
-	// review, ok := m.props.Global.ReviewMap[-m.filmId]
 
 	rightSb.WriteString(descStyle.Render(m.film.Overview))
 	rightSb.WriteString("\n\n")

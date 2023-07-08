@@ -73,8 +73,4 @@ func renderScrollbar(height, positions, pos int) string {
 	}
 
 	return scrollStyle.Render(sb.String())
-	// t := scrollStyle.Render(sb.String())
-	// t += ("\n")
-	// t += (fmt.Sprintf("#: %v sos: %v pos: %v th: %v tsi: %v tei: %v", positions, sos, pos, thumbHeight, thumbStartIndex, thumbEndIndex))
-	// return t
 }

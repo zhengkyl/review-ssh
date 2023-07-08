@@ -1,7 +1,7 @@
 package common
 
 type Cacheable interface {
-	Review | Film | Show
+	Film
 }
 
 type CacheInfo[T Cacheable] struct {

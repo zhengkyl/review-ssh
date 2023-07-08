@@ -25,19 +25,10 @@ type Film struct {
 	Release_date string
 }
 
-type Show struct {
-	Id             int
-	Name           string
-	Overview       string
-	Poster_path    string
-	First_air_date string
-}
-
 type Review struct {
 	User_id  int            //`json:"user_id"`
 	Tmdb_id  int            //`json:"tmdb_id"`
 	Category enums.Category //`json:"category"`
-	Season   int            //`json:"season"` only for shows
 	//
 	Status     enums.Status //`json:"status"`
 	Text       string       //`json:"text"`
@@ -60,7 +51,6 @@ type ReviewNew struct {
 	Tmdb_id  int    `json:"tmdb_id"`
 	Category string `json:"category"`
 	Status   string `json:"status"`
-	// Season     int     //`json:"season"`
 }
 
 type ByUpdatedAt []Review
@@ -72,27 +62,6 @@ func (a ByUpdatedAt) Less(i, j int) bool {
 		return a[i].Created_at.After(a[j].Updated_at)
 	}
 	return a[i].Updated_at.After(a[j].Updated_at)
-}
-
-func (s Show) Key() int {
-	return s.Id
-}
-
-func (f Film) Key() int {
-	return -f.Id
-}
-
-// tmdb_id overlaps for movies and tv series and is not unique per season
-func (r Review) Key() int {
-	switch r.Category {
-	case enums.Film:
-		return -r.Tmdb_id
-	case enums.Show:
-		return r.Tmdb_id*100 + r.Season
-	default:
-		// TODO error?
-		return 0
-	}
 }
 
 type Paginated interface {
@@ -107,7 +76,7 @@ type PageResult[T Paginated] struct {
 }
 
 type Gettable interface {
-	PageResult[Review] | Film | Show
+	PageResult[Review] | Film
 }
 
 type GetResponse[T Gettable] struct {
@@ -140,16 +109,10 @@ func GetCmd[T Gettable](client *retryablehttp.Client, url string) tea.Cmd {
 }
 
 const filmEndpoint = "https://api.themoviedb.org/3/movie/"
-const showEndpoint = "https://api.themoviedb.org/3/tv/"
 
 func GetFilmCmd(g Global, filmId int) tea.Cmd {
 	url := (filmEndpoint + strconv.Itoa(filmId) + "?api_key=" + g.Config.TMDB_API_KEY)
 	return GetCmd[Film](g.HttpClient, url)
-}
-
-func GetShowCmd(g Global, showId int) tea.Cmd {
-	url := (showEndpoint + strconv.Itoa(showId) + "?api_key=" + g.Config.TMDB_API_KEY)
-	return GetCmd[Show](g.HttpClient, url)
 }
 
 const filmReviewEndpoint = "https://review-api.fly.dev/reviews?category=Film"
@@ -157,15 +120,6 @@ const filmReviewEndpoint = "https://review-api.fly.dev/reviews?category=Film"
 func GetMyFilmReviewCmd(g Global, filmId int) tea.Cmd {
 	url := filmReviewEndpoint +
 		"&tmdb_id=" + strconv.Itoa(filmId) +
-		"&user_id=" + strconv.Itoa(g.AuthState.User.Id)
-	return GetCmd[PageResult[Review]](g.HttpClient, url)
-}
-
-const showReviewsEndpoint = "https://review-api.fly.dev/reviews?category=Show"
-
-func GetMyShowReviewsCmd(g Global, showId int) tea.Cmd {
-	url := showReviewsEndpoint +
-		"&tmdb_id=" + strconv.Itoa(showId) +
 		"&user_id=" + strconv.Itoa(g.AuthState.User.Id)
 	return GetCmd[PageResult[Review]](g.HttpClient, url)
 }

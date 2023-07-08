@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/ansi"
 	"github.com/zhengkyl/review-ssh/ui/common"
-	"github.com/zhengkyl/review-ssh/ui/common/enums"
 	"github.com/zhengkyl/review-ssh/ui/components/button"
 	"github.com/zhengkyl/review-ssh/ui/components/dialog"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
@@ -121,19 +120,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 
-	case common.ShowPage:
-		switch msg.Category {
-		case enums.Film:
-			_, cmd := m.filmdetailsPage.Update(filmdetails.Init(msg.Tmdb_id))
-			cmds = append(cmds, cmd)
-			m.page = FILMDETAILS
-		}
+	case common.ShowFilm:
+		cmds = append(cmds, m.filmdetailsPage.Init(int(msg)))
+		m.page = FILMDETAILS
 
 	case common.GetResponse[common.PageResult[common.Review]]:
 		if msg.Ok {
 			reviews := msg.Data.Results
 			for _, review := range reviews {
-				m.props.Global.ReviewMap[review.Key()] = review
+				m.props.Global.ReviewMap[review.Tmdb_id] = review
 			}
 		} else {
 		}
@@ -141,12 +136,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Ok {
 			film := msg.Data
 			m.props.Global.FilmCache.Set(film.Id, film)
-		} else {
-		}
-	case common.GetResponse[common.Show]:
-		if msg.Ok {
-			show := msg.Data
-			m.props.Global.ShowCache.Set(show.Id, show)
 		} else {
 		}
 	case tea.KeyMsg:
@@ -210,7 +199,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() string {
 
 	view := strings.Builder{}
-	if m.props.Global.AuthState.Authed {
+	if !m.props.Global.AuthState.Authed {
 		// 3 tall to match search bar + fullwidth to allow centering accountPage view
 		rightPad := util.Max(m.props.Width-ansi.PrintableRuneWidth(title), 0)
 		appBar := "\n" + title + strings.Repeat(" ", rightPad) + "\n"
