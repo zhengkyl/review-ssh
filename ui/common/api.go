@@ -104,11 +104,11 @@ func Fetch[T responseData](client *retryablehttp.Client, method string, url stri
 		resp, err := client.Do(req)
 
 		if err != nil {
-			return callback(data, err)
+			return func() { callback(data, err) }
 		}
 
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			return callback(data, errors.New("something went wrong"))
+			return func() { callback(data, errors.New("something went wrong")) }
 		}
 
 		if resp.StatusCode != 204 {
@@ -116,10 +116,10 @@ func Fetch[T responseData](client *retryablehttp.Client, method string, url stri
 		}
 
 		if err != nil {
-			return callback(data, err)
+			return func() { callback(data, err) }
 		}
 
-		return callback(data, nil)
+		return func() { callback(data, nil) }
 	}
 }
 
@@ -130,9 +130,10 @@ func GetFilmCmd(g Global, filmId int) tea.Cmd {
 	url := (filmEndpoint + strconv.Itoa(filmId) + "?api_key=" + g.Config.TMDB_API_KEY)
 	return Fetch[Film](g.HttpClient, "GET", url, nil, func(data Film, err error) tea.Msg {
 		if err != nil {
-
+			g.FilmCache.Delete(filmId)
+		} else {
+			g.FilmCache.Set(filmId, data)
 		}
-		// g.FilmCache.Delete(filmId)
 		return nil
 	})
 }

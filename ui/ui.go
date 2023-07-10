@@ -110,6 +110,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case func():
+		msg()
 	case common.AuthState:
 		m.props.Global.AuthState.Authed = msg.Authed
 		m.props.Global.AuthState.Cookie = msg.Cookie

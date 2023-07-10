@@ -118,7 +118,7 @@ func (m *Model) View() string {
 	if m.Selected == -1 {
 		selected = m.noneText
 	} else {
-		selected = m.options[m.active].Text
+		selected = m.options[m.Selected].Text
 	}
 	selected = util.TruncOrPadASCII(selected, itemWidth-2) + " ▼"
 	selected = " " + selected + " "
