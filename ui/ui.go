@@ -114,9 +114,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.props.Global.AuthState.Authed = msg.Authed
 		m.props.Global.AuthState.Cookie = msg.Cookie
 		m.props.Global.AuthState.User = msg.User
-		_, cmd := m.listsPage.Update(lists.Init{})
 		m.page = LISTS
-		return m, cmd
+		return m, m.listsPage.Init()
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 
@@ -124,20 +123,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.filmdetailsPage.Init(int(msg)))
 		m.page = FILMDETAILS
 
-	case common.GetResponse[common.PageResult[common.Review]]:
-		if msg.Ok {
-			reviews := msg.Data.Results
-			for _, review := range reviews {
-				m.props.Global.ReviewMap[review.Tmdb_id] = review
-			}
-		} else {
-		}
-	case common.GetResponse[common.Film]:
-		if msg.Ok {
-			film := msg.Data
-			m.props.Global.FilmCache.Set(film.Id, film)
-		} else {
-		}
 	case tea.KeyMsg:
 		var cmd tea.Cmd
 		event := &common.KeyEvent{KeyMsg: msg, Handled: false}

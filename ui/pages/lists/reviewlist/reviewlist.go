@@ -119,7 +119,6 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			}
 
 			if !loading {
-				m.props.Global.FilmCache.SetLoading(review.Tmdb_id)
 				cmds = append(cmds, common.GetFilmCmd(m.props.Global, review.Tmdb_id))
 			}
 

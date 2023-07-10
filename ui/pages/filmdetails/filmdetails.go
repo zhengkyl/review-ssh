@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
+	"github.com/zhengkyl/review-ssh/ui/common/enums"
 	"github.com/zhengkyl/review-ssh/ui/components/checkbox"
 	"github.com/zhengkyl/review-ssh/ui/components/dropdown"
 	"github.com/zhengkyl/review-ssh/ui/components/poster"
@@ -18,26 +19,26 @@ var (
 )
 
 type Model struct {
-	props       common.Props
-	poster      *poster.Model
-	loaded      bool
-	filmId      int
-	film        common.Film
-	inputs      []common.Focusable
-	dropdown    *dropdown.Model
-	checkBefore *checkbox.Model
-	checkDuring *checkbox.Model
-	checkAfter  *checkbox.Model
-	focusIndex  int
+	props        common.Props
+	poster       *poster.Model
+	filmLoaded   bool
+	reviewLoaded bool
+	filmId       int
+	inputs       []common.Focusable
+	dropdown     *dropdown.Model
+	checkBefore  *checkbox.Model
+	checkDuring  *checkbox.Model
+	checkAfter   *checkbox.Model
+	focusIndex   int
+	updates      map[string]string
 }
 
 func New(p common.Props) *Model {
 	m := &Model{
-		props:  p,
-		poster: &poster.Model{},
-		loaded: false,
-		filmId: 0,
-		film:   common.Film{},
+		props:      p,
+		poster:     &poster.Model{},
+		filmLoaded: false,
+		filmId:     0,
 		dropdown: dropdown.New(common.Props{Width: 20, Height: 3, Global: p.Global}, "Add movie", []dropdown.Option{
 			{Text: "Plan to Watch", Callback: func() tea.Msg { return nil }},
 			{Text: "Completed", Callback: func() tea.Msg { return nil }},
@@ -47,6 +48,7 @@ func New(p common.Props) *Model {
 		checkAfter:  checkbox.New(p),
 		inputs:      []common.Focusable{},
 		focusIndex:  0,
+		updates:     make(map[string]string),
 	}
 	m.inputs = append(m.inputs, m.dropdown, m.checkBefore, m.checkDuring, m.checkAfter)
 
@@ -61,31 +63,39 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Height = height - vf
 }
 
-func (m *Model) Init(filmId int) tea.Cmd {
-	m.filmId = filmId
-	m.loaded = false
-	review, ok := m.props.Global.ReviewMap[m.filmId]
+func (m *Model) updateInputs(review common.Review) {
 	m.checkBefore.Checked = review.Fun_before
 	m.checkDuring.Checked = review.Fun_during
 	m.checkAfter.Checked = review.Fun_after
 
+	switch review.Status {
+	case enums.PlanToWatch:
+		m.dropdown.Selected = 0
+	case enums.Completed:
+		m.dropdown.Selected = 1
+	}
+}
+
+func (m *Model) Init(filmId int) tea.Cmd {
+	m.filmId = filmId
+	m.filmLoaded = false
+	review, ok := m.props.Global.ReviewMap[m.filmId]
+	m.updateInputs(review)
+
 	m.dropdown.Focus()
 
 	if ok {
+		m.reviewLoaded = true
 		return nil
 	}
-	return func() tea.Msg {
-		res := common.GetMyFilmReviewCmd(m.props.Global, m.filmId)().(common.GetResponse[common.PageResult[common.Review]])
-		if res.Ok && len(res.Data.Results) > 0 {
-			review := res.Data.Results[0]
-			m.checkBefore.Checked = review.Fun_before
-			m.checkDuring.Checked = review.Fun_during
-			m.checkAfter.Checked = review.Fun_after
-
-			m.dropdown.Focus()
+	return common.GetMyFilmReviewCmd(m.props.Global, m.filmId, func(data common.Paged[common.Review], err error) tea.Msg {
+		if err == nil && len(data.Results) > 0 {
+			review := data.Results[0]
+			m.props.Global.ReviewMap[review.Tmdb_id] = review
+			m.updateInputs(review)
 		}
-		return res
-	}
+		return nil
+	})
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
@@ -105,7 +115,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		}
 	}
 
-	if !m.loaded {
+	if !m.filmLoaded {
 
 		ok, loading, film := m.props.Global.FilmCache.Get(m.filmId)
 
@@ -115,8 +125,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		} else if loading {
 
 		} else {
-			m.loaded = true
-			m.film = film
+			m.filmLoaded = true
 			m.poster = poster.New(common.Props{Width: 28, Height: 21, Global: m.props.Global}, "https://image.tmdb.org/t/p/w200"+film.Poster_path)
 
 			_, cmd := m.poster.Update(poster.Init{})
@@ -135,9 +144,10 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	if !m.loaded {
+	if !m.filmLoaded {
 		return "loading..."
 	}
+	_, _, film := m.props.Global.FilmCache.Get(m.filmId)
 
 	left := m.poster.View()
 
@@ -145,7 +155,7 @@ func (m *Model) View() string {
 
 	rightSb := strings.Builder{}
 	rightSb.WriteString("\n")
-	rightSb.WriteString(m.film.Title + " (" + m.film.Release_date[:4] + ")")
+	rightSb.WriteString(film.Title + " (" + film.Release_date[:4] + ")")
 	rightSb.WriteString("\n\n")
 
 	// make place holder for dropdown which needs to be overlaid
@@ -155,12 +165,10 @@ func (m *Model) View() string {
 
 	rightSb.WriteString("\n\n")
 
-	rightSb.WriteString(descStyle.Render(m.film.Overview))
+	rightSb.WriteString(descStyle.Render(film.Overview))
 	rightSb.WriteString("\n\n")
 
 	rightView := util.RenderOverlay(rightSb.String(), dropdownView, 0, 3)
-
-	// return rightSb.String()
 
 	return viewStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, left, "  ", rightView))
 }

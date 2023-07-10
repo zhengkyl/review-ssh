@@ -30,10 +30,11 @@ type Option struct {
 type Model struct {
 	props    common.Props
 	focused  bool
+	Callback tea.Cmd
 	open     bool
 	noneText string
 	options  []Option
-	selected int // -1 if none, else index into options
+	Selected int // -1 if none, else index into options
 	active   int // not yet selected, but hovering index
 }
 
@@ -44,7 +45,7 @@ func New(p common.Props, noneText string, options []Option) *Model {
 		options:  options,
 		focused:  false,
 		open:     false,
-		selected: -1,
+		Selected: -1,
 		active:   -1,
 	}
 }
@@ -89,14 +90,14 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
 			if !m.open {
 				m.open = true
-				if m.selected == -1 {
+				if m.Selected == -1 {
 					m.active = 0
 				} else {
-					m.active = m.selected
+					m.active = m.Selected
 				}
 
 			} else {
-				m.selected = m.active
+				m.Selected = m.active
 				m.open = false
 				return m, m.options[m.active].Callback
 			}
@@ -114,7 +115,7 @@ func (m *Model) View() string {
 	itemWidth := m.props.Width - hf - itemHf
 
 	var selected string
-	if m.selected == -1 {
+	if m.Selected == -1 {
 		selected = m.noneText
 	} else {
 		selected = m.options[m.active].Text

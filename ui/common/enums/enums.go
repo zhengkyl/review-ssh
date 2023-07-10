@@ -36,6 +36,20 @@ func (s Status) DisplayString() string {
 	return "Invalid Status"
 }
 
+func (s Status) String() string {
+	switch s {
+	case PlanToWatch:
+		return "PlanToWatch"
+	case Watching:
+		return "Watching"
+	case Completed:
+		return "Completed"
+	case Dropped:
+		return "Dropped"
+	}
+	return "Invalid Status"
+}
+
 func (c *Category) UnmarshalJSON(data []byte) (err error) {
 	var category string
 	if err := json.Unmarshal(data, &category); err != nil {

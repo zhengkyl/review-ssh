@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 	"time"
 
@@ -68,58 +69,79 @@ type Paginated interface {
 	Review
 }
 
-type PageResult[T Paginated] struct {
+type Paged[T Paginated] struct {
 	Results       []T
 	Page          int
 	Total_Pages   int
 	Total_Results int
 }
 
-type Gettable interface {
-	PageResult[Review] | Film
+type responseData interface {
+	Paged[Review] | Film | Review
 }
 
-type GetResponse[T Gettable] struct {
-	Ok   bool
-	Data T
-	Err  string
-}
+type fetchCallback[T responseData] func(data T, err error) tea.Msg
 
-func GetCmd[T Gettable](client *retryablehttp.Client, url string) tea.Cmd {
+func Fetch[T responseData](client *retryablehttp.Client, method string, url string, body map[string]string, callback fetchCallback[T]) tea.Cmd {
+
+	var rawbody []byte
+	var err error
+	if body != nil {
+		rawbody, err = json.Marshal(body)
+		if err != nil {
+			return nil
+		}
+	}
+
+	req, err := retryablehttp.NewRequest(method, url, rawbody)
+	if err != nil {
+		return nil
+	}
+
 	return func() tea.Msg {
-		resp, err := client.Get(url)
-
 		var data T
-		if err != nil {
-			return GetResponse[T]{false, data, err.Error()}
-		}
 
-		if resp.StatusCode != 200 {
-			return GetResponse[T]{false, data, "Something went wrong."}
-		}
-
-		err = json.NewDecoder(resp.Body).Decode(&data)
+		resp, err := client.Do(req)
 
 		if err != nil {
-			return GetResponse[T]{false, data, err.Error()}
+			return callback(data, err)
 		}
 
-		return GetResponse[T]{true, data, ""}
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			return callback(data, errors.New("something went wrong"))
+		}
+
+		if resp.StatusCode != 204 {
+			err = json.NewDecoder(resp.Body).Decode(&data)
+		}
+
+		if err != nil {
+			return callback(data, err)
+		}
+
+		return callback(data, nil)
 	}
 }
 
 const filmEndpoint = "https://api.themoviedb.org/3/movie/"
 
 func GetFilmCmd(g Global, filmId int) tea.Cmd {
+	g.FilmCache.SetLoading(filmId)
 	url := (filmEndpoint + strconv.Itoa(filmId) + "?api_key=" + g.Config.TMDB_API_KEY)
-	return GetCmd[Film](g.HttpClient, url)
+	return Fetch[Film](g.HttpClient, "GET", url, nil, func(data Film, err error) tea.Msg {
+		if err != nil {
+
+		}
+		// g.FilmCache.Delete(filmId)
+		return nil
+	})
 }
 
 const filmReviewEndpoint = "https://review-api.fly.dev/reviews?category=Film"
 
-func GetMyFilmReviewCmd(g Global, filmId int) tea.Cmd {
+func GetMyFilmReviewCmd(g Global, filmId int, callback fetchCallback[Paged[Review]]) tea.Cmd {
 	url := filmReviewEndpoint +
 		"&tmdb_id=" + strconv.Itoa(filmId) +
 		"&user_id=" + strconv.Itoa(g.AuthState.User.Id)
-	return GetCmd[PageResult[Review]](g.HttpClient, url)
+	return Fetch[Paged[Review]](g.HttpClient, "GET", url, nil, callback)
 }

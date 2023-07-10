@@ -15,13 +15,14 @@ var (
 )
 
 type Model struct {
-	props   common.Props
-	focused bool
-	Checked bool
+	props    common.Props
+	focused  bool
+	Callback tea.Cmd
+	Checked  bool
 }
 
 func New(p common.Props) *Model {
-	return &Model{p, false, false}
+	return &Model{props: p, focused: false, Checked: false}
 }
 
 func (m *Model) Focused() bool {

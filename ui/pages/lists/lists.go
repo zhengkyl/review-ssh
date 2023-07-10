@@ -2,6 +2,7 @@ package lists
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -55,23 +56,33 @@ func (m *Model) SetSize(width, height int) {
 	m.list.SetSize(width, height-3)
 }
 
-type Init struct{}
+func (m *Model) Init() tea.Cmd {
+	user_id := m.props.Global.AuthState.User.Id
 
-func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case Init:
-		return m, getReviewsCmd(m.props.Global.HttpClient, m.props.Global.AuthState.User.Id)
-	case common.GetResponse[common.PageResult[common.Review]]:
-		if msg.Ok {
-			reviews := make([]common.Review, 0, len(m.props.Global.ReviewMap))
-			for _, review := range m.props.Global.ReviewMap {
+	callback := func(data common.Paged[common.Review], err error) tea.Msg {
+
+		if err == nil {
+			reviews := make([]common.Review, 0, len(data.Results))
+			for _, review := range data.Results {
 				reviews = append(reviews, review)
+				m.props.Global.ReviewMap[review.Tmdb_id] = review
 			}
 
 			sort.Sort(common.ByUpdatedAt(reviews))
 			m.list.SetReviews(reviews)
-		} else {
 		}
+		return nil
+	}
+
+	if user_id == common.GuestAuthState.User.Id {
+		return common.Fetch[common.Paged[common.Review]](m.props.Global.HttpClient, "GET", reviewsEndpoint, nil, callback)
+	}
+
+	return common.Fetch[common.Paged[common.Review]](m.props.Global.HttpClient, "GET", reviewsEndpoint+"?user_id="+strconv.Itoa(user_id), nil, callback)
+}
+
+func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
+	switch msg := msg.(type) {
 	case *common.KeyEvent:
 		prevActive := m.activeTab
 		if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextTab) {
