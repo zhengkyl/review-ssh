@@ -128,8 +128,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			m.filmLoaded = true
 			m.poster = poster.New(common.Props{Width: 28, Height: 21, Global: m.props.Global}, "https://image.tmdb.org/t/p/w200"+film.Poster_path)
 
-			_, cmd := m.poster.Update(poster.Init{})
-			cmds = append(cmds, cmd)
+			cmds = append(cmds, m.poster.Init())
 
 		}
 	} else {
@@ -151,7 +150,7 @@ func (m *Model) View() string {
 
 	left := m.poster.View()
 
-	descStyle := lipgloss.NewStyle().Width(m.props.Width - m.poster.Width() - 2).Height(5)
+	descStyle := lipgloss.NewStyle().Width(m.props.Width - 28 - 2).Height(5)
 
 	rightSb := strings.Builder{}
 	rightSb.WriteString("\n")

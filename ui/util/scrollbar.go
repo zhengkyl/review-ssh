@@ -1,4 +1,4 @@
-package reviewlist
+package util
 
 import (
 	"strings"
@@ -17,8 +17,7 @@ var (
 	scrollStyle  = lipgloss.NewStyle().Border(scrollBorder, true)
 )
 
-func renderScrollbar(height, positions, pos int) string {
-	// sos := pos
+func RenderScrollbar(height, positions, pos int) string {
 	innerHeight := height - 2 // top/bot border
 	thumbPositions := innerHeight * 2
 

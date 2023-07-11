@@ -20,8 +20,8 @@ type Props struct {
 }
 type Sizable interface {
 	SetSize(width, height int)
-	Width() int
-	Height() int
+	// Width() int
+	// Height() int
 }
 
 type Focusable interface {

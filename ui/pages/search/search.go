@@ -1,45 +1,35 @@
 package search
 
 import (
-	"github.com/charmbracelet/bubbles/list"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
-	"github.com/zhengkyl/review-ssh/ui/components/poster"
+	"github.com/zhengkyl/review-ssh/ui/components/textfield"
+	"github.com/zhengkyl/review-ssh/ui/components/vlist"
+	"github.com/zhengkyl/review-ssh/ui/pages/search/filmitem"
 )
 
 type Model struct {
-	props common.Props
-	input textinput.Model
-	list  list.Model
+	props       common.Props
+	searchField *textfield.Model
+	list        *vlist.Model
 }
 
-// const film_url = "https://review-api.fly.dev/search/Film"
-// const show_url = "https://review-api.fly.dev/search/Show"
+func New(p common.Props) *Model {
 
-type itemJson struct {
-	Id           int
-	Title        string
-	Overview     string
-	Poster_path  string
-	Release_date string
-}
-
-func New(props common.Props) *Model {
-
-	input := textinput.New()
-	input.Placeholder = "Search for films and shows..."
-	input.Focus()
-	input.CharLimit = 80
+	searchField := textfield.New(p)
+	searchField.CharLimit(80)
+	searchField.Placeholder("(s)earch for films...")
 
 	m := &Model{
-		input: input,
-		props: props,
-		list:  list.New([]list.Item{}, itemDelegate{}, 0, 0),
+		props:       p,
+		searchField: searchField,
+		list:        vlist.New(p, 4),
 	}
 
-	m.SetSize(props.Width, props.Height)
+	m.SetSize(p.Width, p.Height)
 
 	return m
 }
@@ -48,65 +38,63 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Width = width
 	m.props.Height = height
 
+	// title + " " + searchField = width
+	m.searchField.SetSize(width, 3)
+
 	m.list.SetSize(width, height)
 	// wm, hm := m.getMargins()
 
 }
 
-func (m *Model) getMargins() (wm, hm int) {
-	wm = 0
-	hm = 0
-
-	return
+func (m *Model) Init() tea.Cmd {
+	return textinput.Blink
 }
-
-type Init struct{}
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case Init:
-		return m, textinput.Blink
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			cmds = append(cmds, getSearchCmd(m.props.Global.HttpClient, m.input.Value()))
-		}
+			cmd := common.Get[common.Paged[common.Film]](m.props.Global.HttpClient, endpoint+"?query="+m.searchField.Value(), func(data common.Paged[common.Film], err error) tea.Msg {
+				if err == nil {
+					items := make([]common.Focusable, 0, len(data.Results))
+					for _, film := range data.Results {
+						item := filmitem.New(m.props, film)
+						cmds = append(cmds, item.Init())
+					}
+					m.list.SetItems(items)
 
-	case []list.Item:
-		cmds = append(cmds, m.list.SetItems(msg))
-		for _, i := range msg {
-			var j = i.(item)
-			_, cmd := j.poster.Update(poster.Init{})
+				}
+				return nil
+			})
 			cmds = append(cmds, cmd)
 		}
-
-	case error:
-		return m, nil
 	}
 
 	var cmd tea.Cmd
-	// Necessary b/c bubbles component
-	m.input, cmd = m.input.Update(msg)
+
+	_, cmd = m.searchField.Update(msg)
 	cmds = append(cmds, cmd)
 
-	// Necessary b/c bubbles component
-	m.list, cmd = m.list.Update(msg)
+	_, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
+func (m *Model) ViewSearchbar() string {
+	return m.searchField.View()
+}
+
 func (m *Model) View() string {
-	var view string
+	sb := strings.Builder{}
 
-	wm, _ := m.getMargins()
+	// ss := lipgloss.NewStyle().Width(m.props.Width - wm)
+	// view = ss.Render(m.input.View())
+	sb.WriteString(m.list.View())
 
-	ss := lipgloss.NewStyle().Width(m.props.Width - wm)
-	view = ss.Render(m.input.View())
-	view += ss.Render(m.list.View())
-
-	return view
+	return sb.String()
 }

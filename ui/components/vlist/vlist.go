@@ -10,13 +10,23 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
+type overflow int
+
+const (
+	Scroll overflow = iota
+	Paginate
+)
+
 type Model struct {
 	props        common.Props
 	Style        Style
-	Children     []common.Focusable
+	items        []common.Focusable
 	offset       int
-	Active       int
+	active       int
 	visibleItems int
+	ItemHeight   int
+	ItemGap      int
+	Overflow     overflow
 }
 
 type Style struct {
@@ -24,21 +34,25 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(p common.Props, children ...common.Focusable) *Model {
+func New(p common.Props, height int, items ...common.Focusable) *Model {
 	m := &Model{
 		props: p,
 		Style: Style{
 			Normal: lipgloss.NewStyle(),
 			Active: lipgloss.NewStyle(),
 		},
-		Children:     children,
-		offset:       0,
-		Active:       0,
-		visibleItems: p.Height, // set to highest possible ie 1 height items, set in Update()
+		items:      items,
+		offset:     0,
+		active:     0,
+		ItemHeight: height,
+		ItemGap:    1,
+		Overflow:   Scroll,
 	}
 
-	if len(children) > 0 {
-		current := m.Children[m.Active]
+	m.SetSize(p.Width, p.Height)
+
+	if len(items) > 0 {
+		current := m.items[m.active]
 		current.Focus()
 	}
 
@@ -49,57 +63,80 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Width = width
 	m.props.Height = height
 
-	for _, child := range m.Children {
+	for _, child := range m.items {
 		sizable, ok := child.(common.Sizable)
 		if ok {
-			sizable.SetSize(width, sizable.Height())
+			sizable.SetSize(width, m.ItemHeight)
 		}
 	}
 
-	// Try to keep active item same pos from top when resizing
-	maxIndex := util.Max(m.visibleItems-1, 0)
-	newIndex := util.Min(m.Active-m.offset, maxIndex)
-	m.offset = m.Active - newIndex
+	m.visibleItems = (m.props.Height + m.ItemGap) / (m.ItemHeight + m.ItemGap)
+
+	switch m.Overflow {
+	case Scroll:
+		// Try to keep active item same pos from top when resizing
+		maxIndex := util.Max(m.visibleItems-1, 0)
+		newIndex := util.Min(m.active-m.offset, maxIndex)
+		m.offset = m.active - newIndex
+	case Paginate:
+		m.offset = m.active / m.visibleItems
+	}
+}
+
+func (m *Model) SetItems(items []common.Focusable) {
+	m.items = items
+	m.active = 0
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case *common.KeyEvent:
-		_, cmd := m.Children[m.Active].Update(msg)
+		_, cmd := m.items[m.active].Update(msg)
 		if msg.Handled {
 			return m, cmd
 		}
 
-		prevActive := m.Active
+		prevActive := m.active
 		switch {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
-			m.Active = util.Min(m.Active+1, len(m.Children)-1)
+			m.active = util.Min(m.active+1, len(m.items)-1)
 
-			if m.Active == m.offset+m.visibleItems {
-				m.offset++
+			if m.active == m.offset+m.visibleItems {
+				switch m.Overflow {
+				case Scroll:
+					m.offset++
+				case Paginate:
+					m.offset += m.visibleItems
+				}
+
 			}
 			msg.Handled = true
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
-			m.Active = util.Max(m.Active-1, 0)
+			m.active = util.Max(m.active-1, 0)
 
-			if m.Active == m.offset-1 {
-				m.offset = m.Active
+			if m.active == m.offset-1 {
+				switch m.Overflow {
+				case Scroll:
+					m.offset = m.active
+				case Paginate:
+					m.offset -= m.visibleItems
+				}
 			}
 			msg.Handled = true
 		}
 
-		if prevActive != m.Active {
-			prev := m.Children[prevActive]
+		if prevActive != m.active {
+			prev := m.items[prevActive]
 			prev.Blur()
 
-			current := m.Children[m.Active]
+			current := m.items[m.active]
 			current.Focus()
 
 		}
 	}
 
-	for _, child := range m.Children {
+	for _, child := range m.items {
 		_, cmd := child.Update(msg)
 		cmds = append(cmds, cmd)
 	}
@@ -108,30 +145,18 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	sb := strings.Builder{}
-	height := 0
 
-	m.visibleItems = 0
+	for i := m.offset; i < m.offset+m.visibleItems; i++ {
+		section := m.items[i].View()
 
-	for i := m.offset; i < len(m.Children); i++ {
-		section := m.Children[i].View()
-
-		if i == m.Active {
+		if i == m.active {
 			section = m.Style.Active.Render(section)
 		} else {
 			section = m.Style.Normal.Render(section)
 		}
 
-		sectionHeight := lipgloss.Height(section)
-
-		if height+sectionHeight > m.props.Height {
-			break
-		}
-
-		height += sectionHeight
-		m.visibleItems++
-
 		if i > m.offset {
-			sb.WriteString("\n")
+			sb.WriteString(strings.Repeat("\n", m.ItemGap+1))
 		}
 
 		sb.WriteString(section)

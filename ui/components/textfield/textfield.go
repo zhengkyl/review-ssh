@@ -69,13 +69,6 @@ func (m *Model) SetSize(w, h int) {
 	}
 }
 
-func (m *Model) Height() int {
-	return m.props.Height
-}
-func (m *Model) Width() int {
-	return m.props.Width
-}
-
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	// TODO fix this
 	if m.focused && !m.inner.Focused() {

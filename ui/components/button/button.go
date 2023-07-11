@@ -45,13 +45,6 @@ func (m *Model) Blur() {
 	m.focused = false
 }
 
-func (m *Model) Height() int {
-	return m.props.Height
-}
-func (m *Model) Width() int {
-	return m.props.Width
-}
-
 func (m *Model) SetSize(h, w int) {
 
 }

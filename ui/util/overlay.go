@@ -111,6 +111,10 @@ func styleByLine(view string) []string {
 	return styledLines
 }
 
+// for reference, how lipgloss.Style.Render() works
+// var CSI = termenv.CSI
+// return fmt.Sprintf("%s%sm%s%sm", CSI, seq, s, CSI+ResetSeq)
+
 func RenderOverlay(parentView, overlayView string, left, top int) string {
 	parentLines := strings.Split(parentView, "\n")
 	overlayLines := styleByLine(overlayView)
@@ -131,11 +135,6 @@ func RenderOverlay(parentView, overlayView string, left, top int) string {
 
 		overlayIndex := i - top
 		shouldOverlay := overlayIndex >= 0 && overlayIndex < len(overlayLines)
-
-		// lineWidth := ansi.PrintableRuneWidth(parentLine)
-		// if shouldOverlay && lineWidth < left {
-		// 	parentLine += strings.Repeat(" ", left-lineWidth)
-		// }
 
 		sb := strings.Builder{}
 
@@ -219,7 +218,4 @@ func RenderOverlay(parentView, overlayView string, left, top int) string {
 	}
 
 	return strings.Join(finalLines, "\n")
-	// reference
-	// var CSI = termenv.CSI
-	// return fmt.Sprintf("%s%sm%s%sm", CSI, seq, s, CSI+ResetSeq)
 }

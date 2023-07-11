@@ -83,14 +83,6 @@ func (m *Model) SetSize(width, height int) {
 
 }
 
-func (m *Model) Height() int {
-	return m.props.Height
-}
-
-func (m *Model) Width() int {
-	return m.props.Width
-}
-
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	return m, nil
 }

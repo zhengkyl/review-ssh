@@ -65,11 +65,7 @@ func (a ByUpdatedAt) Less(i, j int) bool {
 	return a[i].Updated_at.After(a[j].Updated_at)
 }
 
-type Paginated interface {
-	Review
-}
-
-type Paged[T Paginated] struct {
+type Paged[T Review | Film] struct {
 	Results       []T
 	Page          int
 	Total_Pages   int
@@ -77,10 +73,15 @@ type Paged[T Paginated] struct {
 }
 
 type responseData interface {
-	Paged[Review] | Film | Review
+	Film | Review | Paged[Film] | Paged[Review]
 }
 
 type fetchCallback[T responseData] func(data T, err error) tea.Msg
+
+// Convenience Fetch() wrapper for most common usecase
+func Get[T responseData](client *retryablehttp.Client, url string, callback fetchCallback[T]) tea.Cmd {
+	return Fetch[T](client, "GET", url, nil, callback)
+}
 
 func Fetch[T responseData](client *retryablehttp.Client, method string, url string, body map[string]string, callback fetchCallback[T]) tea.Cmd {
 
@@ -128,7 +129,7 @@ const filmEndpoint = "https://api.themoviedb.org/3/movie/"
 func GetFilmCmd(g Global, filmId int) tea.Cmd {
 	g.FilmCache.SetLoading(filmId)
 	url := (filmEndpoint + strconv.Itoa(filmId) + "?api_key=" + g.Config.TMDB_API_KEY)
-	return Fetch[Film](g.HttpClient, "GET", url, nil, func(data Film, err error) tea.Msg {
+	return Get[Film](g.HttpClient, url, func(data Film, err error) tea.Msg {
 		if err != nil {
 			g.FilmCache.Delete(filmId)
 		} else {
@@ -144,5 +145,5 @@ func GetMyFilmReviewCmd(g Global, filmId int, callback fetchCallback[Paged[Revie
 	url := filmReviewEndpoint +
 		"&tmdb_id=" + strconv.Itoa(filmId) +
 		"&user_id=" + strconv.Itoa(g.AuthState.User.Id)
-	return Fetch[Paged[Review]](g.HttpClient, "GET", url, nil, callback)
+	return Get[Paged[Review]](g.HttpClient, url, callback)
 }

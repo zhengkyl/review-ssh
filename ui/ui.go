@@ -11,7 +11,6 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/button"
 	"github.com/zhengkyl/review-ssh/ui/components/dialog"
-	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
 	"github.com/zhengkyl/review-ssh/ui/pages/filmdetails"
 	"github.com/zhengkyl/review-ssh/ui/pages/lists"
@@ -20,9 +19,9 @@ import (
 )
 
 var (
+	appStyle   = lipgloss.NewStyle().MarginBottom(1)
 	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185")).Padding(0, 1)
 	title      = titleStyle.Render("review-ssh")
-	appStyle   = lipgloss.NewStyle().MarginBottom(1)
 )
 
 type page int
@@ -31,39 +30,30 @@ const (
 	ACCOUNT page = iota
 	LISTS
 	FILMDETAILS
+	SEARCH
 )
 
 type Model struct {
 	props           common.Props
-	searchField     *textfield.Model
 	accountPage     *account.Model
 	listsPage       *lists.Model
-	searchPage      *search.Model
 	filmdetailsPage *filmdetails.Model
+	searchPage      *search.Model
 	dialog          *dialog.Model
 	help            help.Model
 	page            page
-	// scrollView  *vlist.Model
 }
 
 func New(p common.Props) *Model {
 
-	searchField := textfield.New(p)
-	searchField.CharLimit(80)
-	searchField.Placeholder("(s)earch for films...")
-
 	m := &Model{
 		props:           p,
-		searchField:     searchField,
 		accountPage:     account.New(p),
 		listsPage:       lists.New(p),
+		filmdetailsPage: filmdetails.New(p),
 		searchPage:      search.New(p),
 		dialog:          dialog.New(p, "Quit program?"),
 		help:            help.New(),
-		filmdetailsPage: filmdetails.New(p),
-		// scrollView: vlist.New(p, []tea.Model{
-		// 	account.New(c), account.New(c), account.New(c), account.New(c), account.New(c),
-		// }),
 	}
 
 	m.dialog.Buttons(
@@ -84,9 +74,6 @@ func (m *Model) SetSize(width, height int) {
 
 	viewW := width
 	viewH := height - 2 // 1 for bottom margin + 1 for help
-
-	// title + " " + searchField = width
-	m.searchField.SetSize(viewW-lipgloss.Width(title)-1, 3)
 
 	contentHeight := viewH - 3
 
@@ -129,9 +116,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		event := &common.KeyEvent{KeyMsg: msg, Handled: false}
 
-		if m.searchField.Focused() {
-			_, cmd = m.searchField.Update(event)
-		} else if m.dialog.Focused() {
+		if m.dialog.Focused() {
 			_, cmd = m.dialog.Update(event)
 		}
 
@@ -146,6 +131,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			_, cmd = m.listsPage.Update(event)
 		case FILMDETAILS:
 			_, cmd = m.filmdetailsPage.Update(event)
+		case SEARCH:
+			_, cmd = m.searchPage.Update(msg)
+		}
+
+		if event.Handled {
+			return m, cmd
 		}
 
 		if event.Handled {
@@ -163,8 +154,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
-	_, cmd = m.searchField.Update(msg)
-	cmds = append(cmds, cmd)
 	_, cmd = m.dialog.Update(msg)
 	cmds = append(cmds, cmd)
 	switch m.page {
@@ -174,6 +163,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, cmd = m.listsPage.Update(msg)
 	case FILMDETAILS:
 		_, cmd = m.filmdetailsPage.Update(msg)
+	case SEARCH:
+		_, cmd = m.searchPage.Update(msg)
 	}
 	cmds = append(cmds, cmd)
 
@@ -194,9 +185,6 @@ func (m *Model) View() string {
 		centered := lipgloss.JoinVertical(lipgloss.Center, appBar, m.accountPage.View())
 		view.WriteString(centered)
 	} else {
-		appBar := lipgloss.JoinHorizontal(lipgloss.Center, title, " ", m.searchField.View())
-		view.WriteString(appBar)
-		view.WriteString("\n")
 
 		switch m.page {
 		case LISTS:

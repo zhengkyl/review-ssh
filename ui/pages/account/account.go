@@ -43,7 +43,7 @@ type signInMsg struct{}
 type signUpMsg struct{}
 
 func New(p common.Props) *Model {
-	b := vlist.New(p,
+	b := vlist.New(p, 3,
 		button.New(p, "     Sign in     ", func() tea.Msg { return signInMsg{} }),
 		button.New(p, "     Sign up     ", func() tea.Msg { return signUpMsg{} }),
 		button.New(p, "Continue as guest", func() tea.Msg { return common.GuestAuthState }),
@@ -54,21 +54,13 @@ func New(p common.Props) *Model {
 
 	m := &Model{
 		props:      p,
-		inputs:     vlist.New(p),
+		inputs:     vlist.New(p, 3),
 		buttons:    b,
 		focusIndex: 0,
 		help:       help.New(),
 	}
 
 	return m
-}
-
-func (m *Model) Height() int {
-	return m.props.Height
-}
-
-func (m *Model) Width() int {
-	return m.props.Width
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -92,13 +84,11 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		m.err = msg.err
 	case signInMsg:
 		m.stage = signIn
-		m.inputs.Children = signInInputs(m.props)
-		m.inputs.Active = 0
+		m.inputs.SetItems(signInInputs(m.props))
 		m.err = ""
 	case signUpMsg:
 		m.stage = signUp
-		m.inputs.Children = signUpInputs(m.props)
-		m.inputs.Active = 0
+		m.inputs.SetItems(signUpInputs(m.props))
 		m.err = ""
 	case *common.KeyEvent:
 		switch {
@@ -198,8 +188,8 @@ func signUpInputs(p common.Props) []common.Focusable {
 			inputs[2].(*textfield.Model).Value(),
 		})
 	})
-	button.Style.Normal.Margin(1).MarginBottom(0)
-	button.Style.Active.Margin(1).MarginBottom(0)
+	// button.Style.Normal.Margin(1).MarginBottom(0)
+	// button.Style.Active.Margin(1).MarginBottom(0)
 
 	inputs = append(inputs, button)
 
@@ -244,8 +234,8 @@ func signInInputs(p common.Props) []common.Focusable {
 			inputs[1].(*textfield.Model).Value(),
 		})
 	})
-	button.Style.Normal.Margin(1).MarginBottom(0)
-	button.Style.Active.Margin(1).MarginBottom(0)
+	// button.Style.Normal.Margin(1).MarginBottom(0)
+	// button.Style.Active.Margin(1).MarginBottom(0)
 
 	inputs = append(inputs, button)
 

@@ -201,7 +201,7 @@ func (m *Model) View() string {
 
 	scrollPositions := len(m.reviews) - m.visibleItems + 1 // initial + all nonvisible
 	vh := listStyle.GetVerticalFrameSize()
-	scrollBar := renderScrollbar(m.props.Height-vh, scrollPositions, m.offset)
+	scrollBar := util.RenderScrollbar(m.props.Height-vh, scrollPositions, m.offset)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, listStyle.Render(viewSb.String()), scrollBar)
 }

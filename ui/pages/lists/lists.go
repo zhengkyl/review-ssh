@@ -75,10 +75,10 @@ func (m *Model) Init() tea.Cmd {
 	}
 
 	if user_id == common.GuestAuthState.User.Id {
-		return common.Fetch[common.Paged[common.Review]](m.props.Global.HttpClient, "GET", reviewsEndpoint, nil, callback)
+		return common.Get[common.Paged[common.Review]](m.props.Global.HttpClient, reviewsEndpoint, callback)
 	}
 
-	return common.Fetch[common.Paged[common.Review]](m.props.Global.HttpClient, "GET", reviewsEndpoint+"?user_id="+strconv.Itoa(user_id), nil, callback)
+	return common.Get[common.Paged[common.Review]](m.props.Global.HttpClient, reviewsEndpoint+"?user_id="+strconv.Itoa(user_id), callback)
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
