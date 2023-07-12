@@ -70,9 +70,9 @@ func (m *Model) SetSize(w, h int) {
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
-	// TODO fix this
+	var cmds []tea.Cmd
 	if m.focused && !m.inner.Focused() {
-		return m, m.inner.Focus()
+		cmds = append(cmds, m.inner.Focus())
 	}
 
 	var cmd tea.Cmd
@@ -94,8 +94,9 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	default:
 		m.inner, cmd = m.inner.Update(msg)
 	}
+	cmds = append(cmds, cmd)
 
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {

@@ -142,7 +142,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.dialog.Focused() {
 			_, cmd = m.dialog.Update(event)
 		} else if m.searchField.Focused() {
-			_, cmd = m.searchField.Update(msg)
+			_, cmd = m.searchField.Update(event)
 		} else {
 			switch m.page {
 			case ACCOUNT:
@@ -172,7 +172,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.dialog.Focus()
 		case key.Matches(msg, m.props.Global.KeyMap.Search):
-			m.searchField.Focus()
+			if !m.searchField.Focused() {
+				m.searchField.Focus()
+				_, cmd := m.searchField.Update(nil)
+				return m, cmd
+			}
 		case key.Matches(msg, m.props.Global.KeyMap.Select):
 			if m.searchField.Focused() {
 				m.searchField.Blur()
