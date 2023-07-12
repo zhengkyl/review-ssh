@@ -93,8 +93,8 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	case *common.KeyEvent:
 		switch {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Back):
-			msg.Handled = true
 			if m.stage != 0 {
+				msg.Handled = true
 				m.stage = 0
 			}
 		}

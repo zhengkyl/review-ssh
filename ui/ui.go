@@ -11,10 +11,12 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/button"
 	"github.com/zhengkyl/review-ssh/ui/components/dialog"
+	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/pages/account"
 	"github.com/zhengkyl/review-ssh/ui/pages/filmdetails"
 	"github.com/zhengkyl/review-ssh/ui/pages/lists"
 	"github.com/zhengkyl/review-ssh/ui/pages/search"
+	"github.com/zhengkyl/review-ssh/ui/pages/search/filmitem"
 	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
@@ -23,6 +25,8 @@ var (
 	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185")).Padding(0, 1)
 	title      = titleStyle.Render("review-ssh")
 )
+
+const searchEndpoint = "https://review-api.fly.dev/search/Film"
 
 type page int
 
@@ -35,6 +39,7 @@ const (
 
 type Model struct {
 	props           common.Props
+	searchField     *textfield.Model
 	accountPage     *account.Model
 	listsPage       *lists.Model
 	filmdetailsPage *filmdetails.Model
@@ -46,12 +51,17 @@ type Model struct {
 
 func New(p common.Props) *Model {
 
+	searchField := textfield.New(p)
+	searchField.CharLimit(80)
+	searchField.Placeholder("(s)earch for films...")
+
 	m := &Model{
 		props:           p,
+		searchField:     searchField,
 		accountPage:     account.New(p),
 		listsPage:       lists.New(p),
 		filmdetailsPage: filmdetails.New(p),
-		searchPage:      search.New(p),
+		searchPage:      search.New(p, searchField),
 		dialog:          dialog.New(p, "Quit program?"),
 		help:            help.New(),
 	}
@@ -75,6 +85,9 @@ func (m *Model) SetSize(width, height int) {
 	viewW := width
 	viewH := height - 2 // 1 for bottom margin + 1 for help
 
+	// title + " " + searchField = width
+	m.searchField.SetSize(width-lipgloss.Width(title)-1, 3)
+
 	contentHeight := viewH - 3
 
 	m.accountPage.SetSize(util.Max(viewW/2, 30), contentHeight)
@@ -97,8 +110,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case func():
-		msg()
+	case func() tea.Msg:
+		// Handle callback type tea.Cmd's
+		nextMsg := msg()
+
+		// Only used by searchField callback to init posters
+		// TODO figure out a better way?
+		cmd, ok := nextMsg.(tea.Cmd)
+		if ok {
+			cmds = append(cmds, cmd)
+		}
 	case common.AuthState:
 		m.props.Global.AuthState.Authed = msg.Authed
 		m.props.Global.AuthState.Cookie = msg.Cookie
@@ -116,46 +137,86 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		event := &common.KeyEvent{KeyMsg: msg, Handled: false}
 
+		// Check if children handle input first
+		// Keyboard input is mutually exclusive
 		if m.dialog.Focused() {
 			_, cmd = m.dialog.Update(event)
+		} else if m.searchField.Focused() {
+			_, cmd = m.searchField.Update(msg)
+		} else {
+			switch m.page {
+			case ACCOUNT:
+				_, cmd = m.accountPage.Update(event)
+			case LISTS:
+				_, cmd = m.listsPage.Update(event)
+			case FILMDETAILS:
+				_, cmd = m.filmdetailsPage.Update(event)
+			case SEARCH:
+				_, cmd = m.searchPage.Update(event)
+			}
 		}
 
 		if event.Handled {
 			return m, cmd
 		}
 
-		switch m.page {
-		case ACCOUNT:
-			_, cmd = m.accountPage.Update(event)
-		case LISTS:
-			_, cmd = m.listsPage.Update(event)
-		case FILMDETAILS:
-			_, cmd = m.filmdetailsPage.Update(event)
-		case SEARCH:
-			_, cmd = m.searchPage.Update(msg)
-		}
-
-		if event.Handled {
-			return m, cmd
-		}
-
-		if event.Handled {
-			return m, cmd
-		}
-
-		if key.Matches(msg, m.props.Global.KeyMap.Quit) {
+		// Handle global keybinds
+		switch {
+		case key.Matches(msg, m.props.Global.KeyMap.Back):
+			// TODO add history stack?
+			m.page = LISTS
+			m.searchField.Blur()
+		case key.Matches(msg, m.props.Global.KeyMap.Quit):
 			if m.dialog.Focused() {
 				return m, tea.Quit
 			}
 			m.dialog.Focus()
+		case key.Matches(msg, m.props.Global.KeyMap.Search):
+			m.searchField.Focus()
+		case key.Matches(msg, m.props.Global.KeyMap.Select):
+			if m.searchField.Focused() {
+				m.searchField.Blur()
+				m.page = SEARCH
+				cmd := common.Get[common.Paged[common.Film]](m.props.Global.HttpClient, searchEndpoint+"?query="+m.searchField.Value(), func(data common.Paged[common.Film], err error) tea.Msg {
+					if err == nil {
+						inits := make([]tea.Cmd, 0, len(data.Results))
+						items := make([]common.Focusable, 0, len(data.Results))
+						for _, film := range data.Results {
+							item := filmitem.New(
+								common.Props{
+									Width:  m.props.Width,
+									Height: 6,
+									Global: m.props.Global,
+								}, film)
+							items = append(items, item)
+							inits = append(inits, item.Init())
+						}
+						m.searchPage.SetItems(items)
+						return tea.Batch(inits...)
+					}
+					return nil
+				})
+				return m, cmd
+			}
 		}
 
+		// Already handled update
 		return m, nil
 	}
 
+	// non-keyboard input updates
 	var cmd tea.Cmd
-	_, cmd = m.dialog.Update(msg)
-	cmds = append(cmds, cmd)
+
+	if m.dialog.Focused() {
+		_, cmd = m.dialog.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+
+	if m.searchField.Focused() {
+		_, cmd = m.searchField.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+
 	switch m.page {
 	case ACCOUNT:
 		_, cmd = m.accountPage.Update(msg)
@@ -177,6 +238,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() string {
 
 	view := strings.Builder{}
+	// view.WriteString(m.debug1)
+	// view.WriteString("\n")
+	// view.WriteString(m.debug2)
+	// view.WriteString("\n")
+	// view.WriteString(m.debug3)
+	// view.WriteString("\n")
+	// view.WriteString(m.debug4)
+	// view.WriteString("\n")
+	// view.WriteString(fmt.Sprint(m.debug5))
+	// view.WriteString("\n")
 	if !m.props.Global.AuthState.Authed {
 		// 3 tall to match search bar + fullwidth to allow centering accountPage view
 		rightPad := util.Max(m.props.Width-ansi.PrintableRuneWidth(title), 0)
@@ -185,12 +256,17 @@ func (m *Model) View() string {
 		centered := lipgloss.JoinVertical(lipgloss.Center, appBar, m.accountPage.View())
 		view.WriteString(centered)
 	} else {
+		appBar := lipgloss.JoinHorizontal(lipgloss.Center, title, " ", m.searchField.View())
+		view.WriteString(appBar)
+		view.WriteString("\n")
 
 		switch m.page {
 		case LISTS:
 			view.WriteString(m.listsPage.View())
 		case FILMDETAILS:
 			view.WriteString(m.filmdetailsPage.View())
+		case SEARCH:
+			view.WriteString(m.searchPage.View())
 		}
 	}
 

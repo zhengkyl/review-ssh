@@ -71,15 +71,20 @@ func (m *Model) SetSize(width, height int) {
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case *common.KeyEvent:
-		msg.Handled = true
 		switch {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Back):
-			m.open = false
+			if m.open {
+				msg.Handled = true
+				m.open = false
+			}
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
+			msg.Handled = true
 			m.active = util.Min(m.active+1, len(m.options)-1)
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
+			msg.Handled = true
 			m.active = util.Max(m.active-1, 0)
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
+			msg.Handled = true
 			if !m.open {
 				m.open = true
 				if m.Selected == -1 {
@@ -93,8 +98,6 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				m.open = false
 				return m, m.options[m.active].Callback
 			}
-		default:
-			msg.Handled = false
 		}
 	}
 	return m, nil

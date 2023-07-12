@@ -10,8 +10,8 @@ import (
 
 var (
 	// titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle       = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).MarginBottom(1).BorderStyle(lipgloss.Border{Left: " "}).BorderLeft(true)
-	activeItemStyle = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).MarginBottom(1).Foreground(
+	itemStyle       = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).BorderStyle(lipgloss.Border{Left: " "}).BorderLeft(true)
+	activeItemStyle = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).Foreground(
 		lipgloss.Color("170")).BorderStyle(lipgloss.Border{Left: "┃"}).
 		BorderForeground(lipgloss.Color("176")).BorderLeft(true)
 	// paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)

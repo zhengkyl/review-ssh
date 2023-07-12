@@ -84,8 +84,10 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			msg.Handled = true
 		} else {
 			prevValue := m.inner.Value()
+			prevPos := m.inner.Position()
 			m.inner, cmd = m.inner.Update(msg.KeyMsg)
-			if m.inner.Value() != prevValue {
+			if m.inner.Value() != prevValue ||
+				m.inner.Position() != prevPos {
 				msg.Handled = true
 			}
 		}

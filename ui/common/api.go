@@ -105,11 +105,11 @@ func Fetch[T responseData](client *retryablehttp.Client, method string, url stri
 		resp, err := client.Do(req)
 
 		if err != nil {
-			return func() { callback(data, err) }
+			return func() tea.Msg { return callback(data, err) }
 		}
 
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			return func() { callback(data, errors.New("something went wrong")) }
+			return func() tea.Msg { return callback(data, errors.New("something went wrong")) }
 		}
 
 		if resp.StatusCode != 204 {
@@ -117,10 +117,10 @@ func Fetch[T responseData](client *retryablehttp.Client, method string, url stri
 		}
 
 		if err != nil {
-			return func() { callback(data, err) }
+			return func() tea.Msg { return callback(data, err) }
 		}
 
-		return func() { callback(data, nil) }
+		return func() tea.Msg { return callback(data, nil) }
 	}
 }
 

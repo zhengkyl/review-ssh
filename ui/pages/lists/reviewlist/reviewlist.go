@@ -78,27 +78,27 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		}
 	case *common.KeyEvent:
 		prevActive := m.active
-		msg.Handled = true
 		switch {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
+			msg.Handled = true
 			m.active = util.Min(m.active+1, len(m.reviews)-1)
 
 			if m.active == m.offset+m.visibleItems {
 				m.offset++
 			}
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
+			msg.Handled = true
 			m.active = util.Max(m.active-1, 0)
 
 			if m.active == m.offset-1 {
 				m.offset = m.active
 			}
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
+			msg.Handled = true
 			cmd = func() tea.Msg {
 				return common.ShowFilm(m.reviews[m.active].Tmdb_id)
 			}
 			cmds = append(cmds, cmd)
-		default:
-			msg.Handled = false
 		}
 
 		if prevActive != m.active {

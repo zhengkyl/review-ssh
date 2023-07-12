@@ -34,7 +34,7 @@ type Style struct {
 	Active lipgloss.Style
 }
 
-func New(p common.Props, height int, items ...common.Focusable) *Model {
+func New(p common.Props, itemHeight int, items ...common.Focusable) *Model {
 	m := &Model{
 		props: p,
 		Style: Style{
@@ -44,7 +44,7 @@ func New(p common.Props, height int, items ...common.Focusable) *Model {
 		items:      items,
 		offset:     0,
 		active:     0,
-		ItemHeight: height,
+		ItemHeight: itemHeight,
 		ItemGap:    1,
 		Overflow:   Scroll,
 	}
@@ -79,13 +79,17 @@ func (m *Model) SetSize(width, height int) {
 		newIndex := util.Min(m.active-m.offset, maxIndex)
 		m.offset = m.active - newIndex
 	case Paginate:
-		m.offset = m.active / m.visibleItems
+		m.offset = m.active / util.Max(m.visibleItems, 1)
 	}
 }
 
 func (m *Model) SetItems(items []common.Focusable) {
 	m.items = items
 	m.active = 0
+	if len(items) > 0 {
+		current := m.items[m.active]
+		current.Focus()
+	}
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
@@ -93,6 +97,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case *common.KeyEvent:
 		_, cmd := m.items[m.active].Update(msg)
+
 		if msg.Handled {
 			return m, cmd
 		}
@@ -100,6 +105,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		prevActive := m.active
 		switch {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
+			msg.Handled = true
 			m.active = util.Min(m.active+1, len(m.items)-1)
 
 			if m.active == m.offset+m.visibleItems {
@@ -111,8 +117,8 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				}
 
 			}
-			msg.Handled = true
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
+			msg.Handled = true
 			m.active = util.Max(m.active-1, 0)
 
 			if m.active == m.offset-1 {
@@ -123,7 +129,6 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 					m.offset -= m.visibleItems
 				}
 			}
-			msg.Handled = true
 		}
 
 		if prevActive != m.active {
@@ -146,7 +151,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 func (m *Model) View() string {
 	sb := strings.Builder{}
 
-	for i := m.offset; i < m.offset+m.visibleItems; i++ {
+	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.items); i++ {
 		section := m.items[i].View()
 
 		if i == m.active {

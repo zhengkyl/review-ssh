@@ -41,12 +41,9 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case *common.KeyEvent:
 		switch {
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Back):
-			m.Blur()
-			msg.Handled = true
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
-			m.Checked = !m.Checked
 			msg.Handled = true
+			m.Checked = !m.Checked
 		}
 	}
 	return m, nil
