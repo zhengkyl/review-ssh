@@ -108,6 +108,10 @@ func (m *Model) Value() string {
 	return m.inner.Value()
 }
 
+func (m *Model) SetValue(s string) {
+	m.inner.SetValue(s)
+}
+
 func (m *Model) Prompt(p string) {
 	m.inner.Prompt = p
 }

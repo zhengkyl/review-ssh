@@ -4,9 +4,14 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/components/vlist"
+)
+
+var (
+	viewStyle = lipgloss.NewStyle().Margin(1)
 )
 
 type Model struct {
@@ -36,8 +41,11 @@ func (m *Model) SetItems(items []common.Focusable) {
 }
 
 func (m *Model) SetSize(width, height int) {
-	m.props.Width = width
-	m.props.Height = height
+	hf := viewStyle.GetHorizontalFrameSize()
+	vf := viewStyle.GetVerticalFrameSize()
+
+	m.props.Width = width - hf
+	m.props.Height = height - vf
 
 	m.list.SetSize(width, height)
 }
@@ -66,5 +74,5 @@ func (m *Model) View() string {
 	// view = ss.Render(m.input.View())
 	sb.WriteString(m.list.View())
 
-	return sb.String()
+	return viewStyle.Render(sb.String())
 }

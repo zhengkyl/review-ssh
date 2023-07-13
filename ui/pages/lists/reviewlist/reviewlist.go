@@ -13,6 +13,22 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
+const noMoviesArt = `          NO MOVIES?
+⠀⣞⢽⢪⢣⢣⢣⢫⡺⡵⣝⡮⣗⢷⢽⢽⢽⣮⡷⡽⣜⣜⢮⢺⣜⢷⢽⢝⡽⣝
+⠸⡸⠜⠕⠕⠁⢁⢇⢏⢽⢺⣪⡳⡝⣎⣏⢯⢞⡿⣟⣷⣳⢯⡷⣽⢽⢯⣳⣫⠇
+⠀⠀⢀⢀⢄⢬⢪⡪⡎⣆⡈⠚⠜⠕⠇⠗⠝⢕⢯⢫⣞⣯⣿⣻⡽⣏⢗⣗⠏
+⠀⠪⡪⡪⣪⢪⢺⢸⢢⢓⢆⢤⢀⠀⠀⠀⠀⠈⢊⢞⡾⣿⡯⣏⢮⠷⠁
+⠀⠀⠀⠈⠊⠆⡃⠕⢕⢇⢇⢇⢇⢇⢏⢎⢎⢆⢄⠀⢑⣽⣿⢝⠲⠉
+⠀⠀⠀⠀⠀⡿⠂⠠⠀⡇⢇⠕⢈⣀⠀⠁⠡⠣⡣⡫⣂⣿⠯⢪⠰⠂
+⠀⠀⠀⠀⡦⡙⡂⢀⢤⢣⠣⡈⣾⡃⠠⠄⠀⡄⢱⣌⣶⢏⢊⠂
+⠀⠀⠀⠀⢝⡲⣜⡮⡏⢎⢌⢂⠙⠢⠐⢀⢘⢵⣽⣿⡿⠁⠁
+⠀⠀⠀⠀⠨⣺⡺⡕⡕⡱⡑⡆⡕⡅⡕⡜⡼⢽⡻⠏
+⠀⠀⠀⠀⣼⣳⣫⣾⣵⣗⡵⡱⡡⢣⢑⢕⢜⢕⡝
+⠀⠀⠀⣴⣿⣾⣿⣿⣿⡿⡽⡑⢌⠪⡢⡣⣣⡟
+⠀⠀⠀⡟⡾⣿⢿⢿⢵⣽⣾⣼⣘⢸⢸⣞⡟
+⠀⠀⠀⠀⠁⠇⠡⠩⡫⢿⣝⡻⡮⣒⢽⠋
+`
+
 type Model struct {
 	props        common.Props
 	reviews      []common.Review
@@ -143,11 +159,15 @@ func (m *Model) View() string {
 		return listStyle.Render("Loading reviews" + spinner)
 	}
 
-	if len(m.reviews) == 0 {
-		return listStyle.Render("No reviews.")
-	}
-
 	viewSb := strings.Builder{}
+
+	if len(m.reviews) == 0 {
+		topPad := (m.props.Height - lipgloss.Height(noMoviesArt)) / 3
+		leftPad := (m.props.Width - lipgloss.Width(noMoviesArt)) / 2
+		style := lipgloss.NewStyle().PaddingTop(util.Max(topPad, 0)).PaddingLeft(util.Max(leftPad, 0))
+		viewSb.WriteString(style.Render(noMoviesArt))
+		return viewSb.String()
+	}
 
 	// 8 wide review
 	// 13 status

@@ -53,7 +53,7 @@ func New(p common.Props) *Model {
 
 	searchField := textfield.New(p)
 	searchField.CharLimit(80)
-	searchField.Placeholder("(s)earch for films...")
+	searchField.Placeholder("(s)earch for movies...")
 
 	m := &Model{
 		props:           p,
@@ -166,6 +166,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// TODO add history stack?
 			m.page = LISTS
 			m.searchField.Blur()
+			m.searchField.SetValue("")
+
 		case key.Matches(msg, m.props.Global.KeyMap.Quit):
 			if m.dialog.Focused() {
 				return m, tea.Quit
