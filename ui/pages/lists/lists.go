@@ -85,10 +85,10 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case *common.KeyEvent:
 		prevActive := m.activeTab
-		if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextTab) {
+		if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Right) {
 			msg.Handled = true
 			m.activeTab = (m.activeTab + 1) % NUM_LISTS
-		} else if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.PrevTab) {
+		} else if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Left) {
 			msg.Handled = true
 			m.activeTab = (m.activeTab - 1 + NUM_LISTS) % NUM_LISTS
 		}

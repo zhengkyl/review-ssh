@@ -1,6 +1,7 @@
 package search
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -47,7 +48,7 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Width = width - hf
 	m.props.Height = height - vf
 
-	m.list.SetSize(width, height)
+	m.list.SetSize(width, height-2)
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
@@ -73,6 +74,14 @@ func (m *Model) View() string {
 	// ss := lipgloss.NewStyle().Width(m.props.Width - wm)
 	// view = ss.Render(m.input.View())
 	sb.WriteString(m.list.View())
+
+	sb.WriteString("\n\n")
+	perPage := m.list.PerPage()
+	page := m.list.Offset() / perPage
+	pages := (m.list.Length() + perPage - 1) / perPage
+	paginator := fmt.Sprintf("%d/%d", page, pages)
+	sb.WriteString(strings.Repeat(" ", (m.props.Width/2)-len(paginator)))
+	sb.WriteString(paginator)
 
 	return viewStyle.Render(sb.String())
 }

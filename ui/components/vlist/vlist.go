@@ -18,15 +18,15 @@ const (
 )
 
 type Model struct {
-	props        common.Props
-	Style        Style
-	items        []common.Focusable
-	offset       int
-	active       int
-	visibleItems int
-	ItemHeight   int
-	ItemGap      int
-	Overflow     overflow
+	props      common.Props
+	Style      Style
+	items      []common.Focusable
+	offset     int
+	active     int
+	perPage    int
+	ItemHeight int
+	ItemGap    int
+	Overflow   overflow
 }
 
 type Style struct {
@@ -59,6 +59,18 @@ func New(p common.Props, itemHeight int, items ...common.Focusable) *Model {
 	return m
 }
 
+func (m *Model) Offset() int {
+	return m.offset
+}
+
+func (m *Model) PerPage() int {
+	return m.perPage
+}
+
+func (m *Model) Length() int {
+	return len(m.items)
+}
+
 func (m *Model) SetSize(width, height int) {
 	m.props.Width = width
 	m.props.Height = height
@@ -70,16 +82,16 @@ func (m *Model) SetSize(width, height int) {
 		}
 	}
 
-	m.visibleItems = (m.props.Height + m.ItemGap) / (m.ItemHeight + m.ItemGap)
+	m.perPage = (m.props.Height + m.ItemGap) / (m.ItemHeight + m.ItemGap)
 
 	switch m.Overflow {
 	case Scroll:
 		// Try to keep active item same pos from top when resizing
-		maxIndex := util.Max(m.visibleItems-1, 0)
+		maxIndex := util.Max(m.perPage-1, 0)
 		newIndex := util.Min(m.active-m.offset, maxIndex)
 		m.offset = m.active - newIndex
 	case Paginate:
-		m.offset = m.active / util.Max(m.visibleItems, 1)
+		m.offset = m.active / util.Max(m.perPage, 1)
 	}
 }
 
@@ -108,12 +120,12 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			msg.Handled = true
 			m.active = util.Min(m.active+1, len(m.items)-1)
 
-			if m.active == m.offset+m.visibleItems {
+			if m.active == m.offset+m.perPage {
 				switch m.Overflow {
 				case Scroll:
 					m.offset++
 				case Paginate:
-					m.offset += m.visibleItems
+					m.offset += m.perPage
 				}
 
 			}
@@ -126,7 +138,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				case Scroll:
 					m.offset = m.active
 				case Paginate:
-					m.offset -= m.visibleItems
+					m.offset -= m.perPage
 				}
 			}
 		}
@@ -151,7 +163,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 func (m *Model) View() string {
 	sb := strings.Builder{}
 
-	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.items); i++ {
+	for i := m.offset; i < m.offset+m.perPage && i < len(m.items); i++ {
 		section := m.items[i].View()
 
 		if i == m.active {

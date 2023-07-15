@@ -150,7 +150,7 @@ func (m *Model) View() string {
 		}
 		view += resetTermStyle
 
-		if y == m.scaled.Bounds().Max.Y-1 {
+		if y == m.scaled.Bounds().Max.Y-2 {
 			break
 		}
 		view += "\n"

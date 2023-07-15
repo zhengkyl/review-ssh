@@ -93,7 +93,6 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 	case *common.KeyEvent:
-		prevActive := m.active
 		switch {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
 			msg.Handled = true
@@ -115,10 +114,6 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				return common.ShowFilm(m.reviews[m.active].Tmdb_id)
 			}
 			cmds = append(cmds, cmd)
-		}
-
-		if prevActive != m.active {
-
 		}
 	}
 
@@ -194,13 +189,11 @@ func (m *Model) View() string {
 
 		sectionSb.WriteString(util.TruncOrPadASCII(title, titleWidth))
 
-		sectionSb.WriteString(common.RenderRating(review.Fun_before, review.Fun_during, review.Fun_after))
-		sectionSb.WriteString(" ")
-
 		sectionSb.WriteString(util.TruncOrPadASCII(review.Status.DisplayString(), 13))
 		sectionSb.WriteString(" ")
 
-		// sectionSb.WriteString(util.TruncOrPadASCII(review.Text, 20))
+		sectionSb.WriteString(common.RenderRating(review.Fun_before, review.Fun_during, review.Fun_after))
+		sectionSb.WriteString(" ")
 
 		sectionSb.WriteString("\n")
 
