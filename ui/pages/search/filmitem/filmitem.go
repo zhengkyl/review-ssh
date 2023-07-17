@@ -9,14 +9,10 @@ import (
 )
 
 var (
-	// titleStyle        = lipgloss.NewStyle().MarginLeft(2)
 	itemStyle       = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).BorderStyle(lipgloss.Border{Left: " "}).BorderLeft(true)
 	activeItemStyle = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).Foreground(
 		lipgloss.Color("170")).BorderStyle(lipgloss.Border{Left: "┃"}).
 		BorderForeground(lipgloss.Color("176")).BorderLeft(true)
-	// paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	// helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	// quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 
 	textStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#fff"))
@@ -47,6 +43,11 @@ func New(p common.Props, film common.Film) *Model {
 	}
 
 	return m
+}
+
+func (m *Model) SetSize(width, height int) {
+	m.props.Width = width
+	m.props.Height = height
 }
 
 func (m *Model) Focused() bool {

@@ -83,20 +83,18 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Height = height
 
 	viewW := width
-	viewH := height - 2 // 1 for bottom margin + 1 for help
+	viewH := height - 5 // bottom margin + help + searchfield
 
 	// title + " " + searchField = width
 	m.searchField.SetSize(width-lipgloss.Width(title)-1, 3)
 
-	contentHeight := viewH - 3
+	m.accountPage.SetSize(util.Max(viewW/2, 30), viewH)
 
-	m.accountPage.SetSize(util.Max(viewW/2, 30), contentHeight)
+	m.listsPage.SetSize(viewW, viewH)
+	m.searchPage.SetSize(viewW, viewH)
+	m.filmdetailsPage.SetSize(viewW, viewH)
 
-	m.listsPage.SetSize(viewW, contentHeight)
-	m.searchPage.SetSize(viewW, contentHeight)
-	m.filmdetailsPage.SetSize(viewW, contentHeight)
-
-	m.help.Width = width
+	m.help.Width = viewW
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -279,7 +277,7 @@ func (m *Model) View() string {
 	vGap := m.props.Height - 2 - lipgloss.Height(view.String())
 
 	if vGap > 0 {
-		view.WriteString(strings.Repeat("\n", vGap))
+		view.WriteString(strings.Repeat("\ngap", vGap))
 	}
 
 	view.WriteString("\n")

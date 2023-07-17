@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	viewStyle = lipgloss.NewStyle().Margin(1)
+	viewStyle = lipgloss.NewStyle().MarginTop(1)
 )
 
 type Model struct {
@@ -42,45 +42,33 @@ func (m *Model) SetItems(items []common.Focusable) {
 }
 
 func (m *Model) SetSize(width, height int) {
-	hf := viewStyle.GetHorizontalFrameSize()
+	m.props.Width = width
+	m.props.Height = height
+
 	vf := viewStyle.GetVerticalFrameSize()
 
-	m.props.Width = width - hf
-	m.props.Height = height - vf
-
-	m.list.SetSize(width, height-2)
+	m.list.SetSize(width, height-vf-1)
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
+	_, cmd := m.list.Update(msg)
 
-	var cmds []tea.Cmd
-
-	// switch msg := msg.(type) {
-	// case *common.KeyEvent:
-	// 	switch {
-	// 	}
-	// }
-
-	var cmd tea.Cmd
-
-	_, cmd = m.list.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
+	return m, cmd
 }
 
 func (m *Model) View() string {
 	sb := strings.Builder{}
-	// ss := lipgloss.NewStyle().Width(m.props.Width - wm)
-	// view = ss.Render(m.input.View())
 	sb.WriteString(m.list.View())
 
-	sb.WriteString("\n\n")
-	perPage := m.list.PerPage()
-	page := m.list.Offset() / perPage
-	pages := (m.list.Length() + perPage - 1) / perPage
-	paginator := fmt.Sprintf("%d/%d", page, pages)
-	sb.WriteString(strings.Repeat(" ", (m.props.Width/2)-len(paginator)))
+	viewH := m.props.Height - 1
+	sb.WriteString(strings.Repeat("\n", viewH-lipgloss.Height(sb.String())))
+
+	start := m.list.Offset() + 1
+	last := m.list.Offset() + m.list.PerPage()
+	paginator := fmt.Sprintf("%d-%d of %d", start, last, m.list.Length())
+
+	// filmitems have an internal horizontal framesize of 2
+	sb.WriteString(strings.Repeat(" ", m.props.Width-len(paginator)-2))
 	sb.WriteString(paginator)
 
 	return viewStyle.Render(sb.String())
