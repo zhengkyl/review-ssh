@@ -1,6 +1,7 @@
 package filmitem
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengkyl/review-ssh/ui/common"
@@ -67,6 +68,16 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case *common.KeyEvent:
+		switch {
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
+			msg.Handled = true
+			return m, func() tea.Msg {
+				return common.ShowFilm(m.film.Id)
+			}
+		}
+	}
 
 	_, cmd := m.poster.Update(msg)
 	return m, cmd

@@ -40,8 +40,8 @@ func New(p common.Props) *Model {
 		filmLoaded: false,
 		filmId:     0,
 		dropdown: dropdown.New(common.Props{Width: 20, Height: 3, Global: p.Global}, "Add movie", []dropdown.Option{
-			{Text: "Plan to Watch", Callback: func() tea.Msg { return nil }},
-			{Text: "Completed", Callback: func() tea.Msg { return nil }},
+			{Text: "Plan To Watch", Value: "PlanToWatch"},
+			{Text: "Completed", Value: "Completed"},
 		}),
 		checkBefore: checkbox.New(p),
 		checkDuring: checkbox.New(p),
@@ -64,10 +64,23 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) updateInputs(review common.Review) {
-	m.checkBefore.Checked = review.Fun_before
-	m.checkDuring.Checked = review.Fun_during
-	m.checkAfter.Checked = review.Fun_after
 
+	m.checkBefore.Checked = review.Fun_before
+	m.checkBefore.OnChange = func(value bool) tea.Cmd {
+		return patchReviewCmd(m.props.Global, m.filmId, map[string]interface{}{"fun_before": value})
+	}
+	m.checkDuring.Checked = review.Fun_during
+	m.checkDuring.OnChange = func(value bool) tea.Cmd {
+		return patchReviewCmd(m.props.Global, m.filmId, map[string]interface{}{"fun_during": value})
+	}
+	m.checkAfter.Checked = review.Fun_after
+	m.checkAfter.OnChange = func(value bool) tea.Cmd {
+		return patchReviewCmd(m.props.Global, m.filmId, map[string]interface{}{"fun_after": value})
+	}
+
+	m.dropdown.OnChange = func(value string) tea.Cmd {
+		return patchReviewCmd(m.props.Global, m.filmId, map[string]interface{}{"status": value})
+	}
 	switch review.Status {
 	case enums.PlanToWatch:
 		m.dropdown.Selected = 0
@@ -80,14 +93,27 @@ func (m *Model) Init(filmId int) tea.Cmd {
 	m.filmId = filmId
 	m.filmLoaded = false
 	review, ok := m.props.Global.ReviewMap[m.filmId]
-	m.updateInputs(review)
 
+	m.focusIndex = 0
 	m.dropdown.Focus()
+	m.checkBefore.Blur()
+	m.checkDuring.Blur()
+	m.checkAfter.Blur()
 
 	if ok {
+		m.updateInputs(review)
 		m.reviewLoaded = true
 		return nil
 	}
+	m.dropdown.Selected = -1
+	m.checkBefore.Checked = false
+	m.checkDuring.Checked = false
+	m.checkAfter.Checked = false
+
+	m.dropdown.OnChange = func(value string) tea.Cmd {
+		return postReviewCmd(m.props.Global, filmId, value)
+	}
+
 	return common.GetMyFilmReviewCmd(m.props.Global, m.filmId, func(data common.Paged[common.Review], err error) tea.Msg {
 		if err == nil && len(data.Results) > 0 {
 			review := data.Results[0]
@@ -119,18 +145,15 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 
 		ok, loading, film := m.props.Global.FilmCache.Get(m.filmId)
 
-		if !ok {
-			cmd := common.GetFilmCmd(m.props.Global, m.filmId)
-			cmds = append(cmds, cmd)
-		} else if loading {
-
-		} else {
+		if ok {
 			m.filmLoaded = true
 			m.poster = poster.New(common.Props{Width: 28, Height: 21, Global: m.props.Global}, "https://image.tmdb.org/t/p/w200"+film.Poster_path)
-
 			cmds = append(cmds, m.poster.Init())
-
+		} else if !loading {
+			cmd := common.GetFilmCmd(m.props.Global, m.filmId)
+			cmds = append(cmds, cmd)
 		}
+
 	} else {
 		_, cmd := m.poster.Update(msg)
 		cmds = append(cmds, cmd)

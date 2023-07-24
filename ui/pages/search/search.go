@@ -20,6 +20,7 @@ type Model struct {
 	list        *vlist.Model
 	searchField *textfield.Model
 	focused     bool
+	Query       string
 }
 
 func New(p common.Props, searchField *textfield.Model) *Model {

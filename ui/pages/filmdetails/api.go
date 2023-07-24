@@ -4,26 +4,32 @@ import (
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common"
-	"github.com/zhengkyl/review-ssh/ui/common/enums"
 )
 
-const patchEndpoint = "https://review-api.fly.dev/reviews/Film/"
+const patchEndpoint = common.ReviewBase + "/reviews/Film/"
 
-func patchReviewCmd(client *retryablehttp.Client, tmdb_id int, updates map[string]string) tea.Cmd {
-	return common.Fetch[common.Review](client, "PATCH", patchEndpoint+strconv.Itoa(tmdb_id), updates, func(data common.Review, err error) tea.Msg {
+func patchReviewCmd(g common.Global, tmdb_id int, updates map[string]interface{}) tea.Cmd {
+	return common.Fetch[common.Review](g, "PATCH", patchEndpoint+strconv.Itoa(tmdb_id), updates, func(data common.Review, err error) tea.Msg {
+		if err == nil {
+			g.ReviewMap[tmdb_id] = data
+		}
 		return nil
 	})
 }
 
-const postEndpoint = "https://review-api.fly.dev/reviews"
+const postEndpoint = common.ReviewBase + "/reviews"
 
-func postReviewCmd(client *retryablehttp.Client, tmdb_id int, status enums.Status) tea.Cmd {
-	data := map[string]string{
-		"tmdb_id":  strconv.Itoa(tmdb_id),
+func postReviewCmd(g common.Global, tmdb_id int, status string) tea.Cmd {
+	data := map[string]interface{}{
+		"tmdb_id":  tmdb_id,
 		"category": "Film",
-		"status":   status.String(),
+		"status":   status,
 	}
-	return common.Fetch[common.Review](client, "POST", postEndpoint+strconv.Itoa(tmdb_id), data, func(data common.Review, err error) tea.Msg { return nil })
+	return common.Fetch[common.Review](g, "POST", postEndpoint, data, func(data common.Review, err error) tea.Msg {
+		if err == nil {
+			g.ReviewMap[tmdb_id] = data
+		}
+		return nil
+	})
 }

@@ -22,15 +22,17 @@ var (
 	normalStyle    = lipgloss.NewStyle().Padding(0, 1)
 )
 
+type onChange func(value string) tea.Cmd
+
 type Option struct {
-	Text     string
-	Callback tea.Cmd
+	Text  string
+	Value string
 }
 
 type Model struct {
 	props    common.Props
 	focused  bool
-	Callback tea.Cmd
+	OnChange onChange
 	open     bool
 	noneText string
 	options  []Option
@@ -96,7 +98,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			} else {
 				m.Selected = m.active
 				m.open = false
-				return m, m.options[m.active].Callback
+				return m, m.OnChange(m.options[m.Selected].Value)
 			}
 		}
 	}

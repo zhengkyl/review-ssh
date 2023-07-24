@@ -98,6 +98,7 @@ func (m *Model) SetSize(width, height int) {
 func (m *Model) SetItems(items []common.Focusable) {
 	m.items = items
 	m.active = 0
+	m.offset = 0
 	if len(items) > 0 {
 		current := m.items[m.active]
 		current.Focus()
@@ -105,6 +106,10 @@ func (m *Model) SetItems(items []common.Focusable) {
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
+	if len(m.items) == 0 {
+		return m, nil
+	}
+
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case *common.KeyEvent:

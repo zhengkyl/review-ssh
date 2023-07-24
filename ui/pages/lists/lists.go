@@ -55,7 +55,16 @@ func (m *Model) SetSize(width, height int) {
 
 	m.list.SetSize(width, height-3)
 }
+func (m *Model) ReloadReviews() {
+	reviews := make([]common.Review, 0, len(m.props.Global.ReviewMap))
+	for _, review := range m.props.Global.ReviewMap {
+		reviews = append(reviews, review)
+		m.props.Global.ReviewMap[review.Tmdb_id] = review
+	}
 
+	sort.Sort(common.ByUpdatedAt(reviews))
+	m.list.SetReviews(reviews)
+}
 func (m *Model) Init() tea.Cmd {
 	user_id := m.props.Global.AuthState.User.Id
 
@@ -75,10 +84,10 @@ func (m *Model) Init() tea.Cmd {
 	}
 
 	if user_id == common.GuestAuthState.User.Id {
-		return common.Get[common.Paged[common.Review]](m.props.Global.HttpClient, reviewsEndpoint, callback)
+		return common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint, callback)
 	}
 
-	return common.Get[common.Paged[common.Review]](m.props.Global.HttpClient, reviewsEndpoint+"?user_id="+strconv.Itoa(user_id), callback)
+	return common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint+"&user_id="+strconv.Itoa(user_id), callback)
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -26,7 +27,7 @@ var (
 	title      = titleStyle.Render("review-ssh")
 )
 
-const searchEndpoint = "https://review-api.fly.dev/search/Film"
+const searchEndpoint = common.ReviewBase + "/search/Film"
 
 type page int
 
@@ -163,6 +164,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.props.Global.KeyMap.Back):
 			// TODO add history stack?
 			m.page = LISTS
+			m.listsPage.ReloadReviews()
 			m.searchField.Blur()
 			m.searchField.SetValue("")
 
@@ -181,26 +183,30 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.searchField.Focused() {
 				m.searchField.Blur()
 				m.page = SEARCH
-				cmd := common.Get[common.Paged[common.Film]](m.props.Global.HttpClient, searchEndpoint+"?query="+m.searchField.Value(), func(data common.Paged[common.Film], err error) tea.Msg {
-					if err == nil {
-						inits := make([]tea.Cmd, 0, len(data.Results))
-						items := make([]common.Focusable, 0, len(data.Results))
-						for _, film := range data.Results {
-							item := filmitem.New(
-								common.Props{
-									Width:  m.props.Width,
-									Height: 6,
-									Global: m.props.Global,
-								}, film)
-							items = append(items, item)
-							inits = append(inits, item.Init())
+				if m.searchPage.Query != m.searchField.Value() {
+					m.searchPage.SetItems([]common.Focusable{})
+					m.searchPage.Query = m.searchField.Value()
+					cmd := common.Get[common.Paged[common.Film]](m.props.Global, searchEndpoint+"?query="+url.QueryEscape(m.searchField.Value()), func(data common.Paged[common.Film], err error) tea.Msg {
+						if err == nil {
+							inits := make([]tea.Cmd, 0, len(data.Results))
+							items := make([]common.Focusable, 0, len(data.Results))
+							for _, film := range data.Results {
+								item := filmitem.New(
+									common.Props{
+										Width:  m.props.Width,
+										Height: 6,
+										Global: m.props.Global,
+									}, film)
+								items = append(items, item)
+								inits = append(inits, item.Init())
+							}
+							m.searchPage.SetItems(items)
+							return tea.Batch(inits...)
 						}
-						m.searchPage.SetItems(items)
-						return tea.Batch(inits...)
-					}
-					return nil
-				})
-				return m, cmd
+						return nil
+					})
+					return m, cmd
+				}
 			}
 		}
 
@@ -277,7 +283,7 @@ func (m *Model) View() string {
 	vGap := m.props.Height - 2 - lipgloss.Height(view.String())
 
 	if vGap > 0 {
-		view.WriteString(strings.Repeat("\ngap", vGap))
+		view.WriteString(strings.Repeat("\n", vGap))
 	}
 
 	view.WriteString("\n")

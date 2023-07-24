@@ -14,10 +14,12 @@ var (
 	checkedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("227"))
 )
 
+type onChange func(value bool) tea.Cmd
+
 type Model struct {
 	props    common.Props
 	focused  bool
-	Callback tea.Cmd
+	OnChange onChange
 	Checked  bool
 }
 
@@ -44,6 +46,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
 			msg.Handled = true
 			m.Checked = !m.Checked
+			return m, m.OnChange(m.Checked)
 		}
 	}
 	return m, nil

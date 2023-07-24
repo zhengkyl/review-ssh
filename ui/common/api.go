@@ -3,6 +3,8 @@ package common
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -10,6 +12,9 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui/common/enums"
 )
+
+// const ReviewBase = "http://localhost:8080"
+const ReviewBase = "https://review-api.fly.dev"
 
 type User struct {
 	Id         int       `json:"id"`
@@ -79,11 +84,11 @@ type responseData interface {
 type fetchCallback[T responseData] func(data T, err error) tea.Msg
 
 // Convenience Fetch() wrapper for most common usecase
-func Get[T responseData](client *retryablehttp.Client, url string, callback fetchCallback[T]) tea.Cmd {
-	return Fetch[T](client, "GET", url, nil, callback)
+func Get[T responseData](g Global, url string, callback fetchCallback[T]) tea.Cmd {
+	return Fetch[T](g, "GET", url, nil, callback)
 }
 
-func Fetch[T responseData](client *retryablehttp.Client, method string, url string, body map[string]string, callback fetchCallback[T]) tea.Cmd {
+func Fetch[T responseData](g Global, method string, url string, body map[string]interface{}, callback fetchCallback[T]) tea.Cmd {
 
 	var rawbody []byte
 	var err error
@@ -95,6 +100,11 @@ func Fetch[T responseData](client *retryablehttp.Client, method string, url stri
 	}
 
 	req, err := retryablehttp.NewRequest(method, url, rawbody)
+	req.AddCookie(&http.Cookie{Name: "id", Value: g.AuthState.Cookie})
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
 	if err != nil {
 		return nil
 	}
@@ -102,14 +112,14 @@ func Fetch[T responseData](client *retryablehttp.Client, method string, url stri
 	return func() tea.Msg {
 		var data T
 
-		resp, err := client.Do(req)
+		resp, err := g.HttpClient.Do(req)
 
 		if err != nil {
 			return func() tea.Msg { return callback(data, err) }
 		}
 
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			return func() tea.Msg { return callback(data, errors.New("something went wrong")) }
+			return func() tea.Msg { return callback(data, errors.New(fmt.Sprint(resp.StatusCode))) }
 		}
 
 		if resp.StatusCode != 204 {
@@ -129,7 +139,7 @@ const filmEndpoint = "https://api.themoviedb.org/3/movie/"
 func GetFilmCmd(g Global, filmId int) tea.Cmd {
 	g.FilmCache.SetLoading(filmId)
 	url := (filmEndpoint + strconv.Itoa(filmId) + "?api_key=" + g.Config.TMDB_API_KEY)
-	return Get[Film](g.HttpClient, url, func(data Film, err error) tea.Msg {
+	return Get[Film](g, url, func(data Film, err error) tea.Msg {
 		if err != nil {
 			g.FilmCache.Delete(filmId)
 		} else {
@@ -139,11 +149,11 @@ func GetFilmCmd(g Global, filmId int) tea.Cmd {
 	})
 }
 
-const filmReviewEndpoint = "https://review-api.fly.dev/reviews?category=Film"
+const filmReviewEndpoint = ReviewBase + "/reviews?category=Film"
 
 func GetMyFilmReviewCmd(g Global, filmId int, callback fetchCallback[Paged[Review]]) tea.Cmd {
 	url := filmReviewEndpoint +
 		"&tmdb_id=" + strconv.Itoa(filmId) +
 		"&user_id=" + strconv.Itoa(g.AuthState.User.Id)
-	return Get[Paged[Review]](g.HttpClient, url, callback)
+	return Get[Paged[Review]](g, url, callback)
 }

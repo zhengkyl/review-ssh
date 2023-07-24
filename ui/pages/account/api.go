@@ -27,7 +27,7 @@ func postSignUp(client *retryablehttp.Client, data signUpData) tea.Msg {
 		return signUpRes{false, err.Error()}
 	}
 
-	resp, err := client.Post("https://review-api.fly.dev/users", "application/json", bytes.NewBuffer(bsLoginData))
+	resp, err := client.Post(common.ReviewBase+"/users", "application/json", bytes.NewBuffer(bsLoginData))
 
 	if err != nil {
 		return signUpRes{false, err.Error()}
@@ -65,7 +65,7 @@ func postSignIn(client *retryablehttp.Client, data signInData) tea.Msg {
 		return signInRes{false, err.Error()}
 	}
 
-	resp, err := client.Post("https://review-api.fly.dev/auth", "application/json", bytes.NewBuffer(bsLoginData))
+	resp, err := client.Post(common.ReviewBase+"/auth", "application/json", bytes.NewBuffer(bsLoginData))
 
 	if err != nil {
 		return signInRes{false, err.Error()}
@@ -75,7 +75,12 @@ func postSignIn(client *retryablehttp.Client, data signInData) tea.Msg {
 		return signInRes{false, "Wrong email or password."}
 	}
 
-	cookie := resp.Header.Get("Set-Cookie")
+	var cookie string
+	for _, c := range resp.Cookies() {
+		if c.Name == "id" {
+			cookie = c.Value
+		}
+	}
 
 	var user common.User
 
