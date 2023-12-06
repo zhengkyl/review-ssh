@@ -31,7 +31,7 @@ var NUM_LISTS = len(tabNames)
 var (
 	tabBorder      = lipgloss.NormalBorder()
 	tabStyle       = lipgloss.NewStyle().Padding(0, 1).Border(tabBorder, true)
-	activeTabStyle = lipgloss.NewStyle().Padding(0, 1).BorderForeground(lipgloss.Color("#7D56F4")).Border(tabBorder, true)
+	activeTabStyle = lipgloss.NewStyle().Padding(0, 1).BorderForeground(lipgloss.Color("#F25D94")).Border(tabBorder, true).Foreground((lipgloss.Color("#F25D94")))
 )
 
 type Model struct {

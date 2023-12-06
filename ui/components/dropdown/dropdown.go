@@ -13,12 +13,12 @@ import (
 var (
 	tabBorder      = lipgloss.RoundedBorder()
 	unfocusedStyle = lipgloss.NewStyle().Border(tabBorder, true)
-	dividerStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("227"))
-	closedStyle    = lipgloss.NewStyle().Border(tabBorder, true).BorderForeground(lipgloss.Color("227"))
-	openStyle      = lipgloss.NewStyle().Border(tabBorder, true).BorderBottom(false).BorderForeground(lipgloss.Color("227"))
-	itemStyle      = lipgloss.NewStyle().Border(tabBorder, false, true).BorderForeground(lipgloss.Color("227"))
-	lastStyle      = lipgloss.NewStyle().Border(tabBorder, false, true, true).BorderForeground(lipgloss.Color("227"))
-	activeStyle    = lipgloss.NewStyle().Background(lipgloss.Color("227")).Padding(0, 1)
+	dividerStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#F25D94"))
+	closedStyle    = lipgloss.NewStyle().Border(tabBorder, true).BorderForeground(lipgloss.Color("#F25D94"))
+	openStyle      = lipgloss.NewStyle().Border(tabBorder, true).BorderBottom(false).BorderForeground(lipgloss.Color("#F25D94"))
+	itemStyle      = lipgloss.NewStyle().Border(tabBorder, false, true).BorderForeground(lipgloss.Color("#F25D94"))
+	lastStyle      = lipgloss.NewStyle().Border(tabBorder, false, true, true).BorderForeground(lipgloss.Color("#F25D94"))
+	activeStyle    = lipgloss.NewStyle().Background(lipgloss.Color("#F25D94")).Padding(0, 1)
 	normalStyle    = lipgloss.NewStyle().Padding(0, 1)
 )
 

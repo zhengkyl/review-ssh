@@ -8,10 +8,14 @@ import (
 )
 
 var (
-	tabBorder        = lipgloss.RoundedBorder()
-	borderStyle      = lipgloss.NewStyle().Border(tabBorder, true)
-	focusBorderStyle = lipgloss.NewStyle().Border(tabBorder, true).BorderForeground(lipgloss.Color("227"))
-	checkedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("227"))
+	focusColor = lipgloss.Color("#F25D94")
+	tabBorder  = lipgloss.RoundedBorder()
+
+	borderStyle      = lipgloss.NewStyle().Border(tabBorder, true).BorderTop(false)
+	focusBorderStyle = lipgloss.NewStyle().Border(tabBorder, true).BorderForeground(focusColor).Foreground(focusColor).BorderTop(false)
+
+	topStyle     = lipgloss.NewStyle().Foreground(focusColor)
+	checkedStyle = lipgloss.NewStyle().Foreground(focusColor)
 )
 
 type onChange func(value bool) tea.Cmd
@@ -21,6 +25,7 @@ type Model struct {
 	focused  bool
 	OnChange onChange
 	Checked  bool
+	Label    string
 }
 
 func New(p common.Props) *Model {
@@ -60,9 +65,18 @@ func (m *Model) View() string {
 		pixel = "   "
 	}
 
-	if m.focused {
-		return focusBorderStyle.Render(pixel)
-	} else {
-		return borderStyle.Render(pixel)
+	top := "╭───╮"
+	if len(m.Label) == 4 {
+		top = m.Label + "╮" //top[len(m.Label):] doesn't work b/c bytes
 	}
+
+	var bottom string
+	if m.focused {
+		top = topStyle.Render(top)
+		bottom = focusBorderStyle.Render(pixel)
+	} else {
+		bottom = borderStyle.Render(pixel)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, top, bottom)
 }

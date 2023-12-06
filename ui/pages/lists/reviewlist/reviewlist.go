@@ -43,7 +43,7 @@ type Model struct {
 
 var (
 	normalStyle = lipgloss.NewStyle()
-	activeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
+	activeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#F25D94"))
 	listStyle   = lipgloss.NewStyle().Margin(1)
 	dotdotdot   = spinner.Spinner{Frames: []string{"", ".", ".. ", "...", "..", "."}, FPS: time.Second / 3}
 )
@@ -96,27 +96,29 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 	case *common.KeyEvent:
-		switch {
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
-			msg.Handled = true
-			m.active = util.Min(m.active+1, len(m.reviews)-1)
+		if m.loadedReviews {
+			switch {
+			case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
+				msg.Handled = true
+				m.active = util.Min(m.active+1, util.Max(len(m.reviews)-1, 0))
 
-			if m.active == m.offset+m.visibleItems {
-				m.offset++
-			}
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
-			msg.Handled = true
-			m.active = util.Max(m.active-1, 0)
+				if m.active == m.offset+m.visibleItems {
+					m.offset++
+				}
+			case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
+				msg.Handled = true
+				m.active = util.Max(m.active-1, 0)
 
-			if m.active == m.offset-1 {
-				m.offset = m.active
+				if m.active == m.offset-1 {
+					m.offset = m.active
+				}
+			case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
+				msg.Handled = true
+				cmd = func() tea.Msg {
+					return common.ShowFilm(m.reviews[m.active].Tmdb_id)
+				}
+				cmds = append(cmds, cmd)
 			}
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Select):
-			msg.Handled = true
-			cmd = func() tea.Msg {
-				return common.ShowFilm(m.reviews[m.active].Tmdb_id)
-			}
-			cmds = append(cmds, cmd)
 		}
 	}
 
@@ -170,12 +172,12 @@ func (m *Model) View() string {
 		return viewSb.String()
 	}
 
-	// 8 wide review
+	// 5 wide review
 	// 13 status
 	// 3 gaps
 	// 3 wide scrollbar
 	hf := listStyle.GetHorizontalFrameSize()
-	titleWidth := m.props.Width - 8 - 13 - 3 - 3 - hf
+	titleWidth := m.props.Width - 5 - 13 - 3 - 3 - hf
 
 	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 
@@ -196,7 +198,7 @@ func (m *Model) View() string {
 		sectionSb.WriteString(util.TruncOrPadASCII(title, titleWidth))
 
 		sectionSb.WriteString(util.TruncOrPadASCII(review.Status.DisplayString(), 13))
-		sectionSb.WriteString(" ")
+		sectionSb.WriteString("  ")
 
 		sectionSb.WriteString(common.RenderRating(review.Fun_before, review.Fun_during, review.Fun_after))
 		sectionSb.WriteString(" ")

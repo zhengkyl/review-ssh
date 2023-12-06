@@ -12,8 +12,8 @@ import (
 var (
 	itemStyle       = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).BorderStyle(lipgloss.Border{Left: " "}).BorderLeft(true)
 	activeItemStyle = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(2).Foreground(
-		lipgloss.Color("170")).BorderStyle(lipgloss.Border{Left: "┃"}).
-		BorderForeground(lipgloss.Color("176")).BorderLeft(true)
+		lipgloss.Color("#F25D94")).BorderStyle(lipgloss.Border{Left: "┃"}).
+		BorderForeground(lipgloss.Color("#F25D94")).BorderLeft(true)
 
 	textStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#fff"))

@@ -15,9 +15,10 @@ import (
 )
 
 var (
-	tabBorder    = lipgloss.RoundedBorder()
-	inputStyle   = lipgloss.NewStyle().Border(tabBorder, true) //.BorderBottom(true)
-	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	tabBorder         = lipgloss.RoundedBorder()
+	inputStyle        = lipgloss.NewStyle().Border(tabBorder, true)
+	focusedInputStyle = lipgloss.NewStyle().Border(tabBorder, true).BorderForeground(lipgloss.Color("#F25D94"))
+	focusedStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#F25D94"))
 	// blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	// cursorStyle  = focusedStyle.Copy()
 	noStyle = lipgloss.NewStyle()
@@ -100,7 +101,11 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	return inputStyle.Render(m.inner.View())
+	if m.focused {
+		return focusedInputStyle.Render(m.inner.View())
+	} else {
+		return inputStyle.Render(m.inner.View())
+	}
 }
 
 // textinput model

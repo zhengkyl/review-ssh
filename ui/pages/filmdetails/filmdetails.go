@@ -26,7 +26,6 @@ type Model struct {
 	filmId       int
 	inputs       []common.Focusable
 	dropdown     *dropdown.Model
-	checkBefore  *checkbox.Model
 	checkDuring  *checkbox.Model
 	checkAfter   *checkbox.Model
 	focusIndex   int
@@ -43,14 +42,16 @@ func New(p common.Props) *Model {
 			{Text: "Plan To Watch", Value: "PlanToWatch"},
 			{Text: "Completed", Value: "Completed"},
 		}),
-		checkBefore: checkbox.New(p),
 		checkDuring: checkbox.New(p),
 		checkAfter:  checkbox.New(p),
 		inputs:      []common.Focusable{},
 		focusIndex:  0,
 		updates:     make(map[string]string),
 	}
-	m.inputs = append(m.inputs, m.dropdown, m.checkBefore, m.checkDuring, m.checkAfter)
+	m.checkDuring.Label = "LIKE"
+	m.checkAfter.Label = "STAR"
+
+	m.inputs = append(m.inputs, m.dropdown, m.checkDuring, m.checkAfter)
 
 	return m
 }
@@ -65,10 +66,6 @@ func (m *Model) SetSize(width, height int) {
 
 func (m *Model) updateInputs(review common.Review) {
 
-	m.checkBefore.Checked = review.Fun_before
-	m.checkBefore.OnChange = func(value bool) tea.Cmd {
-		return patchReviewCmd(m.props.Global, m.filmId, map[string]interface{}{"fun_before": value})
-	}
 	m.checkDuring.Checked = review.Fun_during
 	m.checkDuring.OnChange = func(value bool) tea.Cmd {
 		return patchReviewCmd(m.props.Global, m.filmId, map[string]interface{}{"fun_during": value})
@@ -96,7 +93,6 @@ func (m *Model) Init(filmId int) tea.Cmd {
 
 	m.focusIndex = 0
 	m.dropdown.Focus()
-	m.checkBefore.Blur()
 	m.checkDuring.Blur()
 	m.checkAfter.Blur()
 
@@ -106,7 +102,6 @@ func (m *Model) Init(filmId int) tea.Cmd {
 		return nil
 	}
 	m.dropdown.Selected = -1
-	m.checkBefore.Checked = false
 	m.checkDuring.Checked = false
 	m.checkAfter.Checked = false
 
@@ -177,12 +172,17 @@ func (m *Model) View() string {
 
 	rightSb := strings.Builder{}
 	rightSb.WriteString("\n")
-	rightSb.WriteString(film.Title + " (" + film.Release_date[:4] + ")")
+
+	date := "No Release Date"
+	if len(film.Release_date) >= 4 {
+		date = film.Release_date[:4]
+	}
+	rightSb.WriteString(film.Title + " (" + date + ")")
 	rightSb.WriteString("\n\n")
 
 	// make place holder for dropdown which needs to be overlaid
 	dropdownView := m.dropdown.View()
-	inputs := lipgloss.JoinHorizontal(lipgloss.Top, strings.Repeat(" ", lipgloss.Width(dropdownView)), " ", m.checkBefore.View(), " ", m.checkDuring.View(), " ", m.checkAfter.View())
+	inputs := lipgloss.JoinHorizontal(lipgloss.Top, strings.Repeat(" ", lipgloss.Width(dropdownView)), " ", m.checkDuring.View(), " ", m.checkAfter.View())
 	rightSb.WriteString(inputs)
 
 	rightSb.WriteString("\n\n")

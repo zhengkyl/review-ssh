@@ -3,6 +3,10 @@ package util
 import "strings"
 
 func TruncOrPadASCII(text string, length int) string {
+	if len(text) == length {
+		return text
+	}
+
 	if length < 1 {
 		return ""
 	}
