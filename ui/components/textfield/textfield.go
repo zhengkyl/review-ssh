@@ -18,9 +18,9 @@ var (
 	tabBorder    = lipgloss.RoundedBorder()
 	inputStyle   = lipgloss.NewStyle().Border(tabBorder, true) //.BorderBottom(true)
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle  = focusedStyle.Copy()
-	noStyle      = lipgloss.NewStyle()
+	// blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	// cursorStyle  = focusedStyle.Copy()
+	noStyle = lipgloss.NewStyle()
 )
 
 type Model struct {
@@ -151,12 +151,6 @@ func (m *Model) PromptStyle(s lipgloss.Style) {
 func (m *Model) TextStyle(s lipgloss.Style) {
 	m.inner.TextStyle = s
 }
-func (m *Model) BackgroundStyle(s lipgloss.Style) {
-	m.inner.BackgroundStyle = s
-}
 func (m *Model) PlaceholderStyle(s lipgloss.Style) {
 	m.inner.PlaceholderStyle = s
-}
-func (m *Model) CursorStyle(s lipgloss.Style) {
-	m.inner.CursorStyle = s
 }

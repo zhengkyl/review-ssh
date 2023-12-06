@@ -53,11 +53,15 @@ func New(p common.Props) *Model {
 		props:       p,
 		active:      0,
 		itemSpinner: spinner.New(spinner.WithSpinner(dotdotdot)),
-		spinning:    false,
+		spinning:    true,
 	}
 	m.SetSize(p.Width, p.Height)
 
 	return m
+}
+
+func (m *Model) Init() tea.Cmd {
+	return m.itemSpinner.Tick
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -75,7 +79,6 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
-	// m.spinning = true
 	m.loadedReviews = true
 	m.reviews = reviews
 	m.active = 0
@@ -137,11 +140,14 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		}
 	}
 
-	if m.spinning && !itemsLoading {
-		m.spinning = false
-	} else if !m.spinning && itemsLoading {
-		m.spinning = true
-		cmds = append(cmds, m.itemSpinner.Tick)
+	if m.loadedReviews {
+		if m.spinning && !itemsLoading {
+			m.spinning = false
+		}
+		// } else if !m.spinning && itemsLoading {
+		// 	m.spinning = true
+		// 	cmds = append(cmds, m.itemSpinner.Tick)
+		// }
 	}
 
 	return m, tea.Batch(cmds...)

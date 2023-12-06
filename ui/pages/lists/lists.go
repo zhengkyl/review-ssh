@@ -22,8 +22,8 @@ var tabNames = []string{
 // This must match the order of tabNames
 var tabStatuses = []enums.Status{
 	255, // This should never be accessed
-	enums.PlanToWatch,
 	enums.Completed,
+	enums.PlanToWatch,
 }
 
 var NUM_LISTS = len(tabNames)
@@ -82,12 +82,16 @@ func (m *Model) Init() tea.Cmd {
 		}
 		return nil
 	}
+	cmds := []tea.Cmd{m.list.Init()}
 
 	if user_id == common.GuestAuthState.User.Id {
-		return common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint, callback)
+		cmds = append(cmds,
+			common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint, callback))
+	} else {
+		cmds = append(cmds, common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint+"&user_id="+strconv.Itoa(user_id), callback))
 	}
 
-	return common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint+"&user_id="+strconv.Itoa(user_id), callback)
+	return tea.Batch(cmds...)
 }
 
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {

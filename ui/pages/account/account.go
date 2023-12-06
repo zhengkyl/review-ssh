@@ -15,9 +15,7 @@ import (
 )
 
 var (
-	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	errStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("197"))
-	cursorStyle  = focusedStyle.Copy()
 	accountStyle = lipgloss.NewStyle().Padding(1, 3).Border(lipgloss.RoundedBorder(), true)
 )
 
@@ -44,9 +42,9 @@ type signUpMsg struct{}
 
 func New(p common.Props) *Model {
 	b := vlist.New(p, 3,
+		button.New(p, "Continue as guest", func() tea.Msg { return common.GuestAuthState }),
 		button.New(p, "     Sign in     ", func() tea.Msg { return signInMsg{} }),
 		button.New(p, "     Sign up     ", func() tea.Msg { return signUpMsg{} }),
-		button.New(p, "Continue as guest", func() tea.Msg { return common.GuestAuthState }),
 	)
 
 	b.Style.Active = lipgloss.NewStyle().Margin(1, 0)
@@ -151,7 +149,6 @@ func signUpInputs(p common.Props) []common.Focusable {
 
 	for i := 0; i < 4; i++ {
 		input := textfield.New(ic)
-		input.CursorStyle(cursorStyle)
 		input.CharLimit(80)
 
 		switch i {
@@ -207,7 +204,6 @@ func signInInputs(p common.Props) []common.Focusable {
 
 	for i := 0; i < 2; i++ {
 		input := textfield.New(ic)
-		input.CursorStyle(cursorStyle)
 		input.CharLimit(80)
 
 		switch i {
