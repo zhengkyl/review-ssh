@@ -59,11 +59,15 @@ type ReviewNew struct {
 	Status   string `json:"status"`
 }
 
-type ByUpdatedAt []Review
+type ByStatusAndUpdate []Review
 
-func (a ByUpdatedAt) Len() int      { return len(a) }
-func (a ByUpdatedAt) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByUpdatedAt) Less(i, j int) bool {
+func (a ByStatusAndUpdate) Len() int      { return len(a) }
+func (a ByStatusAndUpdate) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByStatusAndUpdate) Less(i, j int) bool {
+	if a[i].Status != a[j].Status {
+		return a[i].Status > a[j].Status
+	}
+
 	if a[i].Updated_at.Equal(a[j].Updated_at) {
 		return a[i].Created_at.After(a[j].Updated_at)
 	}

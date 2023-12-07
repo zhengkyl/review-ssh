@@ -22,8 +22,8 @@ var tabNames = []string{
 // This must match the order of tabNames
 var tabStatuses = []enums.Status{
 	255, // This should never be accessed
-	enums.Completed,
 	enums.PlanToWatch,
+	enums.Completed,
 }
 
 var NUM_LISTS = len(tabNames)
@@ -59,10 +59,9 @@ func (m *Model) ReloadReviews() {
 	reviews := make([]common.Review, 0, len(m.props.Global.ReviewMap))
 	for _, review := range m.props.Global.ReviewMap {
 		reviews = append(reviews, review)
-		m.props.Global.ReviewMap[review.Tmdb_id] = review
 	}
 
-	sort.Sort(common.ByUpdatedAt(reviews))
+	sort.Sort(common.ByStatusAndUpdate(reviews))
 	m.list.SetReviews(reviews)
 }
 func (m *Model) Init() tea.Cmd {
@@ -77,7 +76,7 @@ func (m *Model) Init() tea.Cmd {
 				m.props.Global.ReviewMap[review.Tmdb_id] = review
 			}
 
-			sort.Sort(common.ByUpdatedAt(reviews))
+			sort.Sort(common.ByStatusAndUpdate(reviews))
 			m.list.SetReviews(reviews)
 		}
 		return nil
@@ -98,10 +97,10 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case *common.KeyEvent:
 		prevActive := m.activeTab
-		if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Right) {
+		if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextX) {
 			msg.Handled = true
 			m.activeTab = (m.activeTab + 1) % NUM_LISTS
-		} else if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Left) {
+		} else if key.Matches(msg.KeyMsg, m.props.Global.KeyMap.PrevX) {
 			msg.Handled = true
 			m.activeTab = (m.activeTab - 1 + NUM_LISTS) % NUM_LISTS
 		}
@@ -121,8 +120,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				}
 			}
 
-			sort.Sort(common.ByUpdatedAt(filtered))
-
+			sort.Sort(common.ByStatusAndUpdate(filtered))
 			m.list.SetReviews(filtered)
 		}
 

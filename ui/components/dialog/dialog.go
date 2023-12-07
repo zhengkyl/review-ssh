@@ -67,12 +67,12 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Back):
 			msg.Handled = true
 			m.Blur()
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextInput):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextX):
 			msg.Handled = true
-			m.active = util.Min(m.active+1, len(m.buttons)-1)
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.PrevInput):
+			m.active = util.Mod(m.active+1, len(m.buttons))
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.PrevX):
 			msg.Handled = true
-			m.active = util.Max(m.active-1, 0)
+			m.active = util.Mod(m.active-1, len(m.buttons))
 		}
 
 		if prevActive != m.active {

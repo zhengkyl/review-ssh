@@ -11,10 +11,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	bm "github.com/charmbracelet/wish/bubbletea"
 	lm "github.com/charmbracelet/wish/logging"
-	"github.com/gliderlabs/ssh"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/zhengkyl/review-ssh/ui"
 	"github.com/zhengkyl/review-ssh/ui/common"
@@ -23,16 +23,16 @@ import (
 
 const (
 	host = "0.0.0.0"
-	port = 2345
+	port = 3456
 )
 
-func RunServer() {
+func RunServer(tmdbKey string) {
 
 	s, err := wish.NewServer(
 		wish.WithAddress(fmt.Sprintf("%s:%d", host, port)),
 		wish.WithHostKeyPath(".ssh/server_ed25519"),
 		wish.WithMiddleware(
-			bm.Middleware(teaHandler),
+			bm.Middleware(makeTeaHandler(tmdbKey)),
 			lm.Middleware(),
 		),
 	)
@@ -63,37 +63,33 @@ func RunServer() {
 	}
 }
 
-func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	pty, _, active := s.Pty()
-	if !active {
-		wish.Fatalln(s, "no active terminal, skipping")
-		return nil, nil
-	}
+func makeTeaHandler(tmdbKey string) bm.Handler {
+	return func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
+		_, _, active := s.Pty()
+		if !active {
+			wish.Fatalln(s, "no active terminal, skipping")
+			return nil, nil
+		}
 
-	httpClient := retryablehttp.NewClient()
-	httpClient.Logger = nil
+		httpClient := retryablehttp.NewClient()
+		httpClient.Logger = nil
 
-	c := common.Props{
-		Global: common.Global{
-			AuthState: &common.AuthState{
-				Authed: false,
+		c := common.Props{
+			Global: common.Global{
+				AuthState: &common.AuthState{
+					Authed: false,
+				},
+				Config: common.Config{
+					TMDB_API_KEY: tmdbKey,
+				},
+
+				ReviewMap:  map[int]common.Review{},
+				FilmCache:  common.Cache[common.Film]{},
+				KeyMap:     keymap.DefaultKeyMap(),
+				HttpClient: httpClient,
 			},
-			Config: common.Config{
-				TMDB_API_KEY: tmdbKey,
-			},
+		}
 
-			ReviewMap:  map[int]common.Review{},
-			FilmCache:  common.Cache[common.Film]{},
-			KeyMap:     keymap.DefaultKeyMap(),
-			HttpClient: httpClient,
-		},
+		return ui.New(c), []tea.ProgramOption{tea.WithAltScreen()}
 	}
-
-	p := tea.NewProgram(ui.New(c), tea.WithAltScreen())
-	// m := model{
-	// 	term:   pty.Term,
-	// 	width:  pty.Window.Width,
-	// 	height: pty.Window.Height,
-	// }
-	return nil, []tea.ProgramOption{tea.WithAltScreen()}
 }

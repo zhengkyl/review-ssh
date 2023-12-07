@@ -23,7 +23,7 @@ import (
 
 var (
 	appStyle   = lipgloss.NewStyle().MarginBottom(1)
-	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#fb7185")).Padding(0, 1)
+	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#F25D94")).Padding(0, 1)
 	title      = titleStyle.Render("review-ssh")
 )
 
@@ -100,9 +100,6 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) Init() tea.Cmd {
-	// _, cmd := m.filmdetailsPage.Update(filmdetails.Init(109445))
-	// m.page = FILMDETAILS
-	// return cmd
 	return nil
 }
 

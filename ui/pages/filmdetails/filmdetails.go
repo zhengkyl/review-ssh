@@ -125,10 +125,10 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	case *common.KeyEvent:
 		prevFocus := m.focusIndex
 		switch {
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Right):
-			m.focusIndex = util.Min(m.focusIndex+1, 3)
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Left):
-			m.focusIndex = util.Max(m.focusIndex-1, 0)
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextX):
+			m.focusIndex = util.Mod(m.focusIndex+1, 3)
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.PrevX):
+			m.focusIndex = util.Mod(m.focusIndex-1, 3)
 		}
 		if m.focusIndex != prevFocus {
 			m.inputs[m.focusIndex].Focus()

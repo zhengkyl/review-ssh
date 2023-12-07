@@ -4,14 +4,22 @@ go 1.19
 
 require (
 	github.com/charmbracelet/bubbletea v0.24.2
+	github.com/charmbracelet/log v0.3.1
+	github.com/charmbracelet/wish v1.2.0
+	github.com/gliderlabs/ssh v0.3.5
 	golang.org/x/image v0.14.0
 )
 
 require (
+	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
+	github.com/charmbracelet/keygen v0.5.0 // indirect
+	github.com/charmbracelet/ssh v0.0.0-20221117183211-483d43d97103 // indirect
+	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
+	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
 )
 

@@ -121,7 +121,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 
 		prevActive := m.active
 		switch {
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Down):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.NextY):
 			msg.Handled = true
 			m.active = util.Min(m.active+1, len(m.items)-1)
 
@@ -134,7 +134,7 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 				}
 
 			}
-		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.Up):
+		case key.Matches(msg.KeyMsg, m.props.Global.KeyMap.PrevY):
 			msg.Handled = true
 			m.active = util.Max(m.active-1, 0)
 
