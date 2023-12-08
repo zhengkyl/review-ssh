@@ -1,43 +1,29 @@
 package util
 
-import "strings"
+import (
+	"github.com/mattn/go-runewidth"
+)
 
-func TruncOrPadASCII(text string, length int) string {
-	if len(text) == length {
-		return text
-	}
-
+func TruncAndPadUnicode(text string, length int) string {
 	if length < 1 {
 		return ""
 	}
-	if length == 1 {
-		return "…"
+
+	len := runewidth.StringWidth(text)
+
+	if len == length {
+		return text
 	}
 
-	pad := length - len(text)
-	if pad > 0 {
-		return text + strings.Repeat(" ", pad)
+	if length > len {
+		return runewidth.FillRight(text, length)
 	}
 
+	var trunc string
 	if text[length-2] == ' ' {
-		return text[:length-2] + "… "
+		trunc = runewidth.Truncate(text, length, "… ")
+	} else {
+		trunc = runewidth.Truncate(text, length, "…")
 	}
-
-	return text[:length-1] + "…"
+	return runewidth.FillRight(trunc, length)
 }
-
-// still doesn't work for emojies
-// line := strings.Split(text, "\n")[0]
-// lineLen := runewidth.StringWidth(line)
-
-// if lineLen <= length {
-// 	return line + strings.Repeat(" ", length-lineLen)
-// }
-
-// runewidth.Truncate(line, length, "")
-
-// if line[length-2] == ' ' {
-// 	return runewidth.Truncate(line, length-2, "… ")
-// }
-
-// return runewidth.Truncate(line, length-1, "… ")

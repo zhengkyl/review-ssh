@@ -15,7 +15,7 @@ Enter
 Sleep 1s
 Type "pete@fish.net"
 Tab
-Type "definitelyrealpassword"
+Type "fisher2"
 Tab
 Sleep 500ms
 Enter
@@ -25,6 +25,7 @@ Tab
 Sleep 1s
 
 Type "s"
+Sleep 500ms
 Type "pirates of the caribbean"
 Sleep 1s
 Enter

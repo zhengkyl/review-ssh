@@ -177,7 +177,8 @@ func (m *Model) View() string {
 
 	left := m.poster.View()
 
-	descStyle := lipgloss.NewStyle().Width(m.props.Width - 28 - 2).Height(5)
+	rightWidth := m.props.Width - 28 - 2 // poster + gap
+	descStyle := lipgloss.NewStyle().Width(rightWidth).Height(5)
 
 	rightSb := strings.Builder{}
 	rightSb.WriteString("\n")
@@ -186,7 +187,7 @@ func (m *Model) View() string {
 	if len(film.Release_date) >= 4 {
 		date = film.Release_date[:4]
 	}
-	rightSb.WriteString(film.Title + " (" + date + ")")
+	rightSb.WriteString(util.TruncAndPadUnicode(film.Title+" ("+date+")", rightWidth))
 	rightSb.WriteString("\n\n")
 
 	// make place holder for dropdown which needs to be overlaid

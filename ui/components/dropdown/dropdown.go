@@ -117,7 +117,7 @@ func (m *Model) View() string {
 	} else {
 		selected = m.options[m.Selected].Text
 	}
-	selected = util.TruncOrPadASCII(selected, itemWidth-2) + " ▼"
+	selected = util.TruncAndPadUnicode(selected, itemWidth-2) + " ▼"
 	selected = " " + selected + " "
 
 	if !m.open {
@@ -134,7 +134,7 @@ func (m *Model) View() string {
 	sb.WriteString("\n" + dividerStyle.Render("├"+strings.Repeat("─", itemWidth+2)+"┤") + "\n")
 
 	for i, option := range m.options {
-		text := util.TruncOrPadASCII(option.Text, itemWidth)
+		text := util.TruncAndPadUnicode(option.Text, itemWidth)
 		if i == m.active {
 			text = activeStyle.Render(text)
 		} else {

@@ -26,7 +26,8 @@ func DefaultKeyMap() *KeyMap {
 		Search: key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "search")),
 		NextX:  key.NewBinding(key.WithKeys("tab", "right", "l"), key.WithHelp("tab", "next tab")),
 		PrevX:  key.NewBinding(key.WithKeys("shift+tab", "left", "h"), key.WithHelp("shift+tab", "prev tab")),
-		NextY:  key.NewBinding(key.WithKeys("tab", "down", "j"), key.WithHelp("tab", "next tab")),
+		// TODO temp fix enter is NextY b/c input lists
+		NextY:  key.NewBinding(key.WithKeys("tab", "down", "j", "enter"), key.WithHelp("tab", "next tab")),
 		PrevY:  key.NewBinding(key.WithKeys("shift+tab", "up", "k"), key.WithHelp("shift+tab", "prev tab")),
 		Up:     key.NewBinding(key.WithKeys("k", "up"), key.WithHelp("k", "up")),
 		Down:   key.NewBinding(key.WithKeys("j", "down"), key.WithHelp("j", "down")),

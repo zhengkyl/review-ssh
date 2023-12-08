@@ -178,10 +178,10 @@ func (m *Model) View() string {
 
 	// 5 wide review
 	// 13 status
-	// 3 gaps
+	// 5 gaps
 	// 3 wide scrollbar
 	hf := listStyle.GetHorizontalFrameSize()
-	titleWidth := m.props.Width - 5 - 13 - 3 - 3 - hf
+	titleWidth := m.props.Width - 5 - 13 - 5 - 3 - hf
 
 	for i := m.offset; i < m.offset+m.visibleItems && i < len(m.reviews); i++ {
 
@@ -199,9 +199,10 @@ func (m *Model) View() string {
 
 		sectionSb := strings.Builder{}
 
-		sectionSb.WriteString(util.TruncOrPadASCII(title, titleWidth))
+		sectionSb.WriteString(util.TruncAndPadUnicode(title, titleWidth))
+		sectionSb.WriteString("  ")
 
-		sectionSb.WriteString(util.TruncOrPadASCII(review.Status.DisplayString(), 13))
+		sectionSb.WriteString(util.TruncAndPadUnicode(review.Status.DisplayString(), 13))
 		sectionSb.WriteString("  ")
 
 		sectionSb.WriteString(common.RenderRating(review.Fun_before, review.Fun_during, review.Fun_after))
