@@ -113,9 +113,6 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 func (m *Model) View() string {
 	sb := strings.Builder{}
 
-	// sb.WriteString(m.props.Global.AuthState.Cookie)
-	// sb.WriteString("\n")
-
 	if m.stage == picker {
 		sb.WriteString("Ahoy there!\n")
 		sb.WriteString(m.buttons.View())
@@ -129,9 +126,9 @@ func (m *Model) View() string {
 		sb.WriteString("\n\n")
 
 		sb.WriteString(m.inputs.View())
-		// if m.err != "" {
-		sb.WriteString(errStyle.Render(m.err))
-		// }
+		if m.err != "" {
+			sb.WriteString(" " + errStyle.Render(m.err))
+		}
 
 	}
 

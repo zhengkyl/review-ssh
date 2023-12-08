@@ -29,7 +29,7 @@ type Model struct {
 }
 
 func New(p common.Props) *Model {
-	return &Model{props: p, focused: false, Checked: false}
+	return &Model{props: p, focused: false, Checked: false, OnChange: func(value bool) tea.Cmd { return nil }}
 }
 
 func (m *Model) Focused() bool {

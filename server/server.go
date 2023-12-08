@@ -16,6 +16,7 @@ import (
 	bm "github.com/charmbracelet/wish/bubbletea"
 	lm "github.com/charmbracelet/wish/logging"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/muesli/termenv"
 	"github.com/zhengkyl/review-ssh/ui"
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/keymap"
@@ -32,7 +33,7 @@ func RunServer(tmdbKey string) {
 		wish.WithAddress(fmt.Sprintf("%s:%d", host, port)),
 		wish.WithHostKeyPath(".ssh/server_ed25519"),
 		wish.WithMiddleware(
-			bm.Middleware(makeTeaHandler(tmdbKey)),
+			bm.MiddlewareWithColorProfile(makeTeaHandler(tmdbKey), termenv.TrueColor),
 			lm.Middleware(),
 		),
 	)

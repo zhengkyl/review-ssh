@@ -1,38 +1,44 @@
 # review-ssh
 
-A terminal user-interface for [`review-api`](https://github.com/zhengkyl/review-api) over ssh
+A terminal user-interface to review movies. Frontend for [`review-api`](https://github.com/zhengkyl/review-api). Try it at `ssh reviews.kylezhe.ng`
 
-<img alt="movie review list" src="./assets/list.png" width="600" />
+UI built using [`bubbletea`](https://github.com/charmbracelet/bubbletea) and images captured with [`vhs`](https://github.com/charmbracelet/vhs).
 
-<img alt="movie details" src="./assets/details.gif" width="600" />
+## Movie review/watchlist
 
-# Progress
+<img alt="movie lists" src="./assets/lists.png"/>
 
-<img alt="scrollable review list" src="./assets/progress.gif" width="600" />
+## Search (powered by [TMDB](https://www.themoviedb.org))
 
-## Sign in/up flow
+<img alt="movie search" src="./assets/search.png"/>
 
-<img alt="account flow" src="./assets/account.gif" width="600" />
+## Image, summary, and minimalist rating system
 
-## Ahoy there!
+<img alt="movie details" src="./assets/details.png"/>
 
-All ye brave souls who wish to delve within this repo, heed me warnings!
+## Usage demo
 
-- I be new to Go and this be me maiden voyage.
-- [@charmbracelet/soft-serve](https://github.com/charmbracelet/soft-serve) be the siren I follow, but bountiful booty or the depths of the sea, where does it lead?
-  - Bubble tea is a nice framework for terminal user interfaces (TUI) using Go, but it's still very non-ergonomic and I don't think it scales well with deeply nested views. It's hard to create general use components. I think it makes more sense to make specific components for each use case.
-- Ye must lose your landlubber ways if ye wish to conquer these high seas!
-  - Working on this project has made me a bit crazy.
+<img alt="usage demo" src="./assets/demo.gif"/>
 
-### Things of note
+## Development
 
-You may see this and wonder why ignore the first arg of Update()?
+This is my first project with Go so I made questionable choices.
+
+Here are problems I struggled to solve and should probably be completely redone.
+
+- Async stuff like fetching data and then performing a callback.
+- Handling key events and focus across nested components.
+- Reusable components. I ended up with a lot of makeshift spaghetti code. At the same time, I overgeneralized too early (see unused vscroll component).
+
+### Notes
+
+I opted to only work with struct pointers for components.
 
 ```go
 _, cmd := child.Update(msg)
 ```
 
-I opted to only work with struct pointers to avoid type assertions everywhere like below.
+This was to avoid type assertions everywhere like below.
 
 ```go
 // type MyModel struct {
@@ -44,8 +50,6 @@ I opted to only work with struct pointers to avoid type assertions everywhere li
 model, cmd := child.Update(msg)
 m.child = model.(child.Model)
 ```
-
-The bubbles components avoid the type assertions by having a Update() function with a specific return type. This makes them hard to work with (like in lists), and I ended up creating wrapper components in some cases.
 
 ## Scaffold new component
 
@@ -91,60 +95,3 @@ func (m *Model) View() string {
 	return ""
 }
 ```
-
-## Progress
-
-### 2/25/23
-
-- move between input fields
-
-<img alt="Day 7" src="./assets/day7.gif" width="600" />
-
-### 2/11/23
-
-- toggle between multiple pages
-- functionless buttons for each movie in list
-
-<img alt="Day 6" src="./assets/day6.gif" width="600" />
-
-### 2/3/23
-
-- made list of movies pretty
-
-<img alt="Day 5" src="./assets/day5.gif" width="600" />
-
-### 1/28/23
-
-- got images loading in a jank way
-
-<img alt="Day 4" src="./assets/day4.gif" width="600" />
-
-### 12/23/22
-
-- colors are sooo fun and quirky
-
-<img alt="Day 3" src="./assets/day3.gif" width="600" />
-
-### 12/22/22
-
-- colors are sooo fun and quirky
-
-<img alt="Day 2" src="./assets/day2.gif" width="600" />
-
-### 12/21/22
-
-- http requests keep failing?
-- parsing json is a pain?
-- the terminal is not a good user interface?! 😳
-
-<img alt="Day 1" src="./assets/day1.gif" width="600" />
-
-## Resources
-
-https://github.com/charmbracelet/bubbletea
-
-https://github.com/charmbracelet/soft-serve
-
-https://github.com/charmbracelet/lipgloss
-
-https://github.com/charmbracelet/wish

@@ -106,6 +106,15 @@ func (m *Model) Init(filmId int) tea.Cmd {
 	m.checkAfter.Checked = false
 
 	m.dropdown.OnChange = func(value string) tea.Cmd {
+		status := enums.PlanToWatch
+		if value == enums.Completed.String() {
+			status = enums.Completed
+		}
+		m.updateInputs(common.Review{
+			Status:     status,
+			Fun_during: m.checkDuring.Checked,
+			Fun_after:  m.checkAfter.Checked,
+		})
 		return postReviewCmd(m.props.Global, filmId, value)
 	}
 

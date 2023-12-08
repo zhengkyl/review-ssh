@@ -9,6 +9,7 @@ import (
 	"github.com/zhengkyl/review-ssh/ui/common"
 	"github.com/zhengkyl/review-ssh/ui/components/textfield"
 	"github.com/zhengkyl/review-ssh/ui/components/vlist"
+	"github.com/zhengkyl/review-ssh/ui/util"
 )
 
 var (
@@ -59,14 +60,18 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	sb := strings.Builder{}
-	sb.WriteString(m.list.View())
+	if m.list.Length() == 0 {
+		sb.WriteString("No results.")
+	} else {
+		sb.WriteString(m.list.View())
+	}
 
 	viewH := m.props.Height - 1
 	sb.WriteString(strings.Repeat("\n", viewH-lipgloss.Height(sb.String())))
 
 	start := m.list.Offset() + 1
 	last := m.list.Offset() + m.list.PerPage()
-	paginator := fmt.Sprintf("%d-%d of %d", start, last, m.list.Length())
+	paginator := fmt.Sprintf("%d-%d of %d", start, util.Max(last, m.list.Length()), m.list.Length())
 
 	// filmitems have an internal horizontal framesize of 2
 	sb.WriteString(strings.Repeat(" ", m.props.Width-len(paginator)-2))

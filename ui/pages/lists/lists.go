@@ -55,15 +55,26 @@ func (m *Model) SetSize(width, height int) {
 
 	m.list.SetSize(width, height-3)
 }
+
 func (m *Model) ReloadReviews() {
-	reviews := make([]common.Review, 0, len(m.props.Global.ReviewMap))
-	for _, review := range m.props.Global.ReviewMap {
-		reviews = append(reviews, review)
+	reviews := make([]common.Review, 0)
+
+	if m.activeTab == 0 {
+		for _, review := range m.props.Global.ReviewMap {
+			reviews = append(reviews, review)
+		}
+	} else {
+		for _, review := range m.props.Global.ReviewMap {
+			if tabStatuses[m.activeTab] == review.Status {
+				reviews = append(reviews, review)
+			}
+		}
 	}
 
 	sort.Sort(common.ByStatusAndUpdate(reviews))
 	m.list.SetReviews(reviews)
 }
+
 func (m *Model) Init() tea.Cmd {
 	user_id := m.props.Global.AuthState.User.Id
 
@@ -106,24 +117,8 @@ func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 		}
 
 		if m.activeTab != prevActive {
-			filtered := make([]common.Review, 0)
-
-			if m.activeTab == 0 {
-				for _, review := range m.props.Global.ReviewMap {
-					filtered = append(filtered, review)
-				}
-			} else {
-				for _, review := range m.props.Global.ReviewMap {
-					if tabStatuses[m.activeTab] == review.Status {
-						filtered = append(filtered, review)
-					}
-				}
-			}
-
-			sort.Sort(common.ByStatusAndUpdate(filtered))
-			m.list.SetReviews(filtered)
+			m.ReloadReviews()
 		}
-
 	}
 
 	_, cmd := m.list.Update(msg)

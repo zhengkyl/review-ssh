@@ -79,11 +79,11 @@ func (m *Model) SetSize(width, height int) {
 }
 
 func (m *Model) SetReviews(reviews []common.Review) {
+	m.loadedReviews = true
 	// TODO quick dirty dirty check
 	if len(reviews) == len(m.reviews) {
 		return
 	}
-	m.loadedReviews = true
 	m.reviews = reviews
 	m.active = 0
 	m.offset = 0
