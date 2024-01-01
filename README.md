@@ -1,8 +1,12 @@
 # review-ssh
 
-A terminal user-interface to review movies. Frontend for [`review-api`](https://github.com/zhengkyl/review-api). Try it at `ssh reviews.kylezhe.ng`
+A minimalist terminal app to review movies. Frontend for [`review-api`](https://github.com/zhengkyl/review-api). Try it at `ssh reviews.kylezhe.ng`
 
 UI built using [`bubbletea`](https://github.com/charmbracelet/bubbletea) and images captured with [`vhs`](https://github.com/charmbracelet/vhs).
+
+## Demo
+
+<img alt="usage demo" src="./assets/demo.gif"/>
 
 ## Movie review/watchlist
 
@@ -15,10 +19,6 @@ UI built using [`bubbletea`](https://github.com/charmbracelet/bubbletea) and ima
 ## Image, summary, and minimalist rating system
 
 <img alt="movie details" src="./assets/details.png"/>
-
-## Usage demo
-
-<img alt="usage demo" src="./assets/demo.gif"/>
 
 ## Development
 

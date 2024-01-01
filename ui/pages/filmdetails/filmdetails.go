@@ -15,7 +15,16 @@ import (
 )
 
 var (
-	viewStyle = lipgloss.NewStyle().Margin(1)
+	viewStyle      = lipgloss.NewStyle().Margin(1)
+	defaultOptions = []dropdown.Option{
+		{Text: "Plan To Watch", Value: "PlanToWatch"},
+		{Text: "Completed", Value: "Completed"},
+	}
+	savedOptions = []dropdown.Option{
+		{Text: "Plan To Watch", Value: "PlanToWatch"},
+		{Text: "Completed", Value: "Completed"},
+		{Text: "Remove", Value: "Remove"},
+	}
 )
 
 type Model struct {
@@ -34,14 +43,11 @@ type Model struct {
 
 func New(p common.Props) *Model {
 	m := &Model{
-		props:      p,
-		poster:     &poster.Model{},
-		filmLoaded: false,
-		filmId:     0,
-		dropdown: dropdown.New(common.Props{Width: 20, Height: 3, Global: p.Global}, "Add movie", []dropdown.Option{
-			{Text: "Plan To Watch", Value: "PlanToWatch"},
-			{Text: "Completed", Value: "Completed"},
-		}),
+		props:       p,
+		poster:      &poster.Model{},
+		filmLoaded:  false,
+		filmId:      0,
+		dropdown:    dropdown.New(common.Props{Width: 20, Height: 3, Global: p.Global}, "Add movie", defaultOptions),
 		checkDuring: checkbox.New(p),
 		checkAfter:  checkbox.New(p),
 		inputs:      []common.Focusable{},
@@ -76,6 +82,12 @@ func (m *Model) updateInputs(review common.Review) {
 	}
 
 	m.dropdown.OnChange = func(value string) tea.Cmd {
+		if value == "Remove" {
+			m.dropdown.SetItems(defaultOptions)
+			m.checkDuring.Checked = false
+			m.checkAfter.Checked = false
+			return deleteReviewCmd(m.props.Global, m.filmId)
+		}
 		return patchReviewCmd(m.props.Global, m.filmId, map[string]interface{}{"status": value})
 	}
 	switch review.Status {
@@ -84,6 +96,7 @@ func (m *Model) updateInputs(review common.Review) {
 	case enums.Completed:
 		m.dropdown.Selected = 1
 	}
+	m.dropdown.SetItems(savedOptions)
 }
 
 func (m *Model) Init(filmId int) tea.Cmd {
@@ -104,6 +117,7 @@ func (m *Model) Init(filmId int) tea.Cmd {
 	m.dropdown.Selected = -1
 	m.checkDuring.Checked = false
 	m.checkAfter.Checked = false
+	m.dropdown.SetItems(defaultOptions)
 
 	m.dropdown.OnChange = func(value string) tea.Cmd {
 		status := enums.PlanToWatch
@@ -190,8 +204,8 @@ func (m *Model) View() string {
 	rightSb.WriteString(util.TruncAndPadUnicode(film.Title+" ("+date+")", rightWidth))
 	rightSb.WriteString("\n\n")
 
-	// make place holder for dropdown which needs to be overlaid
 	dropdownView := m.dropdown.View()
+	// make place holder for expanded dropdown which needs to be overlaid
 	inputs := lipgloss.JoinHorizontal(lipgloss.Top, strings.Repeat(" ", lipgloss.Width(dropdownView)), " ", m.checkDuring.View(), " ", m.checkAfter.View())
 	rightSb.WriteString(inputs)
 

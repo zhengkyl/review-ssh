@@ -82,7 +82,7 @@ type Paged[T Review | Film] struct {
 }
 
 type responseData interface {
-	Film | Review | Paged[Film] | Paged[Review]
+	Film | Review | Paged[Film] | Paged[Review] | struct{}
 }
 
 type fetchCallback[T responseData] func(data T, err error) tea.Msg

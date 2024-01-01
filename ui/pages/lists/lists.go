@@ -96,7 +96,7 @@ func (m *Model) Init() tea.Cmd {
 
 	if user_id == common.GuestAuthState.User.Id {
 		cmds = append(cmds,
-			common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint, callback))
+			common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint+"&user_id=1", callback))
 	} else {
 		cmds = append(cmds, common.Get[common.Paged[common.Review]](m.props.Global, reviewsEndpoint+"&user_id="+strconv.Itoa(user_id), callback))
 	}

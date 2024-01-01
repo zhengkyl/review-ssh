@@ -18,6 +18,15 @@ func patchReviewCmd(g common.Global, tmdb_id int, updates map[string]interface{}
 	})
 }
 
+func deleteReviewCmd(g common.Global, tmdb_id int) tea.Cmd {
+	return common.Fetch[struct{}](g, "DELETE", patchEndpoint+strconv.Itoa(tmdb_id), nil, func(data struct{}, err error) tea.Msg {
+		if err == nil {
+			delete(g.ReviewMap, tmdb_id)
+		}
+		return nil
+	})
+}
+
 const postEndpoint = common.ReviewBase + "/reviews"
 
 func postReviewCmd(g common.Global, tmdb_id int, status string) tea.Cmd {

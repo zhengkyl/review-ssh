@@ -70,6 +70,13 @@ func (m *Model) SetSize(width, height int) {
 	m.props.Height = height
 }
 
+func (m *Model) SetItems(options []Option) {
+	m.options = options
+	if m.Selected > len(options)-1 {
+		m.Selected = -1
+	}
+}
+
 func (m *Model) Update(msg tea.Msg) (common.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case *common.KeyEvent:
