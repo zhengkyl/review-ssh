@@ -22,6 +22,7 @@ import (
 )
 
 var (
+	helpStyle  = lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 	appStyle   = lipgloss.NewStyle().MarginBottom(1)
 	titleStyle = lipgloss.NewStyle().Background(lipgloss.Color("#F25D94")).Padding(0, 1)
 	title      = titleStyle.Render("review-ssh")
@@ -292,7 +293,7 @@ func (m *Model) View() string {
 	}
 
 	view.WriteString("\n")
-	view.WriteString(m.help.View(m.props.Global.KeyMap))
+	view.WriteString(helpStyle.Render(m.help.View(m.props.Global.KeyMap)))
 
 	app := view.String()
 

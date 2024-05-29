@@ -16,6 +16,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/keygen v0.5.0 // indirect
 	github.com/charmbracelet/ssh v0.0.0-20221117183211-483d43d97103 // indirect
+	github.com/charmbracelet/x/ansi v0.1.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
@@ -26,7 +27,7 @@ require (
 require (
 	github.com/aymanbagabas/go-osc52 v1.2.2 // indirect
 	github.com/charmbracelet/bubbles v0.16.1
-	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/charmbracelet/lipgloss v0.11.0
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/joho/godotenv v1.5.1
@@ -38,9 +39,9 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.15.2
-	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )
